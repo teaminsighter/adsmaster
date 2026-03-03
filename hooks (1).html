@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>7 Hook Features — What Users Actually See</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0A0E1A;
+    --card: #111827;
+    --card-hover: #1a2236;
+    --accent: #00E5A0;
+    --accent2: #3B82F6;
+    --red: #EF4444;
+    --orange: #F59E0B;
+    --purple: #A855F7;
+    --text: #F1F5F9;
+    --muted: #94A3B8;
+    --border: #1E293B;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+  }
+
+  /* HERO */
+  .hero {
+    text-align: center;
+    padding: 60px 24px 40px;
+    position: relative;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -100px; left: 50%; transform: translateX(-50%);
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(0,229,160,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-badge {
+    display: inline-block;
+    padding: 6px 16px;
+    border: 1px solid var(--accent);
+    border-radius: 100px;
+    font-size: 12px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    animation: fadeDown 0.6s ease;
+  }
+  .hero h1 {
+    font-family: 'Sora', sans-serif;
+    font-size: clamp(28px, 5vw, 48px);
+    font-weight: 800;
+    line-height: 1.15;
+    max-width: 700px;
+    margin: 0 auto 16px;
+    animation: fadeDown 0.8s ease;
+  }
+  .hero h1 .highlight {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .hero p {
+    color: var(--muted);
+    font-size: 17px;
+    max-width: 520px;
+    margin: 0 auto;
+    animation: fadeDown 1s ease;
+  }
+  .hero-sub {
+    margin-top: 32px;
+    padding: 16px 24px;
+    background: rgba(0,229,160,0.06);
+    border: 1px solid rgba(0,229,160,0.15);
+    border-radius: 12px;
+    display: inline-block;
+    animation: fadeDown 1.2s ease;
+  }
+  .hero-sub span {
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 15px;
+  }
+  .hero-sub small {
+    display: block;
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 4px;
+  }
+
+  /* SECTION TITLE */
+  .section-title {
+    text-align: center;
+    padding: 50px 24px 30px;
+  }
+  .section-title h2 {
+    font-family: 'Sora', sans-serif;
+    font-size: clamp(22px, 4vw, 32px);
+    font-weight: 700;
+  }
+  .section-title p {
+    color: var(--muted);
+    font-size: 15px;
+    margin-top: 8px;
+  }
+
+  /* HOOKS GRID */
+  .hooks {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 24px 60px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .hook-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    display: grid;
+    grid-template-columns: 64px 1fr auto;
+    gap: 20px;
+    align-items: start;
+    transition: all 0.3s ease;
+    animation: slideUp 0.6s ease both;
+  }
+  .hook-card:nth-child(1) { animation-delay: 0.1s; }
+  .hook-card:nth-child(2) { animation-delay: 0.2s; }
+  .hook-card:nth-child(3) { animation-delay: 0.3s; }
+  .hook-card:nth-child(4) { animation-delay: 0.4s; }
+  .hook-card:nth-child(5) { animation-delay: 0.5s; }
+  .hook-card:nth-child(6) { animation-delay: 0.6s; }
+  .hook-card:nth-child(7) { animation-delay: 0.7s; }
+
+  .hook-card:hover {
+    background: var(--card-hover);
+    border-color: rgba(0,229,160,0.3);
+    transform: translateX(4px);
+  }
+
+  .hook-icon {
+    width: 64px; height: 64px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    flex-shrink: 0;
+  }
+
+  .hook-content h3 {
+    font-family: 'Sora', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .hook-content .subtitle {
+    font-size: 14px;
+    color: var(--accent);
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .hook-content p {
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .hook-tag {
+    padding: 4px 12px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    align-self: start;
+    margin-top: 4px;
+  }
+  .tag-new { background: rgba(0,229,160,0.12); color: var(--accent); }
+  .tag-killer { background: rgba(239,68,68,0.12); color: var(--red); }
+  .tag-unique { background: rgba(168,85,247,0.12); color: var(--purple); }
+
+  /* WHAT USER SEES vs WHAT COMPETITORS SHOW */
+  .comparison {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 24px 60px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  .comp-card {
+    border-radius: 16px;
+    padding: 28px;
+    border: 1px solid var(--border);
+  }
+  .comp-bad {
+    background: rgba(239,68,68,0.04);
+    border-color: rgba(239,68,68,0.2);
+  }
+  .comp-good {
+    background: rgba(0,229,160,0.04);
+    border-color: rgba(0,229,160,0.2);
+  }
+  .comp-card h3 {
+    font-family: 'Sora', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .comp-bad h3 { color: var(--red); }
+  .comp-good h3 { color: var(--accent); }
+
+  .comp-screen {
+    background: #0a0e17;
+    border-radius: 10px;
+    padding: 16px;
+    font-family: 'DM Sans', monospace;
+    font-size: 12px;
+    line-height: 2;
+  }
+  .comp-bad .comp-screen { color: #94A3B8; }
+  .comp-good .comp-screen { color: #E2E8F0; }
+
+  .metric-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 2px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .metric-label { color: #64748B; }
+  .metric-val { font-weight: 600; }
+
+  .simple-row {
+    padding: 6px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .simple-row .emoji { font-size: 18px; }
+  .simple-row .val { font-weight: 700; font-size: 15px; }
+  .simple-row .label { color: var(--muted); font-size: 12px; }
+
+  .alert-box {
+    margin-top: 12px;
+    padding: 10px 12px;
+    background: rgba(245,158,11,0.08);
+    border: 1px solid rgba(245,158,11,0.2);
+    border-radius: 8px;
+    font-size: 12px;
+    color: var(--orange);
+  }
+  .alert-box .btns {
+    margin-top: 8px;
+    display: flex;
+    gap: 8px;
+  }
+  .alert-box .btn {
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+  }
+  .btn-fix { background: var(--accent); color: #000; }
+  .btn-ignore { background: rgba(255,255,255,0.08); color: var(--muted); }
+
+  /* USER JOURNEY */
+  .journey {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 24px 60px;
+  }
+  .journey-steps {
+    display: flex;
+    gap: 16px;
+    position: relative;
+  }
+  .journey-steps::before {
+    content: '';
+    position: absolute;
+    top: 40px;
+    left: 40px;
+    right: 40px;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2), var(--purple));
+    z-index: 0;
+  }
+  .step {
+    flex: 1;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+  }
+  .step-num {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Sora', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    margin: 0 auto 16px;
+    border: 3px solid;
+  }
+  .step:nth-child(1) .step-num { background: rgba(0,229,160,0.1); border-color: var(--accent); color: var(--accent); }
+  .step:nth-child(2) .step-num { background: rgba(59,130,246,0.1); border-color: var(--accent2); color: var(--accent2); }
+  .step:nth-child(3) .step-num { background: rgba(168,85,247,0.1); border-color: var(--purple); color: var(--purple); }
+  .step h4 {
+    font-family: 'Sora', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .step p {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .step .time {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 3px 10px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 100px;
+    font-size: 11px;
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  /* PRICING HOOK */
+  .pricing-hook {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 24px 60px;
+  }
+  .price-compare {
+    display: grid;
+    grid-template-columns: 1fr 60px 1fr;
+    gap: 0;
+    align-items: center;
+  }
+  .price-card {
+    padding: 28px;
+    border-radius: 16px;
+    text-align: center;
+  }
+  .price-old {
+    background: rgba(239,68,68,0.04);
+    border: 1px solid rgba(239,68,68,0.15);
+  }
+  .price-new {
+    background: rgba(0,229,160,0.04);
+    border: 2px solid rgba(0,229,160,0.3);
+    position: relative;
+  }
+  .price-new::after {
+    content: 'YOUR STARTUP';
+    position: absolute;
+    top: -12px; left: 50%; transform: translateX(-50%);
+    padding: 3px 14px;
+    background: var(--accent);
+    color: #000;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    border-radius: 100px;
+  }
+  .price-card .label {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .price-card .amount {
+    font-family: 'Sora', sans-serif;
+    font-size: 36px;
+    font-weight: 800;
+  }
+  .price-old .amount { color: var(--red); text-decoration: line-through; text-decoration-thickness: 2px; }
+  .price-new .amount { color: var(--accent); }
+  .price-card .detail {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  .vs-badge {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: var(--card);
+    border: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Sora', sans-serif;
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--muted);
+    margin: 0 auto;
+  }
+
+  /* BOTTOM CTA */
+  .bottom-section {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+  }
+  .bottom-card {
+    background: linear-gradient(135deg, rgba(0,229,160,0.06), rgba(59,130,246,0.06));
+    border: 1px solid rgba(0,229,160,0.2);
+    border-radius: 20px;
+    padding: 40px;
+    text-align: center;
+  }
+  .bottom-card h2 {
+    font-family: 'Sora', sans-serif;
+    font-size: 24px;
+    font-weight: 800;
+    margin-bottom: 12px;
+  }
+  .bottom-card p {
+    color: var(--muted);
+    font-size: 15px;
+    margin-bottom: 24px;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .tagline-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  .tagline-item {
+    padding: 12px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .tagline-item .num {
+    font-family: 'Sora', sans-serif;
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--accent);
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 700px) {
+    .comparison { grid-template-columns: 1fr; }
+    .journey-steps { flex-direction: column; }
+    .journey-steps::before { display: none; }
+    .hook-card { grid-template-columns: 48px 1fr; }
+    .hook-icon { width: 48px; height: 48px; font-size: 22px; }
+    .hook-tag { display: none; }
+    .price-compare { grid-template-columns: 1fr; gap: 12px; }
+    .vs-badge { display: none; }
+    .tagline-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-badge">What Users Actually See</div>
+  <h1>7 Hook Features That <span class="highlight">Get Users to Sign Up</span></h1>
+  <p>Your product has 100 features running behind the scenes. But users only need to see THESE to say "take my money."</p>
+  <div class="hero-sub">
+    <span>The Rule: If a feature needs explanation, it's not a hook.</span>
+    <small>Hooks are instant. User sees it, understands it, wants it.</small>
+  </div>
+</div>
+
+<!-- USER JOURNEY -->
+<div class="section-title">
+  <h2>What The User Actually Does</h2>
+  <p>3 steps. That's it. Everything else is automatic.</p>
+</div>
+<div class="journey">
+  <div class="journey-steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <h4>Connect</h4>
+      <p>"Sign in with Google" — one click connects their ad account</p>
+      <span class="time">30 seconds</span>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <h4>Tell AI Your Goal</h4>
+      <p>"I sell candles online, budget $500/month, want more customers"</p>
+      <span class="time">2 minutes</span>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <h4>Approve & Watch</h4>
+      <p>AI builds everything. You just approve and see money come in.</p>
+      <span class="time">Forever on autopilot</span>
+    </div>
+  </div>
+</div>
+
+<!-- 7 HOOK FEATURES -->
+<div class="section-title">
+  <h2>The 7 Hook Features</h2>
+  <p>These are what you put on your landing page, ads, and pitch deck</p>
+</div>
+
+<div class="hooks">
+
+  <!-- HOOK 1 -->
+  <div class="hook-card">
+    <div class="hook-icon" style="background: rgba(239,68,68,0.1);">🔥</div>
+    <div class="hook-content">
+      <h3>HOOK 1: "See How Much Money Your Ads Are Wasting"</h3>
+      <div class="subtitle">Free Ad Audit — The Lead Magnet</div>
+      <p>User connects their Google Ads account → AI instantly scans everything → Shows: "You're wasting $847/month on keywords that never convert." This is FREE. This is what gets them in the door. They see the waste, they want the fix, they subscribe.</p>
+    </div>
+    <span class="hook-tag tag-killer">LEAD MAGNET</span>
+  </div>
+
+  <!-- HOOK 2 -->
+  <div class="hook-card">
+    <div class="hook-icon" style="background: rgba(0,229,160,0.1);">💰</div>
+    <div class="hook-content">
+      <h3>HOOK 2: "AI Stops Your Money Waste — Instantly"</h3>
+      <div class="subtitle">Money Waste Detector + Auto-Fix</div>
+      <p>24/7 monitoring. The moment a keyword, audience, or campaign starts wasting money, AI pauses it and sends you a WhatsApp message: "Saved you $47 today by pausing 'cheap shoes' keyword — it had 200 clicks and 0 sales." User feels protected. This is the #1 reason people stay subscribed.</p>
+    </div>
+    <span class="hook-tag tag-killer">RETENTION KILLER</span>
+  </div>
+
+  <!-- HOOK 3 -->
+  <div class="hook-card">
+    <div class="hook-icon" style="background: rgba(59,130,246,0.1);">🗣️</div>
+    <div class="hook-content">
+      <h3>HOOK 3: "Just Tell AI What You Want"</h3>
+      <div class="subtitle">Plain English Campaign Creator</div>
+      <p>No forms. No settings. No confusion. User types: "I own a pizza shop in London, budget £300/month, I want more delivery orders." AI creates the entire campaign — keywords, ads, targeting, bidding — everything. User just clicks "Launch." This replaces a $2,000/month agency.</p>
+    </div>
+    <span class="hook-tag tag-new">GAME CHANGER</span>
+  </div>
+
+  <!-- HOOK 4 -->
+  <div class="hook-card">
+    <div class="hook-icon" style="background: rgba(168,85,247,0.1);">📊</div>
+    <div class="hook-content">
+      <h3>HOOK 4: "See Your Results in Human Language"</h3>
+      <div class="subtitle">The "Explain Like I'm 5" Dashboard</div>
+      <p>No CTR. No CPC. No ROAS. Instead: "You spent $500 → Got 23 customers → Each cost $21.73 → You made $2,300 back → That's $4.60 profit for every $1 spent." Any human on earth understands this. Your grandma understands this.</p>
+    </div>
+    <span class="hook-tag tag-unique">UNIQUE</span>
+  </div>
+
+  <!-- HOOK 5 -->
+  <div class="hook-card">
+    <div class="hook-icon" style="background: rgba(245,158,11,0.1);">⚡</div>
+    <div class="hook-content">
+      <h3>HOOK 5: "AI Manages, You Approve"</h3>
+      <div class="subtitle">3-Option Decision System</div>
+      <p>AI never does anything secretly. It says: "I found an opportunity. Here are 3 options: 🟢 Safe: Keep current budget (expected +5 customers). 🟡 Moderate: Add $200 (expected +12 customers). 🔴 Aggressive: Double budget (expected +28 customers). Which do you pick?" User stays in control. AI does the work.</p>
+    </div>
+    <span class="hook-tag tag-unique">TRUST BUILDER</span>
+  </div>
+
+  <!-- HOOK 6 -->
+  <div class="hook-card">
+    <div class="hook-icon" style="background: rgba(236,72,153,0.1);">📱</div>
+    <div class="hook-content">
+      <h3>HOOK 6: "Manage Ads From WhatsApp"</h3>
+      <div class="subtitle">Chat-Based Ad Management</div>
+      <p>No app to download. No dashboard to learn. User asks on WhatsApp: "How are my ads?" → Gets instant report. "Pause my shoe campaign" → Done. "Increase my budget" → Done. The user's phone is their ad manager. This is especially powerful in markets like Asia, Middle East, and Africa where WhatsApp is life.</p>
+    </div>
+    <span class="hook-tag tag-new">FIRST EVER</span>
+  </div>
+
+  <!-- HOOK 7 -->
+  <div class="hook-card">
+    <div class="hook-icon" style="background: rgba(6,182,212,0.1);">🌍</div>
+    <div class="hook-content">
+      <h3>HOOK 7: "One AI, All Your Ad Platforms"</h3>
+      <div class="subtitle">Google + Facebook + TikTok in ONE Place</div>
+      <p>Stop logging into 3 different dashboards. One AI manages Google Ads, Facebook/Instagram Ads, and TikTok Ads together. It knows which platform works best for YOUR business and automatically shifts budget to the winner. One subscription. One AI brain. All platforms.</p>
+    </div>
+    <span class="hook-tag tag-unique">ALL-IN-ONE</span>
+  </div>
+
+</div>
+
+<!-- COMPARISON -->
+<div class="section-title">
+  <h2>What Users See: Competitors vs You</h2>
+  <p>Left is what current tools show. Right is what YOUR product shows.</p>
+</div>
+
+<div class="comparison">
+  <div class="comp-card comp-bad">
+    <h3>❌ What Google Ads / Competitors Show</h3>
+    <div class="comp-screen">
+      <div class="metric-row"><span class="metric-label">CTR</span><span class="metric-val">3.21%</span></div>
+      <div class="metric-row"><span class="metric-label">CPC</span><span class="metric-val">$1.47</span></div>
+      <div class="metric-row"><span class="metric-label">Impressions</span><span class="metric-val">12,847</span></div>
+      <div class="metric-row"><span class="metric-label">CPA</span><span class="metric-val">$23.41</span></div>
+      <div class="metric-row"><span class="metric-label">ROAS</span><span class="metric-val">4.2x</span></div>
+      <div class="metric-row"><span class="metric-label">Quality Score</span><span class="metric-val">7/10</span></div>
+      <div class="metric-row"><span class="metric-label">Conv. Rate</span><span class="metric-val">4.1%</span></div>
+      <div class="metric-row"><span class="metric-label">Impr. Share</span><span class="metric-val">67.3%</span></div>
+      <div style="margin-top: 12px; font-size: 11px; color: #475569; text-align: center;">
+        🤷 "What does any of this mean?"
+      </div>
+    </div>
+  </div>
+
+  <div class="comp-card comp-good">
+    <h3>✅ What YOUR Product Shows</h3>
+    <div class="comp-screen">
+      <div class="simple-row"><span class="emoji">💰</span><span class="val">$500</span><span class="label">spent this week</span></div>
+      <div class="simple-row"><span class="emoji">👥</span><span class="val">23</span><span class="label">new customers</span></div>
+      <div class="simple-row"><span class="emoji">🏷️</span><span class="val">$21.73</span><span class="label">cost per customer</span></div>
+      <div class="simple-row"><span class="emoji">📈</span><span class="val">$2,300</span><span class="label">revenue from ads</span></div>
+      <div class="simple-row"><span class="emoji">✅</span><span class="val" style="color: #00E5A0;">$4.60 back</span><span class="label">for every $1 spent</span></div>
+      <div class="alert-box">
+        ⚠️ "cheap shoes" keyword wasting $47/day — 200 clicks, 0 sales
+        <div class="btns">
+          <button class="btn btn-fix">✓ Auto-Fix</button>
+          <button class="btn btn-ignore">Ignore</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PRICING HOOK -->
+<div class="section-title">
+  <h2>The Price Hook</h2>
+  <p>This is what closes the deal on your landing page</p>
+</div>
+
+<div class="pricing-hook">
+  <div class="price-compare">
+    <div class="price-card price-old">
+      <div class="label">Hiring an Agency</div>
+      <div class="amount">$2,000</div>
+      <div class="detail">/month minimum</div>
+      <div style="margin-top: 12px; font-size: 12px; color: #64748B; text-align: left; line-height: 2;">
+        • Still need your approval for everything<br>
+        • Weekly calls you don't understand<br>
+        • Reports full of jargon<br>
+        • 3-month minimum contract<br>
+        • Results take months to see
+      </div>
+    </div>
+    <div class="vs-badge">VS</div>
+    <div class="price-card price-new">
+      <div class="label">Your AI Ad Manager</div>
+      <div class="amount">$99</div>
+      <div class="detail">/month — cancel anytime</div>
+      <div style="margin-top: 12px; font-size: 12px; color: #94A3B8; text-align: left; line-height: 2;">
+        ✅ AI works 24/7 (no weekends off)<br>
+        ✅ Results in plain language<br>
+        ✅ Stops money waste automatically<br>
+        ✅ No contracts, cancel anytime<br>
+        ✅ Manages Google + Meta + TikTok
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM -->
+<div class="bottom-section">
+  <div class="bottom-card">
+    <h2>Summary: Your Landing Page Headlines</h2>
+    <p>Use these exact lines on your website, ads, and pitch deck:</p>
+    <div class="tagline-grid">
+      <div class="tagline-item"><span class="num">1</span>"See how much your ads waste — free"</div>
+      <div class="tagline-item"><span class="num">2</span>"AI stops your money waste instantly"</div>
+      <div class="tagline-item"><span class="num">3</span>"Just tell AI what you want"</div>
+      <div class="tagline-item"><span class="num">4</span>"Results in human language"</div>
+      <div class="tagline-item"><span class="num">5</span>"AI manages, you approve"</div>
+      <div class="tagline-item"><span class="num">6</span>"Manage ads from WhatsApp"</div>
+      <div class="tagline-item"><span class="num">7</span>"One AI for all platforms"</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
