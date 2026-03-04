@@ -14,6 +14,7 @@
 | **8** | [Security & Compliance](./phase-8-security-compliance.md) | **READY FOR REVIEW** | JWT auth, encryption, GDPR, audit logging, incident response |
 | **9** | [DevOps & Infrastructure](./phase-9-devops-infrastructure.md) | **READY FOR REVIEW** | Terraform, CI/CD, monitoring, disaster recovery |
 | **10** | [Testing Strategy](./phase-10-testing-strategy.md) | **READY FOR REVIEW** | Unit, integration, E2E, performance, security, ML testing |
+| **11** | [Meta Ads Integration](./phase-11-meta-ads-integration.md) | **READY FOR REVIEW** | Facebook/Instagram Ads API, targeting, audiences, creatives |
 
 ## How to Use
 
@@ -35,6 +36,7 @@ Phase 7:  AI/ML Pipeline       ████████████████�
 Phase 8:  Security & Compliance████████████████████ 100% - Ready for Review
 Phase 9:  DevOps & Infra       ████████████████████ 100% - Ready for Review
 Phase 10: Testing Strategy     ████████████████████ 100% - Ready for Review
+Phase 11: Meta Ads Integration ████████████████████ 100% - Ready for Review
 ```
 
 ## Phase Summaries
@@ -118,6 +120,17 @@ Phase 10: Testing Strategy     ████████████████�
 - Security: OWASP ZAP, Trivy, Bandit
 - ML: Model validation, LLM response testing
 - Coverage: 80% backend, 75% frontend
+
+### Phase 11: Meta Ads Integration
+- Meta Marketing API v21.0 (Facebook, Instagram, Messenger, Audience Network)
+- OAuth 2.0 with long-lived tokens (60 days)
+- Campaign → Ad Set → Ad structure (vs Google's Ad Group)
+- Visual creatives: Image, Video, Carousel ads
+- Audience-based targeting (no keywords)
+- Custom & Lookalike audiences
+- Meta Pixel + Conversions API (CAPI) tracking
+- AI recommendations: audience fatigue, overlap, learning phase
+- Targeting builder UI with estimated reach
 
 ## Database Modules
 1. Core Users (users, organizations, members)
