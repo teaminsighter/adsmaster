@@ -15,6 +15,7 @@
 | **9** | [DevOps & Infrastructure](./phase-9-devops-infrastructure.md) | **READY FOR REVIEW** | Terraform, CI/CD, monitoring, disaster recovery |
 | **10** | [Testing Strategy](./phase-10-testing-strategy.md) | **READY FOR REVIEW** | Unit, integration, E2E, performance, security, ML testing |
 | **11** | [Meta Ads Integration](./phase-11-meta-ads-integration.md) | **READY FOR REVIEW** | Facebook/Instagram Ads API, targeting, audiences, creatives |
+| **12** | [UI Design System](./phase-12-ui-design-system.md) | **READY FOR REVIEW** | Colors, typography, components, wireframes for all views |
 
 ## How to Use
 
@@ -37,6 +38,7 @@ Phase 8:  Security & Compliance████████████████�
 Phase 9:  DevOps & Infra       ████████████████████ 100% - Ready for Review
 Phase 10: Testing Strategy     ████████████████████ 100% - Ready for Review
 Phase 11: Meta Ads Integration ████████████████████ 100% - Ready for Review
+Phase 12: UI Design System     ████████████████████ 100% - Ready for Review
 ```
 
 ## Phase Summaries
@@ -131,6 +133,17 @@ Phase 11: Meta Ads Integration ████████████████�
 - Meta Pixel + Conversions API (CAPI) tracking
 - AI recommendations: audience fatigue, overlap, learning phase
 - Targeting builder UI with estimated reach
+
+### Phase 12: UI Design System & Wireframes
+- **Style**: Data-dense, Bloomberg/Trading platform inspired
+- **Primary Color**: Green (#10B981) - Growth/ROI focus
+- **Font**: Inter (UI) + JetBrains Mono (numbers)
+- **Themes**: Light + Dark (equal support)
+- **Target**: Agencies with multi-client management
+- **Components**: Buttons, tables, metric cards, badges, recommendation cards
+- **Wireframes**: Dashboard, Campaigns, AI Recommendations, Analytics, Clients, Settings
+- **Navigation**: Keyboard-first with ⌘K command palette
+- **Layout**: Fixed sidebar (240px) + fluid content
 
 ## Database Modules
 1. Core Users (users, organizations, members)
