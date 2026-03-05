@@ -1,0 +1,2603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AdsMaster - UI Wireframes</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    /* ========================================
+       CSS VARIABLES - DESIGN TOKENS
+       ======================================== */
+    :root {
+      /* Primary Green */
+      --primary-50: #ECFDF5;
+      --primary-100: #D1FAE5;
+      --primary-200: #A7F3D0;
+      --primary-300: #6EE7B7;
+      --primary-400: #34D399;
+      --primary-500: #10B981;
+      --primary-600: #059669;
+      --primary-700: #047857;
+      --primary-800: #065F46;
+      --primary-900: #064E3B;
+
+      /* Semantic Colors */
+      --success: #10B981;
+      --warning: #F59E0B;
+      --error: #EF4444;
+      --info: #3B82F6;
+      --opportunity: #8B5CF6;
+
+      /* Chart Colors */
+      --chart-1: #10B981;
+      --chart-2: #3B82F6;
+      --chart-3: #8B5CF6;
+      --chart-4: #F59E0B;
+      --chart-5: #EC4899;
+      --chart-6: #06B6D4;
+    }
+
+    /* Light Theme (Default) */
+    :root, [data-theme="light"] {
+      --bg-primary: #FFFFFF;
+      --bg-secondary: #F9FAFB;
+      --bg-tertiary: #F3F4F6;
+      --bg-elevated: #FFFFFF;
+
+      --text-primary: #111827;
+      --text-secondary: #6B7280;
+      --text-tertiary: #9CA3AF;
+      --text-inverse: #FFFFFF;
+
+      --border-default: #E5E7EB;
+      --border-strong: #D1D5DB;
+
+      --surface-card: #FFFFFF;
+      --surface-hover: #F9FAFB;
+      --surface-active: #F3F4F6;
+
+      --primary: #10B981;
+      --primary-hover: #059669;
+      --primary-light: #ECFDF5;
+
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    }
+
+    /* Dark Theme */
+    [data-theme="dark"] {
+      --bg-primary: #0F0F0F;
+      --bg-secondary: #171717;
+      --bg-tertiary: #1F1F1F;
+      --bg-elevated: #262626;
+
+      --text-primary: #FAFAFA;
+      --text-secondary: #A1A1AA;
+      --text-tertiary: #71717A;
+      --text-inverse: #0F0F0F;
+
+      --border-default: #27272A;
+      --border-strong: #3F3F46;
+
+      --surface-card: #171717;
+      --surface-hover: #1F1F1F;
+      --surface-active: #262626;
+
+      --primary: #34D399;
+      --primary-hover: #10B981;
+      --primary-light: rgba(16, 185, 129, 0.1);
+
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4);
+    }
+
+    /* ========================================
+       BASE STYLES
+       ======================================== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--text-primary);
+      background-color: var(--bg-secondary);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ========================================
+       LAYOUT
+       ======================================== */
+    .app-container {
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Header */
+    .header {
+      height: 48px;
+      background: var(--bg-primary);
+      border-bottom: 1px solid var(--border-default);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      font-size: 15px;
+      color: var(--primary);
+    }
+
+    .logo-icon {
+      width: 24px;
+      height: 24px;
+      background: var(--primary);
+      border-radius: 6px;
+    }
+
+    .search-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-default);
+      border-radius: 6px;
+      color: var(--text-tertiary);
+      font-size: 12px;
+      width: 300px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-btn {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .header-btn:hover {
+      background: var(--surface-hover);
+    }
+
+    .client-selector {
+      padding: 6px 12px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-default);
+      border-radius: 6px;
+      color: var(--text-primary);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .notification-badge {
+      position: relative;
+    }
+
+    .notification-badge::after {
+      content: '3';
+      position: absolute;
+      top: -2px;
+      right: -2px;
+      width: 16px;
+      height: 16px;
+      background: var(--error);
+      color: white;
+      font-size: 10px;
+      font-weight: 600;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 240px;
+      background: var(--bg-primary);
+      border-right: 1px solid var(--border-default);
+      padding-top: 48px;
+      height: 100vh;
+      position: fixed;
+      left: 0;
+      top: 0;
+      overflow-y: auto;
+    }
+
+    .sidebar-nav {
+      padding: 12px;
+    }
+
+    .nav-section {
+      margin-bottom: 16px;
+    }
+
+    .nav-section-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 8px 12px 4px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .nav-item:hover {
+      background: var(--surface-hover);
+      color: var(--text-primary);
+    }
+
+    .nav-item.active {
+      background: var(--primary-light);
+      color: var(--primary);
+      border-left: 3px solid var(--primary);
+      margin-left: -3px;
+    }
+
+    .nav-item-icon {
+      width: 18px;
+      text-align: center;
+    }
+
+    .nav-item-badge {
+      margin-left: auto;
+      background: var(--error);
+      color: white;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 10px;
+    }
+
+    /* Main Content */
+    .main-content {
+      margin-left: 240px;
+      padding-top: 48px;
+      flex: 1;
+      overflow-y: auto;
+      height: 100vh;
+    }
+
+    .page-content {
+      padding: 24px;
+      max-width: 1400px;
+    }
+
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+
+    .page-title {
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .page-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    /* ========================================
+       COMPONENTS
+       ======================================== */
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 0 16px;
+      height: 32px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      border: none;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: var(--text-inverse);
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--text-primary);
+      border: 1px solid var(--border-strong);
+    }
+
+    .btn-secondary:hover {
+      background: var(--surface-hover);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-secondary);
+    }
+
+    .btn-ghost:hover {
+      background: var(--surface-hover);
+      color: var(--text-primary);
+    }
+
+    .btn-sm {
+      height: 28px;
+      padding: 0 12px;
+      font-size: 12px;
+    }
+
+    /* Cards */
+    .card {
+      background: var(--surface-card);
+      border: 1px solid var(--border-default);
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    /* Metric Cards */
+    .metrics-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .metric-card {
+      background: var(--surface-card);
+      border: 1px solid var(--border-default);
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .metric-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+
+    .metric-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .metric-change {
+      font-size: 12px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .metric-change.up {
+      color: var(--success);
+    }
+
+    .metric-change.down {
+      color: var(--error);
+    }
+
+    .sparkline {
+      height: 24px;
+      margin-top: 8px;
+      display: flex;
+      align-items: flex-end;
+      gap: 2px;
+    }
+
+    .sparkline-bar {
+      flex: 1;
+      background: var(--primary);
+      border-radius: 2px;
+      opacity: 0.6;
+    }
+
+    /* Status Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .badge-active {
+      background: var(--primary-light);
+      color: var(--primary);
+    }
+
+    .badge-paused {
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+    }
+
+    .badge-learning {
+      background: rgba(245, 158, 11, 0.1);
+      color: var(--warning);
+    }
+
+    .badge-error {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--error);
+    }
+
+    .badge-critical {
+      background: var(--error);
+      color: white;
+    }
+
+    .badge-warning {
+      background: var(--warning);
+      color: white;
+    }
+
+    .badge-opportunity {
+      background: var(--opportunity);
+      color: white;
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+
+    .status-dot.active { background: var(--success); }
+    .status-dot.paused { background: var(--text-tertiary); }
+    .status-dot.learning { background: var(--warning); }
+    .status-dot.error { background: var(--error); }
+
+    /* Tables */
+    .table-container {
+      background: var(--surface-card);
+      border: 1px solid var(--border-default);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .table th {
+      text-align: left;
+      padding: 10px 12px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-default);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .table th.right, .table td.right {
+      text-align: right;
+    }
+
+    .table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border-default);
+      font-size: 13px;
+    }
+
+    .table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .table tr:hover td {
+      background: var(--surface-hover);
+    }
+
+    .table-checkbox {
+      width: 32px;
+    }
+
+    .campaign-name {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .campaign-icon {
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+    }
+
+    .campaign-icon.google { background: rgba(66, 133, 244, 0.1); color: #4285F4; }
+    .campaign-icon.meta { background: rgba(24, 119, 242, 0.1); color: #1877F2; }
+
+    .campaign-subtext {
+      font-size: 11px;
+      color: var(--text-tertiary);
+    }
+
+    .table-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+    }
+
+    .table-change {
+      font-size: 11px;
+      margin-left: 4px;
+    }
+
+    .table-change.up { color: var(--success); }
+    .table-change.down { color: var(--error); }
+
+    /* Recommendation Cards */
+    .recommendation-card {
+      background: var(--surface-card);
+      border: 1px solid var(--border-default);
+      border-radius: 8px;
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+
+    .recommendation-card.critical {
+      border-left: 4px solid var(--error);
+    }
+
+    .recommendation-card.warning {
+      border-left: 4px solid var(--warning);
+    }
+
+    .recommendation-card.opportunity {
+      border-left: 4px solid var(--opportunity);
+    }
+
+    .recommendation-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-default);
+    }
+
+    .recommendation-header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .recommendation-body {
+      padding: 16px;
+    }
+
+    .recommendation-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+
+    .recommendation-desc {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin-bottom: 12px;
+    }
+
+    .recommendation-impact {
+      display: flex;
+      gap: 16px;
+      padding: 12px;
+      background: var(--bg-secondary);
+      border-radius: 6px;
+      margin-bottom: 16px;
+    }
+
+    .impact-item {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .impact-item strong {
+      color: var(--text-primary);
+    }
+
+    .recommendation-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    /* Charts */
+    .chart-container {
+      background: var(--surface-card);
+      border: 1px solid var(--border-default);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 24px;
+    }
+
+    .chart-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .chart-title {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .chart-area {
+      height: 200px;
+      position: relative;
+      border-left: 1px solid var(--border-default);
+      border-bottom: 1px solid var(--border-default);
+      margin-left: 40px;
+    }
+
+    .chart-line {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 100%;
+    }
+
+    .chart-svg-line {
+      fill: none;
+      stroke: var(--primary);
+      stroke-width: 2;
+    }
+
+    .chart-svg-area {
+      fill: var(--primary);
+      opacity: 0.1;
+    }
+
+    /* Health Score */
+    .health-score {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .health-score-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .health-score-bar {
+      flex: 1;
+      height: 8px;
+      background: var(--bg-tertiary);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .health-score-fill {
+      height: 100%;
+      background: var(--primary);
+      border-radius: 4px;
+    }
+
+    .health-breakdown {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .health-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border-default);
+    }
+
+    .health-item-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .health-item-dots {
+      display: flex;
+      gap: 3px;
+    }
+
+    .health-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--border-default);
+    }
+
+    .health-dot.filled {
+      background: var(--primary);
+    }
+
+    /* Client Cards */
+    .client-cards {
+      display: grid;
+      gap: 16px;
+    }
+
+    .client-card {
+      background: var(--surface-card);
+      border: 1px solid var(--border-default);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .client-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px;
+      border-bottom: 1px solid var(--border-default);
+    }
+
+    .client-name {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .client-avatar {
+      width: 36px;
+      height: 36px;
+      background: var(--bg-tertiary);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .client-card-body {
+      padding: 16px;
+    }
+
+    .client-metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .client-metric {
+      padding: 12px;
+      background: var(--bg-secondary);
+      border-radius: 6px;
+      text-align: center;
+    }
+
+    .client-metric-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .client-metric-label {
+      font-size: 11px;
+      color: var(--text-tertiary);
+      margin-top: 2px;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      padding: 4px;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      margin-bottom: 24px;
+    }
+
+    .tab {
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      transition: all 0.15s ease;
+    }
+
+    .tab:hover {
+      color: var(--text-primary);
+    }
+
+    .tab.active {
+      background: var(--surface-card);
+      color: var(--text-primary);
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* Filters */
+    .filters-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .filter-select {
+      padding: 6px 12px;
+      border: 1px solid var(--border-default);
+      border-radius: 6px;
+      background: var(--surface-card);
+      color: var(--text-primary);
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .filter-search {
+      flex: 1;
+      padding: 6px 12px;
+      border: 1px solid var(--border-default);
+      border-radius: 6px;
+      background: var(--surface-card);
+      color: var(--text-primary);
+      font-size: 12px;
+    }
+
+    .filter-search::placeholder {
+      color: var(--text-tertiary);
+    }
+
+    /* Summary Bar */
+    .summary-bar {
+      display: flex;
+      gap: 24px;
+      padding: 12px 16px;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      margin-bottom: 16px;
+    }
+
+    .summary-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+    }
+
+    .summary-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    /* Grid Layout */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    /* View Selector */
+    .view-selector {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 8px;
+      padding: 8px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-default);
+      border-radius: 12px;
+      box-shadow: var(--shadow-md);
+      z-index: 1000;
+    }
+
+    .view-btn {
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 500;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .view-btn:hover {
+      background: var(--surface-hover);
+      color: var(--text-primary);
+    }
+
+    .view-btn.active {
+      background: var(--primary);
+      color: var(--text-inverse);
+    }
+
+    /* Theme Toggle */
+    .theme-toggle {
+      position: fixed;
+      top: 60px;
+      right: 24px;
+      display: flex;
+      gap: 4px;
+      padding: 4px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-default);
+      border-radius: 8px;
+      z-index: 1000;
+    }
+
+    .theme-btn {
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 500;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+
+    .theme-btn.active {
+      background: var(--primary-light);
+      color: var(--primary);
+    }
+
+    /* Page Views */
+    .page-view {
+      display: none;
+    }
+
+    .page-view.active {
+      display: block;
+    }
+
+    /* Platform breakdown */
+    .platform-breakdown {
+      display: flex;
+      gap: 16px;
+    }
+
+    .platform-bar {
+      flex: 1;
+    }
+
+    .platform-bar-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .platform-bar-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .platform-bar-value {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .platform-bar-track {
+      height: 8px;
+      background: var(--bg-tertiary);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .platform-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+    }
+
+    .platform-bar-fill.google { background: #4285F4; }
+    .platform-bar-fill.meta { background: #1877F2; }
+    .platform-bar-fill.tiktok { background: #000000; }
+
+    /* AI Chat Panel */
+    .ai-chat-panel {
+      position: fixed;
+      right: 0;
+      top: 48px;
+      width: 380px;
+      height: calc(100vh - 48px);
+      background: var(--bg-primary);
+      border-left: 1px solid var(--border-default);
+      display: flex;
+      flex-direction: column;
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+      z-index: 90;
+    }
+
+    .ai-chat-panel.open {
+      transform: translateX(0);
+    }
+
+    .ai-chat-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-default);
+    }
+
+    .ai-chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+    }
+
+    .ai-message {
+      max-width: 90%;
+      padding: 12px;
+      border-radius: 12px;
+      margin-bottom: 12px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .ai-message.bot {
+      background: var(--bg-secondary);
+      border-bottom-left-radius: 4px;
+    }
+
+    .ai-message.user {
+      background: var(--primary);
+      color: var(--text-inverse);
+      margin-left: auto;
+      border-bottom-right-radius: 4px;
+    }
+
+    .ai-chat-input {
+      padding: 12px 16px;
+      border-top: 1px solid var(--border-default);
+    }
+
+    .ai-chat-input-field {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border-default);
+      border-radius: 8px;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      font-size: 13px;
+    }
+
+    .ai-quick-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body data-theme="light">
+
+  <!-- Theme Toggle -->
+  <div class="theme-toggle">
+    <button class="theme-btn active" onclick="setTheme('light')">Light</button>
+    <button class="theme-btn" onclick="setTheme('dark')">Dark</button>
+  </div>
+
+  <!-- View Selector -->
+  <div class="view-selector">
+    <button class="view-btn active" onclick="showView('dashboard')">Dashboard</button>
+    <button class="view-btn" onclick="showView('campaigns')">Campaigns</button>
+    <button class="view-btn" onclick="showView('recommendations')">AI Recs</button>
+    <button class="view-btn" onclick="showView('analytics')">Analytics</button>
+    <button class="view-btn" onclick="showView('clients')">Clients</button>
+    <button class="view-btn" onclick="showView('settings')">Settings</button>
+  </div>
+
+  <div class="app-container">
+
+    <!-- Header -->
+    <header class="header">
+      <div class="header-left">
+        <div class="logo">
+          <div class="logo-icon"></div>
+          AdsMaster
+        </div>
+        <div class="search-bar">
+          <span>🔍</span>
+          <span>Search campaigns, keywords... (⌘K)</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <select class="client-selector">
+          <option>Acme Corp</option>
+          <option>TechStart Inc</option>
+          <option>Fashion Forward</option>
+        </select>
+        <button class="header-btn notification-badge">🔔</button>
+        <button class="header-btn">👤</button>
+        <button class="header-btn" onclick="toggleChat()">💬</button>
+      </div>
+    </header>
+
+    <!-- Sidebar -->
+    <nav class="sidebar">
+      <div class="sidebar-nav">
+        <div class="nav-section">
+          <div class="nav-section-title">Main</div>
+          <div class="nav-item active" onclick="showView('dashboard')">
+            <span class="nav-item-icon">📊</span>
+            Dashboard
+          </div>
+          <div class="nav-item" onclick="showView('campaigns')">
+            <span class="nav-item-icon">📢</span>
+            Campaigns
+          </div>
+          <div class="nav-item" onclick="showView('recommendations')">
+            <span class="nav-item-icon">🤖</span>
+            AI Recommendations
+            <span class="nav-item-badge">12</span>
+          </div>
+          <div class="nav-item" onclick="showView('analytics')">
+            <span class="nav-item-icon">📈</span>
+            Analytics
+          </div>
+          <div class="nav-item">
+            <span class="nav-item-icon">👥</span>
+            Audiences
+          </div>
+          <div class="nav-item">
+            <span class="nav-item-icon">📄</span>
+            Reports
+          </div>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">Agency</div>
+          <div class="nav-item" onclick="showView('clients')">
+            <span class="nav-item-icon">🏢</span>
+            Clients
+          </div>
+          <div class="nav-item">
+            <span class="nav-item-icon">💳</span>
+            Billing
+          </div>
+        </div>
+        <div class="nav-section">
+          <div class="nav-item" onclick="showView('settings')">
+            <span class="nav-item-icon">⚙️</span>
+            Settings
+          </div>
+          <div class="nav-item">
+            <span class="nav-item-icon">❓</span>
+            Help
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+
+      <!-- Dashboard View -->
+      <div class="page-view active" id="view-dashboard">
+        <div class="page-content">
+          <div class="page-header">
+            <h1 class="page-title">Dashboard</h1>
+            <div class="page-actions">
+              <select class="filter-select">
+                <option>Last 7 days</option>
+                <option>Last 30 days</option>
+                <option>This month</option>
+              </select>
+              <button class="btn btn-secondary">↻ Refresh</button>
+            </div>
+          </div>
+
+          <!-- Metrics Row -->
+          <div class="metrics-row">
+            <div class="metric-card">
+              <div class="metric-label">Total Spend</div>
+              <div class="metric-value">$45,678</div>
+              <div class="metric-change up">▲ 12.3% vs last period</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Conversions</div>
+              <div class="metric-value">1,234</div>
+              <div class="metric-change up">▲ 8.5% vs last period</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Avg CPA</div>
+              <div class="metric-value">$37.02</div>
+              <div class="metric-change up">▼ 15.2% vs last period</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">ROAS</div>
+              <div class="metric-value">3.2x</div>
+              <div class="metric-change up">▲ 5.1% vs last period</div>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <!-- Spend Chart -->
+            <div class="chart-container">
+              <div class="chart-header">
+                <span class="chart-title">Spend Over Time</span>
+              </div>
+              <div class="chart-area">
+                <svg width="100%" height="100%" viewBox="0 0 400 180" preserveAspectRatio="none">
+                  <path class="chart-svg-area" d="M0,180 L0,140 Q50,120 100,100 T200,80 T300,60 T400,40 L400,180 Z"/>
+                  <path class="chart-svg-line" d="M0,140 Q50,120 100,100 T200,80 T300,60 T400,40"/>
+                </svg>
+              </div>
+            </div>
+
+            <!-- Top Recommendations -->
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">Top Recommendations</span>
+                <span class="badge badge-error">12</span>
+              </div>
+              <div class="recommendation-card critical">
+                <div class="recommendation-body" style="padding: 12px;">
+                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                    <span class="badge badge-critical">CRITICAL</span>
+                    <span style="font-weight: 600; font-size: 13px;">3 wasting keywords detected</span>
+                  </div>
+                  <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 8px;">
+                    Potential savings: $245/mo
+                  </div>
+                  <button class="btn btn-primary btn-sm">View Details</button>
+                </div>
+              </div>
+              <div class="recommendation-card opportunity">
+                <div class="recommendation-body" style="padding: 12px;">
+                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                    <span class="badge badge-opportunity">OPPORTUNITY</span>
+                    <span style="font-weight: 600; font-size: 13px;">Budget opportunity found</span>
+                  </div>
+                  <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 8px;">
+                    Campaign X underspending by 40%
+                  </div>
+                  <button class="btn btn-primary btn-sm">Increase Budget</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid-2" style="margin-top: 24px;">
+            <!-- Health Score -->
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">Account Health</span>
+              </div>
+              <div class="health-score">
+                <div class="health-score-value">78</div>
+                <div style="flex: 1;">
+                  <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">out of 100</div>
+                  <div class="health-score-bar">
+                    <div class="health-score-fill" style="width: 78%;"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="health-breakdown">
+                <div class="health-item">
+                  <span class="health-item-label">Waste</span>
+                  <div class="health-item-dots">
+                    <div class="health-dot filled"></div>
+                    <div class="health-dot filled"></div>
+                    <div class="health-dot filled"></div>
+                    <div class="health-dot filled"></div>
+                    <div class="health-dot filled"></div>
+                    <div class="health-dot filled"></div>
+                    <div class="health-dot filled"></div>
+                    <div class="health-dot filled"></div>
+                    <div class="health-dot"></div>
+                    <div class="health-dot"></div>
+                  </div>
+                </div>
+                <div class="health-item">
+                  <span class="health-item-label">Targeting</span>
+                  <div class="health-item-dots">
+                    <div class="health-dot filled"></div>
+                    <div class="health-dot filled"></div>
+                    <div class="health-dot filled"></div>
+                    <div class="health-dot filled"></div>
+                    <div class="health-dot filled"></div>
+                    <div class="health-dot filled"></div>
+                    <div class="health-dot"></div>
+                    <div class="health-dot"></div>
+                    <div class="health-dot"></div>
+                    <div class="health-dot"></div>
+                  </div>
+                </div>
+                <div class="health-item">
+                  <span class="health-item-label">Tracking</span>
+                  <div class="health-item-dots">
+                    <div class="health-dot filled"></div>
+                    <div class="health-dot filled"></div>
+                    <div class="health-dot filled"></div>
+                    <div class="health-dot filled"></div>
+                    <div class="health-dot filled"></div>
+                    <div class="health-dot filled"></div>
+                    <div class="health-dot filled"></div>
+                    <div class="health-dot filled"></div>
+                    <div class="health-dot filled"></div>
+                    <div class="health-dot"></div>
+                  </div>
+                </div>
+                <div class="health-item">
+                  <span class="health-item-label">ROI</span>
+                  <div class="health-item-dots">
+                    <div class="health-dot filled"></div>
+                    <div class="health-dot filled"></div>
+                    <div class="health-dot filled"></div>
+                    <div class="health-dot filled"></div>
+                    <div class="health-dot filled"></div>
+                    <div class="health-dot filled"></div>
+                    <div class="health-dot filled"></div>
+                    <div class="health-dot"></div>
+                    <div class="health-dot"></div>
+                    <div class="health-dot"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Platform Breakdown -->
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">Spend by Platform</span>
+              </div>
+              <div style="margin-top: 12px;">
+                <div class="platform-bar" style="margin-bottom: 16px;">
+                  <div class="platform-bar-header">
+                    <span class="platform-bar-label">Google Ads</span>
+                    <span class="platform-bar-value">$28,320 (62%)</span>
+                  </div>
+                  <div class="platform-bar-track">
+                    <div class="platform-bar-fill google" style="width: 62%;"></div>
+                  </div>
+                </div>
+                <div class="platform-bar" style="margin-bottom: 16px;">
+                  <div class="platform-bar-header">
+                    <span class="platform-bar-label">Meta</span>
+                    <span class="platform-bar-value">$16,987 (35%)</span>
+                  </div>
+                  <div class="platform-bar-track">
+                    <div class="platform-bar-fill meta" style="width: 35%;"></div>
+                  </div>
+                </div>
+                <div class="platform-bar">
+                  <div class="platform-bar-header">
+                    <span class="platform-bar-label">TikTok</span>
+                    <span class="platform-bar-value">$1,371 (3%)</span>
+                  </div>
+                  <div class="platform-bar-track">
+                    <div class="platform-bar-fill tiktok" style="width: 3%;"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Campaigns Table -->
+          <div style="margin-top: 24px;">
+            <div class="card-header" style="margin-bottom: 12px;">
+              <span class="card-title">Campaign Performance</span>
+            </div>
+            <div class="table-container">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th class="table-checkbox"><input type="checkbox"></th>
+                    <th>Campaign</th>
+                    <th>Platform</th>
+                    <th>Status</th>
+                    <th class="right">Spend</th>
+                    <th class="right">Conv</th>
+                    <th class="right">CPA</th>
+                    <th class="right">ROAS</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><input type="checkbox"></td>
+                    <td>
+                      <div class="campaign-name">
+                        <div class="campaign-icon google">🔍</div>
+                        <div>
+                          <div>Search - Brand</div>
+                          <div class="campaign-subtext">3 ad groups</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td>Google</td>
+                    <td><span class="badge badge-active"><span class="status-dot active"></span> Active</span></td>
+                    <td class="right"><span class="table-value">$1,234</span><span class="table-change up">▲12%</span></td>
+                    <td class="right"><span class="table-value">45</span></td>
+                    <td class="right"><span class="table-value">$27.42</span></td>
+                    <td class="right"><span class="table-value">3.21x</span></td>
+                  </tr>
+                  <tr>
+                    <td><input type="checkbox"></td>
+                    <td>
+                      <div class="campaign-name">
+                        <div class="campaign-icon google">⚡</div>
+                        <div>
+                          <div>PMax - Products</div>
+                          <div class="campaign-subtext">Auto-managed</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td>Google</td>
+                    <td><span class="badge badge-active"><span class="status-dot active"></span> Active</span></td>
+                    <td class="right"><span class="table-value">$2,567</span><span class="table-change up">▲18%</span></td>
+                    <td class="right"><span class="table-value">89</span></td>
+                    <td class="right"><span class="table-value">$28.84</span></td>
+                    <td class="right"><span class="table-value">4.12x</span></td>
+                  </tr>
+                  <tr>
+                    <td><input type="checkbox"></td>
+                    <td>
+                      <div class="campaign-name">
+                        <div class="campaign-icon meta">📘</div>
+                        <div>
+                          <div>Retargeting</div>
+                          <div class="campaign-subtext">2 ad sets</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td>Meta</td>
+                    <td><span class="badge badge-active"><span class="status-dot active"></span> Active</span></td>
+                    <td class="right"><span class="table-value">$890</span><span class="table-change down">▼5%</span></td>
+                    <td class="right"><span class="table-value">34</span></td>
+                    <td class="right"><span class="table-value">$26.18</span></td>
+                    <td class="right"><span class="table-value">3.82x</span></td>
+                  </tr>
+                  <tr>
+                    <td><input type="checkbox"></td>
+                    <td>
+                      <div class="campaign-name">
+                        <div class="campaign-icon meta">📘</div>
+                        <div>
+                          <div>Prospecting</div>
+                          <div class="campaign-subtext">4 ad sets</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td>Meta</td>
+                    <td><span class="badge badge-learning"><span class="status-dot learning"></span> Learning</span></td>
+                    <td class="right"><span class="table-value">$1,234</span></td>
+                    <td class="right"><span class="table-value">23</span></td>
+                    <td class="right"><span class="table-value">$53.65</span></td>
+                    <td class="right"><span class="table-value">2.14x</span></td>
+                  </tr>
+                  <tr>
+                    <td><input type="checkbox"></td>
+                    <td>
+                      <div class="campaign-name">
+                        <div class="campaign-icon google">🔍</div>
+                        <div>
+                          <div>Search - Generic</div>
+                          <div class="campaign-subtext">5 ad groups</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td>Google</td>
+                    <td><span class="badge badge-paused"><span class="status-dot paused"></span> Paused</span></td>
+                    <td class="right"><span class="table-value">$0</span></td>
+                    <td class="right"><span class="table-value">0</span></td>
+                    <td class="right"><span class="table-value">—</span></td>
+                    <td class="right"><span class="table-value">—</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Campaigns View -->
+      <div class="page-view" id="view-campaigns">
+        <div class="page-content">
+          <div class="page-header">
+            <h1 class="page-title">Campaigns</h1>
+            <div class="page-actions">
+              <button class="btn btn-primary">+ New Campaign</button>
+            </div>
+          </div>
+
+          <div class="filters-row">
+            <select class="filter-select">
+              <option>All Platforms</option>
+              <option>Google Ads</option>
+              <option>Meta</option>
+            </select>
+            <select class="filter-select">
+              <option>All Status</option>
+              <option>Active</option>
+              <option>Paused</option>
+              <option>Learning</option>
+            </select>
+            <select class="filter-select">
+              <option>Last 30 days</option>
+              <option>Last 7 days</option>
+              <option>This month</option>
+            </select>
+            <input type="text" class="filter-search" placeholder="🔍 Search campaigns...">
+          </div>
+
+          <div class="summary-bar">
+            <div class="summary-item">
+              <div class="summary-dot" style="background: var(--success);"></div>
+              <span>3 Active</span>
+            </div>
+            <div class="summary-item">
+              <div class="summary-dot" style="background: var(--text-tertiary);"></div>
+              <span>2 Paused</span>
+            </div>
+            <div class="summary-item">
+              <div class="summary-dot" style="background: var(--warning);"></div>
+              <span>1 Learning</span>
+            </div>
+            <div style="margin-left: auto; color: var(--text-secondary);">Total: 6 campaigns</div>
+          </div>
+
+          <div class="table-container">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th class="table-checkbox"><input type="checkbox"></th>
+                  <th>Campaign</th>
+                  <th>Platform</th>
+                  <th>Status</th>
+                  <th class="right">Spend</th>
+                  <th class="right">Conv</th>
+                  <th class="right">CPA</th>
+                  <th class="right">ROAS</th>
+                  <th class="right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><input type="checkbox"></td>
+                  <td>
+                    <div class="campaign-name">
+                      <div class="campaign-icon google">🔍</div>
+                      <div>
+                        <div style="font-weight: 500;">Search - Brand</div>
+                        <div class="campaign-subtext">▸ 3 ad groups • 12 keywords</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>Google</td>
+                  <td><span class="badge badge-active"><span class="status-dot active"></span> Active</span></td>
+                  <td class="right">
+                    <div class="table-value">$1,234</div>
+                    <div class="campaign-subtext" style="color: var(--success);">▲ 12.3%</div>
+                  </td>
+                  <td class="right">
+                    <div class="table-value">45</div>
+                    <div class="campaign-subtext" style="color: var(--success);">▲ 8.5%</div>
+                  </td>
+                  <td class="right">
+                    <div class="table-value">$27.42</div>
+                    <div class="campaign-subtext" style="color: var(--success);">▼ 3.2%</div>
+                  </td>
+                  <td class="right"><span class="table-value">3.21x</span></td>
+                  <td class="right"><button class="btn btn-ghost btn-sm">⋮</button></td>
+                </tr>
+                <tr>
+                  <td><input type="checkbox"></td>
+                  <td>
+                    <div class="campaign-name">
+                      <div class="campaign-icon google">⚡</div>
+                      <div>
+                        <div style="font-weight: 500;">PMax - Products</div>
+                        <div class="campaign-subtext">▸ Auto-managed</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>Google</td>
+                  <td><span class="badge badge-active"><span class="status-dot active"></span> Active</span></td>
+                  <td class="right">
+                    <div class="table-value">$2,567</div>
+                    <div class="campaign-subtext" style="color: var(--success);">▲ 18.2%</div>
+                  </td>
+                  <td class="right">
+                    <div class="table-value">89</div>
+                    <div class="campaign-subtext" style="color: var(--success);">▲ 22%</div>
+                  </td>
+                  <td class="right">
+                    <div class="table-value">$28.84</div>
+                    <div class="campaign-subtext" style="color: var(--success);">▼ 12%</div>
+                  </td>
+                  <td class="right"><span class="table-value">4.12x</span></td>
+                  <td class="right"><button class="btn btn-ghost btn-sm">⋮</button></td>
+                </tr>
+                <tr>
+                  <td><input type="checkbox"></td>
+                  <td>
+                    <div class="campaign-name">
+                      <div class="campaign-icon meta">📘</div>
+                      <div>
+                        <div style="font-weight: 500;">Retargeting</div>
+                        <div class="campaign-subtext">▸ 2 ad sets</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>Meta</td>
+                  <td><span class="badge badge-active"><span class="status-dot active"></span> Active</span></td>
+                  <td class="right">
+                    <div class="table-value">$890</div>
+                    <div class="campaign-subtext" style="color: var(--error);">▼ 5.2%</div>
+                  </td>
+                  <td class="right">
+                    <div class="table-value">34</div>
+                    <div class="campaign-subtext" style="color: var(--error);">▼ 12%</div>
+                  </td>
+                  <td class="right">
+                    <div class="table-value">$26.18</div>
+                    <div class="campaign-subtext" style="color: var(--success);">▲ 8.1%</div>
+                  </td>
+                  <td class="right"><span class="table-value">3.82x</span></td>
+                  <td class="right"><button class="btn btn-ghost btn-sm">⋮</button></td>
+                </tr>
+                <tr>
+                  <td><input type="checkbox"></td>
+                  <td>
+                    <div class="campaign-name">
+                      <div class="campaign-icon meta">📘</div>
+                      <div>
+                        <div style="font-weight: 500;">Prospecting - Lookalike</div>
+                        <div class="campaign-subtext">▸ 4 ad sets • Learning 3/7 days</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>Meta</td>
+                  <td><span class="badge badge-learning"><span class="status-dot learning"></span> Learning</span></td>
+                  <td class="right"><div class="table-value">$1,234</div></td>
+                  <td class="right"><div class="table-value">23</div></td>
+                  <td class="right"><div class="table-value">$53.65</div></td>
+                  <td class="right"><span class="table-value">2.14x</span></td>
+                  <td class="right"><button class="btn btn-ghost btn-sm">⋮</button></td>
+                </tr>
+                <tr>
+                  <td><input type="checkbox"></td>
+                  <td>
+                    <div class="campaign-name">
+                      <div class="campaign-icon google">🔍</div>
+                      <div>
+                        <div style="font-weight: 500;">Search - Generic</div>
+                        <div class="campaign-subtext">▸ 5 ad groups • Paused</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>Google</td>
+                  <td><span class="badge badge-paused"><span class="status-dot paused"></span> Paused</span></td>
+                  <td class="right"><div class="table-value">$0</div></td>
+                  <td class="right"><div class="table-value">0</div></td>
+                  <td class="right"><div class="table-value">—</div></td>
+                  <td class="right"><span class="table-value">—</span></td>
+                  <td class="right"><button class="btn btn-ghost btn-sm">⋮</button></td>
+                </tr>
+                <tr>
+                  <td><input type="checkbox"></td>
+                  <td>
+                    <div class="campaign-name">
+                      <div class="campaign-icon google">🔍</div>
+                      <div>
+                        <div style="font-weight: 500;">DSA - Products</div>
+                        <div class="campaign-subtext">▸ 1 ad group • ⚠️ Low performance</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>Google</td>
+                  <td><span class="badge badge-active"><span class="status-dot active"></span> Active</span></td>
+                  <td class="right">
+                    <div class="table-value">$567</div>
+                    <div class="campaign-subtext" style="color: var(--error);">▼ 23%</div>
+                  </td>
+                  <td class="right">
+                    <div class="table-value">12</div>
+                    <div class="campaign-subtext" style="color: var(--error);">▼ 31%</div>
+                  </td>
+                  <td class="right">
+                    <div class="table-value">$47.25</div>
+                    <div class="campaign-subtext" style="color: var(--error);">▲ 15.2%</div>
+                  </td>
+                  <td class="right"><span class="table-value">1.89x</span></td>
+                  <td class="right"><button class="btn btn-ghost btn-sm">⋮</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding: 12px 16px; background: var(--bg-secondary); border-radius: 8px;">
+            <div style="font-size: 12px; color: var(--text-secondary);">
+              Selected: <strong>0</strong>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-secondary btn-sm">⏸ Pause</button>
+              <button class="btn btn-secondary btn-sm">▶ Enable</button>
+              <button class="btn btn-secondary btn-sm">📋 Duplicate</button>
+              <button class="btn btn-secondary btn-sm" style="color: var(--error);">🗑 Delete</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recommendations View -->
+      <div class="page-view" id="view-recommendations">
+        <div class="page-content">
+          <div class="page-header">
+            <h1 class="page-title">AI Recommendations</h1>
+            <div class="page-actions">
+              <button class="btn btn-primary">✓ Apply All Safe (3)</button>
+            </div>
+          </div>
+
+          <div class="tabs">
+            <button class="tab active">All (12)</button>
+            <button class="tab">Critical (2)</button>
+            <button class="tab">Warnings (5)</button>
+            <button class="tab">Opportunities (5)</button>
+          </div>
+
+          <div class="summary-bar">
+            <div class="summary-item">
+              <span>💰</span>
+              <span>Potential Monthly Savings: <strong>$1,234</strong></span>
+            </div>
+            <div class="summary-item">
+              <span>📈</span>
+              <span>Potential Gain: <strong>+45 conversions</strong></span>
+            </div>
+          </div>
+
+          <!-- Critical Section -->
+          <div style="margin-bottom: 24px;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+              <span style="font-size: 14px; font-weight: 600; color: var(--error);">🔴 CRITICAL</span>
+              <span class="badge badge-critical">2</span>
+            </div>
+
+            <div class="recommendation-card critical">
+              <div class="recommendation-header">
+                <div class="recommendation-header-left">
+                  <span class="badge badge-critical">CRITICAL</span>
+                  <span style="font-weight: 600;">Tracking Broken - Meta Pixel Not Firing</span>
+                </div>
+                <button class="btn btn-ghost btn-sm">Dismiss</button>
+              </div>
+              <div class="recommendation-body">
+                <p class="recommendation-desc">
+                  Your Meta Pixel hasn't recorded any events in 48 hours. This means conversions aren't being tracked and your campaigns cannot optimize properly.
+                </p>
+                <div class="recommendation-impact">
+                  <div class="impact-item">📊 Impact: <strong>~$2,400 spend without tracking</strong></div>
+                  <div class="impact-item">🏷️ Account: <strong>Acme Corp - Meta</strong></div>
+                </div>
+                <div class="recommendation-actions">
+                  <button class="btn btn-primary">Check Pixel Setup</button>
+                  <button class="btn btn-secondary">Contact Support</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="recommendation-card critical">
+              <div class="recommendation-header">
+                <div class="recommendation-header-left">
+                  <span class="badge badge-critical">CRITICAL</span>
+                  <span style="font-weight: 600;">Emergency: Daily Budget Exceeded</span>
+                </div>
+                <button class="btn btn-ghost btn-sm">Dismiss</button>
+              </div>
+              <div class="recommendation-body">
+                <p class="recommendation-desc">
+                  Campaign "PMax - Summer Sale" spent 150% of daily budget. Current spend: $450 / Budget: $300
+                </p>
+                <div class="recommendation-actions">
+                  <button class="btn btn-primary">Pause Campaign</button>
+                  <button class="btn btn-secondary">Increase Budget</button>
+                  <button class="btn btn-secondary">Set Spend Cap</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Warnings Section -->
+          <div style="margin-bottom: 24px;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+              <span style="font-size: 14px; font-weight: 600; color: var(--warning);">⚠️ WARNINGS</span>
+              <span class="badge badge-warning">5</span>
+            </div>
+
+            <div class="recommendation-card warning">
+              <div class="recommendation-header">
+                <div class="recommendation-header-left">
+                  <span class="badge badge-warning">WARNING</span>
+                  <span style="font-weight: 600;">Wasting Keywords Detected (3 keywords)</span>
+                </div>
+                <button class="btn btn-ghost btn-sm">Dismiss</button>
+              </div>
+              <div class="recommendation-body">
+                <p class="recommendation-desc">
+                  3 keywords spent $245 in 30 days with 0 conversions:
+                </p>
+                <div style="background: var(--bg-secondary); padding: 12px; border-radius: 6px; margin-bottom: 12px; font-size: 12px;">
+                  <div style="display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid var(--border-default);">
+                    <span>"cheap running shoes"</span>
+                    <span class="mono">$89 • 0 conv</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid var(--border-default);">
+                    <span>"buy sneakers online"</span>
+                    <span class="mono">$76 • 0 conv</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 4px 0;">
+                    <span>"athletic footwear sale"</span>
+                    <span class="mono">$80 • 0 conv</span>
+                  </div>
+                </div>
+                <div class="recommendation-impact">
+                  <div class="impact-item">💰 Potential Savings: <strong>$245/month</strong></div>
+                </div>
+                <div class="recommendation-actions">
+                  <button class="btn btn-primary">Pause All (3) ✓ Recommended</button>
+                  <button class="btn btn-secondary">Add as Negatives</button>
+                  <button class="btn btn-secondary">Review Each</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Opportunities Section -->
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+              <span style="font-size: 14px; font-weight: 600; color: var(--opportunity);">💡 OPPORTUNITIES</span>
+              <span class="badge badge-opportunity">5</span>
+            </div>
+
+            <div class="recommendation-card opportunity">
+              <div class="recommendation-header">
+                <div class="recommendation-header-left">
+                  <span class="badge badge-opportunity">OPPORTUNITY</span>
+                  <span style="font-weight: 600;">Budget Opportunity - Campaign Underspending</span>
+                </div>
+                <button class="btn btn-ghost btn-sm">Dismiss</button>
+              </div>
+              <div class="recommendation-body">
+                <p class="recommendation-desc">
+                  "Search - Brand" is limited by budget and could get 35% more conversions with a $50/day budget increase.
+                </p>
+                <div class="recommendation-impact">
+                  <div class="impact-item">📈 Est. additional conversions: <strong>+12/month</strong></div>
+                  <div class="impact-item">💰 Est. additional cost: <strong>$1,500/month</strong></div>
+                  <div class="impact-item">📊 Projected CPA: <strong>$28.50</strong> (current: $27.42)</div>
+                </div>
+                <div class="recommendation-actions">
+                  <button class="btn btn-primary">Increase +$50/day</button>
+                  <button class="btn btn-secondary">Increase +$25/day</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Analytics View -->
+      <div class="page-view" id="view-analytics">
+        <div class="page-content">
+          <div class="page-header">
+            <h1 class="page-title">Analytics</h1>
+            <div class="page-actions">
+              <select class="filter-select">
+                <option>Last 30 days</option>
+                <option>Last 7 days</option>
+                <option>This month</option>
+              </select>
+              <button class="btn btn-secondary">📥 Export</button>
+            </div>
+          </div>
+
+          <div class="tabs">
+            <button class="tab active">Overview</button>
+            <button class="tab">By Platform</button>
+            <button class="tab">By Campaign</button>
+            <button class="tab">By Time</button>
+            <button class="tab">Funnel</button>
+            <button class="tab">Compare</button>
+          </div>
+
+          <div class="metrics-row">
+            <div class="metric-card">
+              <div class="metric-label">Spend</div>
+              <div class="metric-value">$45,678</div>
+              <div class="metric-change up">▲ 12.3%</div>
+              <div class="sparkline">
+                <div class="sparkline-bar" style="height: 30%;"></div>
+                <div class="sparkline-bar" style="height: 45%;"></div>
+                <div class="sparkline-bar" style="height: 60%;"></div>
+                <div class="sparkline-bar" style="height: 55%;"></div>
+                <div class="sparkline-bar" style="height: 75%;"></div>
+                <div class="sparkline-bar" style="height: 85%;"></div>
+                <div class="sparkline-bar" style="height: 100%;"></div>
+              </div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Revenue</div>
+              <div class="metric-value">$156,234</div>
+              <div class="metric-change up">▲ 18.5%</div>
+              <div class="sparkline">
+                <div class="sparkline-bar" style="height: 40%;"></div>
+                <div class="sparkline-bar" style="height: 50%;"></div>
+                <div class="sparkline-bar" style="height: 65%;"></div>
+                <div class="sparkline-bar" style="height: 70%;"></div>
+                <div class="sparkline-bar" style="height: 80%;"></div>
+                <div class="sparkline-bar" style="height: 90%;"></div>
+                <div class="sparkline-bar" style="height: 100%;"></div>
+              </div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">ROAS</div>
+              <div class="metric-value">3.42x</div>
+              <div class="metric-change up">▲ 5.5%</div>
+              <div class="sparkline">
+                <div class="sparkline-bar" style="height: 60%;"></div>
+                <div class="sparkline-bar" style="height: 70%;"></div>
+                <div class="sparkline-bar" style="height: 65%;"></div>
+                <div class="sparkline-bar" style="height: 80%;"></div>
+                <div class="sparkline-bar" style="height: 75%;"></div>
+                <div class="sparkline-bar" style="height: 90%;"></div>
+                <div class="sparkline-bar" style="height: 100%;"></div>
+              </div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Conversions</div>
+              <div class="metric-value">1,234</div>
+              <div class="metric-change up">▲ 15.2%</div>
+              <div class="sparkline">
+                <div class="sparkline-bar" style="height: 35%;"></div>
+                <div class="sparkline-bar" style="height: 50%;"></div>
+                <div class="sparkline-bar" style="height: 60%;"></div>
+                <div class="sparkline-bar" style="height: 70%;"></div>
+                <div class="sparkline-bar" style="height: 85%;"></div>
+                <div class="sparkline-bar" style="height: 95%;"></div>
+                <div class="sparkline-bar" style="height: 100%;"></div>
+              </div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">CPA</div>
+              <div class="metric-value">$37.02</div>
+              <div class="metric-change up">▼ 2.5%</div>
+              <div class="sparkline">
+                <div class="sparkline-bar" style="height: 100%;"></div>
+                <div class="sparkline-bar" style="height: 90%;"></div>
+                <div class="sparkline-bar" style="height: 85%;"></div>
+                <div class="sparkline-bar" style="height: 75%;"></div>
+                <div class="sparkline-bar" style="height: 70%;"></div>
+                <div class="sparkline-bar" style="height: 60%;"></div>
+                <div class="sparkline-bar" style="height: 55%;"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="chart-container">
+            <div class="chart-header">
+              <span class="chart-title">Performance Over Time</span>
+              <div style="display: flex; gap: 16px; font-size: 12px;">
+                <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 12px; height: 3px; background: var(--chart-1); border-radius: 2px;"></span> Spend</span>
+                <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 12px; height: 3px; background: var(--chart-2); border-radius: 2px;"></span> Revenue</span>
+                <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 12px; height: 3px; background: var(--chart-3); border-radius: 2px;"></span> Conversions</span>
+              </div>
+            </div>
+            <div class="chart-area">
+              <svg width="100%" height="100%" viewBox="0 0 400 180" preserveAspectRatio="none">
+                <path class="chart-svg-area" d="M0,180 L0,140 Q50,130 100,110 T200,90 T300,70 T400,50 L400,180 Z"/>
+                <path class="chart-svg-line" d="M0,140 Q50,130 100,110 T200,90 T300,70 T400,50"/>
+              </svg>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">By Platform</span>
+              </div>
+              <div style="margin-top: 16px;">
+                <div class="platform-bar" style="margin-bottom: 16px;">
+                  <div class="platform-bar-header">
+                    <span class="platform-bar-label">Google Ads</span>
+                    <span class="platform-bar-value">$28,320 (62%)</span>
+                  </div>
+                  <div class="platform-bar-track">
+                    <div class="platform-bar-fill google" style="width: 62%;"></div>
+                  </div>
+                </div>
+                <div class="platform-bar" style="margin-bottom: 16px;">
+                  <div class="platform-bar-header">
+                    <span class="platform-bar-label">Meta</span>
+                    <span class="platform-bar-value">$16,987 (35%)</span>
+                  </div>
+                  <div class="platform-bar-track">
+                    <div class="platform-bar-fill meta" style="width: 35%;"></div>
+                  </div>
+                </div>
+                <div class="platform-bar">
+                  <div class="platform-bar-header">
+                    <span class="platform-bar-label">TikTok</span>
+                    <span class="platform-bar-value">$1,371 (3%)</span>
+                  </div>
+                  <div class="platform-bar-track">
+                    <div class="platform-bar-fill tiktok" style="width: 3%;"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">By Campaign Type</span>
+              </div>
+              <div style="margin-top: 16px;">
+                <div class="platform-bar" style="margin-bottom: 16px;">
+                  <div class="platform-bar-header">
+                    <span class="platform-bar-label">Search</span>
+                    <span class="platform-bar-value">45%</span>
+                  </div>
+                  <div class="platform-bar-track">
+                    <div class="platform-bar-fill" style="width: 45%; background: var(--chart-1);"></div>
+                  </div>
+                </div>
+                <div class="platform-bar" style="margin-bottom: 16px;">
+                  <div class="platform-bar-header">
+                    <span class="platform-bar-label">PMax</span>
+                    <span class="platform-bar-value">32%</span>
+                  </div>
+                  <div class="platform-bar-track">
+                    <div class="platform-bar-fill" style="width: 32%; background: var(--chart-2);"></div>
+                  </div>
+                </div>
+                <div class="platform-bar" style="margin-bottom: 16px;">
+                  <div class="platform-bar-header">
+                    <span class="platform-bar-label">Display</span>
+                    <span class="platform-bar-value">15%</span>
+                  </div>
+                  <div class="platform-bar-track">
+                    <div class="platform-bar-fill" style="width: 15%; background: var(--chart-3);"></div>
+                  </div>
+                </div>
+                <div class="platform-bar">
+                  <div class="platform-bar-header">
+                    <span class="platform-bar-label">Social</span>
+                    <span class="platform-bar-value">8%</span>
+                  </div>
+                  <div class="platform-bar-track">
+                    <div class="platform-bar-fill" style="width: 8%; background: var(--chart-4);"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="table-container" style="margin-top: 24px;">
+            <div style="padding: 12px 16px; border-bottom: 1px solid var(--border-default);">
+              <span style="font-weight: 600;">Top Performing Campaigns</span>
+            </div>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Campaign</th>
+                  <th>Platform</th>
+                  <th class="right">Spend</th>
+                  <th class="right">Conv</th>
+                  <th class="right">ROAS</th>
+                  <th class="right">Trend</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>1</td>
+                  <td style="font-weight: 500;">PMax - Products</td>
+                  <td>Google</td>
+                  <td class="right mono">$12,456</td>
+                  <td class="right mono">423</td>
+                  <td class="right mono">4.2x</td>
+                  <td class="right" style="color: var(--success);">▲ +18%</td>
+                </tr>
+                <tr>
+                  <td>2</td>
+                  <td style="font-weight: 500;">Search - Brand</td>
+                  <td>Google</td>
+                  <td class="right mono">$8,234</td>
+                  <td class="right mono">312</td>
+                  <td class="right mono">3.8x</td>
+                  <td class="right" style="color: var(--success);">▲ +12%</td>
+                </tr>
+                <tr>
+                  <td>3</td>
+                  <td style="font-weight: 500;">Retargeting</td>
+                  <td>Meta</td>
+                  <td class="right mono">$5,678</td>
+                  <td class="right mono">189</td>
+                  <td class="right mono">3.5x</td>
+                  <td class="right" style="color: var(--error);">▼ -5%</td>
+                </tr>
+                <tr>
+                  <td>4</td>
+                  <td style="font-weight: 500;">Prospecting - LAL</td>
+                  <td>Meta</td>
+                  <td class="right mono">$4,321</td>
+                  <td class="right mono">134</td>
+                  <td class="right mono">2.9x</td>
+                  <td class="right" style="color: var(--success);">▲ +8%</td>
+                </tr>
+                <tr>
+                  <td>5</td>
+                  <td style="font-weight: 500;">DSA - Products</td>
+                  <td>Google</td>
+                  <td class="right mono">$3,456</td>
+                  <td class="right mono">98</td>
+                  <td class="right mono">2.4x</td>
+                  <td class="right" style="color: var(--error);">▼ -12%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Clients View -->
+      <div class="page-view" id="view-clients">
+        <div class="page-content">
+          <div class="page-header">
+            <h1 class="page-title">Clients</h1>
+            <div class="page-actions">
+              <button class="btn btn-primary">+ New Client</button>
+            </div>
+          </div>
+
+          <div class="filters-row">
+            <input type="text" class="filter-search" placeholder="🔍 Search clients...">
+            <select class="filter-select">
+              <option>All Status</option>
+              <option>Active</option>
+              <option>Needs Attention</option>
+            </select>
+            <select class="filter-select">
+              <option>Sort: Spend ↓</option>
+              <option>Sort: Health ↓</option>
+              <option>Sort: Name A-Z</option>
+            </select>
+          </div>
+
+          <div class="summary-bar">
+            <div class="summary-item">
+              <strong>12</strong> Active Clients
+            </div>
+            <div class="summary-item">
+              <strong>$156,234</strong> Total Spend
+            </div>
+            <div class="summary-item">
+              <strong>$12,890</strong> MRR
+            </div>
+            <div class="summary-item">
+              <strong>87</strong> Avg Health Score
+            </div>
+          </div>
+
+          <div class="client-cards">
+            <!-- Client 1 -->
+            <div class="client-card">
+              <div class="client-card-header">
+                <div class="client-name">
+                  <div class="client-avatar">A</div>
+                  <div>
+                    <div style="font-weight: 600;">Acme Corporation</div>
+                    <div style="font-size: 11px; color: var(--text-tertiary);">5 ad accounts • MRR: $2,500</div>
+                  </div>
+                </div>
+                <button class="btn btn-secondary btn-sm">→ View</button>
+              </div>
+              <div class="client-card-body">
+                <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 12px; color: var(--text-secondary);">Health:</span>
+                    <div style="width: 100px; height: 6px; background: var(--bg-tertiary); border-radius: 3px;">
+                      <div style="width: 82%; height: 100%; background: var(--success); border-radius: 3px;"></div>
+                    </div>
+                    <span class="mono" style="font-size: 12px; font-weight: 600;">82/100</span>
+                  </div>
+                  <div style="font-size: 12px; color: var(--text-secondary);">
+                    Spend: <strong style="color: var(--text-primary);">$28,456</strong> <span style="color: var(--success);">▲12%</span>
+                  </div>
+                </div>
+                <div class="client-metrics">
+                  <div class="client-metric">
+                    <div style="display: flex; align-items: center; gap: 4px; justify-content: center; margin-bottom: 4px;">
+                      <span style="font-size: 12px;">🔍</span>
+                      <span style="font-size: 10px; color: var(--text-tertiary);">Google</span>
+                    </div>
+                    <div class="client-metric-value">$18,234</div>
+                    <div class="client-metric-label">3 campaigns</div>
+                  </div>
+                  <div class="client-metric">
+                    <div style="display: flex; align-items: center; gap: 4px; justify-content: center; margin-bottom: 4px;">
+                      <span style="font-size: 12px;">📘</span>
+                      <span style="font-size: 10px; color: var(--text-tertiary);">Meta</span>
+                    </div>
+                    <div class="client-metric-value">$10,222</div>
+                    <div class="client-metric-label">2 campaigns</div>
+                  </div>
+                  <div class="client-metric">
+                    <div class="client-metric-value">423</div>
+                    <div class="client-metric-label">Conversions <span style="color: var(--success);">▲18%</span></div>
+                  </div>
+                  <div class="client-metric">
+                    <div class="client-metric-value">3.8x</div>
+                    <div class="client-metric-label">ROAS <span style="color: var(--success);">▲5%</span></div>
+                  </div>
+                </div>
+                <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-default); display: flex; align-items: center; justify-content: space-between;">
+                  <span style="font-size: 12px; color: var(--warning);">⚠️ 3 recommendations pending</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Client 2 -->
+            <div class="client-card">
+              <div class="client-card-header">
+                <div class="client-name">
+                  <div class="client-avatar">T</div>
+                  <div>
+                    <div style="font-weight: 600;">TechStart Inc</div>
+                    <div style="font-size: 11px; color: var(--text-tertiary);">3 ad accounts • MRR: $1,500</div>
+                  </div>
+                </div>
+                <button class="btn btn-secondary btn-sm">→ View</button>
+              </div>
+              <div class="client-card-body">
+                <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 12px; color: var(--text-secondary);">Health:</span>
+                    <div style="width: 100px; height: 6px; background: var(--bg-tertiary); border-radius: 3px;">
+                      <div style="width: 95%; height: 100%; background: var(--success); border-radius: 3px;"></div>
+                    </div>
+                    <span class="mono" style="font-size: 12px; font-weight: 600;">95/100</span>
+                  </div>
+                  <div style="font-size: 12px; color: var(--text-secondary);">
+                    Spend: <strong style="color: var(--text-primary);">$15,678</strong> <span style="color: var(--success);">▲22%</span>
+                  </div>
+                </div>
+                <div class="client-metrics">
+                  <div class="client-metric">
+                    <div style="display: flex; align-items: center; gap: 4px; justify-content: center; margin-bottom: 4px;">
+                      <span style="font-size: 12px;">🔍</span>
+                      <span style="font-size: 10px; color: var(--text-tertiary);">Google</span>
+                    </div>
+                    <div class="client-metric-value">$12,456</div>
+                    <div class="client-metric-label">2 campaigns</div>
+                  </div>
+                  <div class="client-metric">
+                    <div style="display: flex; align-items: center; gap: 4px; justify-content: center; margin-bottom: 4px;">
+                      <span style="font-size: 12px;">📘</span>
+                      <span style="font-size: 10px; color: var(--text-tertiary);">Meta</span>
+                    </div>
+                    <div class="client-metric-value">$3,222</div>
+                    <div class="client-metric-label">1 campaign</div>
+                  </div>
+                  <div class="client-metric">
+                    <div class="client-metric-value">234</div>
+                    <div class="client-metric-label">Conversions <span style="color: var(--success);">▲25%</span></div>
+                  </div>
+                  <div class="client-metric">
+                    <div class="client-metric-value">4.2x</div>
+                    <div class="client-metric-label">ROAS <span style="color: var(--success);">▲12%</span></div>
+                  </div>
+                </div>
+                <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-default); display: flex; align-items: center; justify-content: space-between;">
+                  <span style="font-size: 12px; color: var(--success);">✓ All optimized</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Client 3 - Needs Attention -->
+            <div class="client-card" style="border-color: var(--error);">
+              <div class="client-card-header">
+                <div class="client-name">
+                  <div class="client-avatar" style="background: rgba(239, 68, 68, 0.1); color: var(--error);">F</div>
+                  <div>
+                    <div style="font-weight: 600;">Fashion Forward</div>
+                    <div style="font-size: 11px; color: var(--text-tertiary);">2 ad accounts • MRR: $1,000</div>
+                  </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="badge badge-critical">NEEDS ATTENTION</span>
+                  <button class="btn btn-secondary btn-sm">→ View</button>
+                </div>
+              </div>
+              <div class="client-card-body">
+                <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 12px; color: var(--text-secondary);">Health:</span>
+                    <div style="width: 100px; height: 6px; background: var(--bg-tertiary); border-radius: 3px;">
+                      <div style="width: 45%; height: 100%; background: var(--error); border-radius: 3px;"></div>
+                    </div>
+                    <span class="mono" style="font-size: 12px; font-weight: 600; color: var(--error);">45/100</span>
+                  </div>
+                  <div style="font-size: 12px; color: var(--text-secondary);">
+                    Spend: <strong style="color: var(--text-primary);">$8,234</strong> <span style="color: var(--error);">▼15%</span>
+                  </div>
+                </div>
+                <div style="background: rgba(239, 68, 68, 0.1); padding: 12px; border-radius: 6px; margin-bottom: 12px;">
+                  <div style="font-size: 12px; color: var(--error); font-weight: 500;">🔴 CRITICAL: Tracking broken</div>
+                  <div style="font-size: 12px; color: var(--error);">🔴 7 urgent recommendations</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Settings View -->
+      <div class="page-view" id="view-settings">
+        <div class="page-content">
+          <div class="page-header">
+            <h1 class="page-title">Settings</h1>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 200px 1fr; gap: 24px;">
+            <div class="card" style="padding: 12px; height: fit-content;">
+              <div class="nav-item active">Profile</div>
+              <div class="nav-item">Organization</div>
+              <div class="nav-item">Ad Accounts</div>
+              <div class="nav-item">Team Members</div>
+              <div class="nav-item">Billing</div>
+              <div class="nav-item">Notifications</div>
+              <div class="nav-item">Integrations</div>
+              <div class="nav-item">API Keys</div>
+              <div class="nav-item">White Label</div>
+              <div style="border-top: 1px solid var(--border-default); margin: 8px 0;"></div>
+              <div class="nav-item" style="color: var(--error);">Danger Zone</div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">Profile Settings</span>
+              </div>
+
+              <div style="display: flex; align-items: center; gap: 16px; margin: 24px 0; padding: 16px; background: var(--bg-secondary); border-radius: 8px;">
+                <div style="width: 64px; height: 64px; background: var(--primary); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: 600;">J</div>
+                <div>
+                  <div style="font-weight: 600; font-size: 16px;">John Smith</div>
+                  <div style="color: var(--text-secondary); font-size: 13px;">john@agency.com</div>
+                  <button class="btn btn-ghost btn-sm" style="margin-top: 4px;">Change Photo</button>
+                </div>
+              </div>
+
+              <div style="display: grid; gap: 16px;">
+                <div>
+                  <label style="display: block; font-size: 12px; font-weight: 500; color: var(--text-secondary); margin-bottom: 6px;">Name</label>
+                  <input type="text" value="John Smith" style="width: 100%; padding: 8px 12px; border: 1px solid var(--border-default); border-radius: 6px; background: var(--surface-card); color: var(--text-primary); font-size: 13px;">
+                </div>
+                <div>
+                  <label style="display: block; font-size: 12px; font-weight: 500; color: var(--text-secondary); margin-bottom: 6px;">Email</label>
+                  <input type="email" value="john@agency.com" style="width: 100%; padding: 8px 12px; border: 1px solid var(--border-default); border-radius: 6px; background: var(--surface-card); color: var(--text-primary); font-size: 13px;">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                  <div>
+                    <label style="display: block; font-size: 12px; font-weight: 500; color: var(--text-secondary); margin-bottom: 6px;">Timezone</label>
+                    <select style="width: 100%; padding: 8px 12px; border: 1px solid var(--border-default); border-radius: 6px; background: var(--surface-card); color: var(--text-primary); font-size: 13px;">
+                      <option>America/New_York (EST)</option>
+                      <option>America/Los_Angeles (PST)</option>
+                      <option>Europe/London (GMT)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style="display: block; font-size: 12px; font-weight: 500; color: var(--text-secondary); margin-bottom: 6px;">Currency</label>
+                    <select style="width: 100%; padding: 8px 12px; border: 1px solid var(--border-default); border-radius: 6px; background: var(--surface-card); color: var(--text-primary); font-size: 13px;">
+                      <option>USD ($)</option>
+                      <option>EUR (€)</option>
+                      <option>GBP (£)</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label style="display: block; font-size: 12px; font-weight: 500; color: var(--text-secondary); margin-bottom: 6px;">Theme</label>
+                  <div style="display: flex; gap: 8px;">
+                    <label style="display: flex; align-items: center; gap: 6px; padding: 8px 12px; border: 1px solid var(--border-default); border-radius: 6px; cursor: pointer;">
+                      <input type="radio" name="theme" checked> Light
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 6px; padding: 8px 12px; border: 1px solid var(--border-default); border-radius: 6px; cursor: pointer;">
+                      <input type="radio" name="theme"> Dark
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 6px; padding: 8px 12px; border: 1px solid var(--border-default); border-radius: 6px; cursor: pointer;">
+                      <input type="radio" name="theme"> System
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border-default);">
+                <button class="btn btn-primary">Save Changes</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- AI Chat Panel -->
+    <div class="ai-chat-panel" id="ai-chat-panel">
+      <div class="ai-chat-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span>🤖</span>
+          <span style="font-weight: 600;">AI Assistant</span>
+        </div>
+        <div>
+          <button class="btn btn-ghost btn-sm" onclick="toggleChat()">✕</button>
+        </div>
+      </div>
+      <div class="ai-chat-messages">
+        <div class="ai-message bot">
+          👋 Hi! I'm your AI assistant. Ask me anything about your campaigns or get help with optimizations.
+        </div>
+        <div class="ai-message user">
+          Why is my CPA increasing this week?
+        </div>
+        <div class="ai-message bot">
+          Based on your data, I see 3 factors affecting CPA:
+          <br><br>
+          <strong>1. Increased competition</strong><br>
+          CPCs up 15% in your category this week
+          <br><br>
+          <strong>2. Audience fatigue</strong><br>
+          Your Meta campaigns show frequency of 4.2x
+          <br><br>
+          <strong>3. Landing page issue</strong><br>
+          Bounce rate increased from 45% to 62%
+          <br><br>
+          <em style="color: var(--text-tertiary);">📊 Data referenced: Campaign metrics (7d), Industry benchmarks</em>
+          <br><br>
+          Would you like me to create recommendations for these?
+          <br><br>
+          <button class="btn btn-primary btn-sm">Yes, analyze</button>
+          <button class="btn btn-secondary btn-sm">Show data</button>
+        </div>
+      </div>
+      <div class="ai-chat-input">
+        <input type="text" class="ai-chat-input-field" placeholder="Ask me anything...">
+        <div class="ai-quick-actions">
+          <button class="btn btn-ghost btn-sm">📊 Analyze</button>
+          <button class="btn btn-ghost btn-sm">💡 Ideas</button>
+          <button class="btn btn-ghost btn-sm">📈 Compare</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // Theme switching
+    function setTheme(theme) {
+      document.body.setAttribute('data-theme', theme);
+      document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+    }
+
+    // View switching
+    function showView(viewName) {
+      // Hide all views
+      document.querySelectorAll('.page-view').forEach(view => view.classList.remove('active'));
+      // Show selected view
+      document.getElementById('view-' + viewName).classList.add('active');
+
+      // Update nav
+      document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+      event.target.classList.add('active');
+
+      // Update view selector buttons
+      document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelector(`.view-btn[onclick="showView('${viewName}')"]`).classList.add('active');
+    }
+
+    // Toggle AI Chat
+    function toggleChat() {
+      document.getElementById('ai-chat-panel').classList.toggle('open');
+    }
+  </script>
+</body>
+</html>
