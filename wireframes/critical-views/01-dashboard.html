@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AdsMaster - Dashboard (Critical View)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    /* ========================================
+       CSS VARIABLES - DESIGN TOKENS
+       ======================================== */
+    :root {
+      --primary-50: #ECFDF5;
+      --primary-100: #D1FAE5;
+      --primary-200: #A7F3D0;
+      --primary-300: #6EE7B7;
+      --primary-400: #34D399;
+      --primary-500: #10B981;
+      --primary-600: #059669;
+      --primary-700: #047857;
+      --primary-800: #065F46;
+      --primary-900: #064E3B;
+
+      --success: #10B981;
+      --warning: #F59E0B;
+      --error: #EF4444;
+      --info: #3B82F6;
+      --opportunity: #8B5CF6;
+
+      --chart-1: #10B981;
+      --chart-2: #3B82F6;
+      --chart-3: #8B5CF6;
+    }
+
+    /* Light Theme (Default) */
+    :root, [data-theme="light"] {
+      --bg-primary: #FFFFFF;
+      --bg-secondary: #F9FAFB;
+      --bg-tertiary: #F3F4F6;
+      --bg-elevated: #FFFFFF;
+      --text-primary: #111827;
+      --text-secondary: #6B7280;
+      --text-tertiary: #9CA3AF;
+      --text-inverse: #FFFFFF;
+      --border-default: #E5E7EB;
+      --border-strong: #D1D5DB;
+      --surface-card: #FFFFFF;
+      --surface-hover: #F9FAFB;
+      --surface-active: #F3F4F6;
+      --primary: #10B981;
+      --primary-hover: #059669;
+      --primary-light: #ECFDF5;
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    }
+
+    /* Dark Theme */
+    [data-theme="dark"] {
+      --bg-primary: #0F0F0F;
+      --bg-secondary: #171717;
+      --bg-tertiary: #1F1F1F;
+      --bg-elevated: #262626;
+      --text-primary: #FAFAFA;
+      --text-secondary: #A1A1AA;
+      --text-tertiary: #71717A;
+      --text-inverse: #0F0F0F;
+      --border-default: #27272A;
+      --border-strong: #3F3F46;
+      --surface-card: #171717;
+      --surface-hover: #1F1F1F;
+      --surface-active: #262626;
+      --primary: #34D399;
+      --primary-hover: #10B981;
+      --primary-light: rgba(16, 185, 129, 0.1);
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4);
+    }
+
+    /* ========================================
+       BASE STYLES
+       ======================================== */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--text-primary);
+      background-color: var(--bg-secondary);
+      -webkit-font-smoothing: antialiased;
+      padding: 24px;
+    }
+
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Theme Toggle */
+    .theme-toggle {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      display: flex;
+      gap: 4px;
+      padding: 4px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-default);
+      border-radius: 8px;
+      z-index: 100;
+    }
+
+    .theme-btn {
+      padding: 6px 12px;
+      border: none;
+      background: transparent;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .theme-btn.active {
+      background: var(--primary);
+      color: var(--text-inverse);
+    }
+
+    /* ========================================
+       COMPONENTS
+       ======================================== */
+
+    /* Page Header */
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+
+    .page-title {
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .page-actions { display: flex; gap: 8px; }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 0 16px;
+      height: 32px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      border: none;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: var(--text-inverse);
+    }
+
+    .btn-primary:hover { background: var(--primary-hover); }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--text-primary);
+      border: 1px solid var(--border-strong);
+    }
+
+    .btn-secondary:hover { background: var(--surface-hover); }
+
+    .btn-sm { height: 28px; padding: 0 12px; font-size: 12px; }
+
+    /* Filter Select */
+    .filter-select {
+      padding: 6px 12px;
+      border: 1px solid var(--border-default);
+      border-radius: 6px;
+      background: var(--surface-card);
+      color: var(--text-primary);
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    /* Cards */
+    .card {
+      background: var(--surface-card);
+      border: 1px solid var(--border-default);
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    /* Metric Cards */
+    .metrics-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .metric-card {
+      background: var(--surface-card);
+      border: 1px solid var(--border-default);
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .metric-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+
+    .metric-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .metric-change {
+      font-size: 12px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .metric-change.up { color: var(--success); }
+    .metric-change.down { color: var(--error); }
+
+    /* Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .badge-active { background: var(--primary-light); color: var(--primary); }
+    .badge-paused { background: var(--bg-tertiary); color: var(--text-secondary); }
+    .badge-learning { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+    .badge-error { background: rgba(239, 68, 68, 0.1); color: var(--error); }
+    .badge-critical { background: var(--error); color: white; }
+    .badge-opportunity { background: var(--opportunity); color: white; }
+
+    .status-dot { width: 6px; height: 6px; border-radius: 50%; }
+    .status-dot.active { background: var(--success); }
+    .status-dot.paused { background: var(--text-tertiary); }
+    .status-dot.learning { background: var(--warning); }
+
+    /* Grid Layout */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    /* Charts */
+    .chart-container {
+      background: var(--surface-card);
+      border: 1px solid var(--border-default);
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .chart-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .chart-title { font-size: 14px; font-weight: 600; }
+
+    .chart-area {
+      height: 200px;
+      position: relative;
+      border-left: 1px solid var(--border-default);
+      border-bottom: 1px solid var(--border-default);
+      margin-left: 40px;
+    }
+
+    .chart-svg-line { fill: none; stroke: var(--primary); stroke-width: 2; }
+    .chart-svg-area { fill: var(--primary); opacity: 0.1; }
+
+    /* Recommendation Cards */
+    .recommendation-card {
+      background: var(--surface-card);
+      border: 1px solid var(--border-default);
+      border-radius: 8px;
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+
+    .recommendation-card.critical { border-left: 4px solid var(--error); }
+    .recommendation-card.opportunity { border-left: 4px solid var(--opportunity); }
+
+    .recommendation-body { padding: 16px; }
+
+    /* Health Score */
+    .health-score {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .health-score-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .health-score-bar {
+      flex: 1;
+      height: 8px;
+      background: var(--bg-tertiary);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .health-score-fill {
+      height: 100%;
+      background: var(--primary);
+      border-radius: 4px;
+    }
+
+    .health-breakdown {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .health-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border-default);
+    }
+
+    .health-item-label { font-size: 12px; color: var(--text-secondary); }
+    .health-item-dots { display: flex; gap: 3px; }
+
+    .health-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--border-default);
+    }
+
+    .health-dot.filled { background: var(--primary); }
+
+    /* Platform Bars */
+    .platform-bar { flex: 1; }
+    .platform-bar-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
+    .platform-bar-label { font-size: 12px; color: var(--text-secondary); }
+    .platform-bar-value { font-size: 12px; font-weight: 600; color: var(--text-primary); }
+    .platform-bar-track { height: 8px; background: var(--bg-tertiary); border-radius: 4px; overflow: hidden; }
+    .platform-bar-fill { height: 100%; border-radius: 4px; }
+    .platform-bar-fill.google { background: #4285F4; }
+    .platform-bar-fill.meta { background: #1877F2; }
+    .platform-bar-fill.tiktok { background: #000000; }
+
+    /* Tables */
+    .table-container {
+      background: var(--surface-card);
+      border: 1px solid var(--border-default);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .table { width: 100%; border-collapse: collapse; }
+
+    .table th {
+      text-align: left;
+      padding: 10px 12px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-default);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .table th.right, .table td.right { text-align: right; }
+
+    .table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border-default);
+      font-size: 13px;
+    }
+
+    .table tr:last-child td { border-bottom: none; }
+    .table tr:hover td { background: var(--surface-hover); }
+
+    .campaign-name { display: flex; align-items: center; gap: 8px; }
+
+    .campaign-icon {
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+    }
+
+    .campaign-icon.google { background: rgba(66, 133, 244, 0.1); color: #4285F4; }
+    .campaign-icon.meta { background: rgba(24, 119, 242, 0.1); color: #1877F2; }
+
+    .campaign-subtext { font-size: 11px; color: var(--text-tertiary); }
+
+    .table-value { font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+    .table-change { font-size: 11px; margin-left: 4px; }
+    .table-change.up { color: var(--success); }
+    .table-change.down { color: var(--error); }
+  </style>
+</head>
+<body>
+  <!-- Theme Toggle -->
+  <div class="theme-toggle">
+    <button class="theme-btn active" onclick="setTheme('light')">☀️ Light</button>
+    <button class="theme-btn" onclick="setTheme('dark')">🌙 Dark</button>
+  </div>
+
+  <!-- Dashboard View -->
+  <div class="page-header">
+    <h1 class="page-title">Dashboard</h1>
+    <div class="page-actions">
+      <select class="filter-select">
+        <option>Last 7 days</option>
+        <option>Last 30 days</option>
+        <option>This month</option>
+      </select>
+      <button class="btn btn-secondary">↻ Refresh</button>
+    </div>
+  </div>
+
+  <!-- Metrics Row -->
+  <div class="metrics-row">
+    <div class="metric-card">
+      <div class="metric-label">Total Spend</div>
+      <div class="metric-value">$45,678</div>
+      <div class="metric-change up">▲ 12.3% vs last period</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Conversions</div>
+      <div class="metric-value">1,234</div>
+      <div class="metric-change up">▲ 8.5% vs last period</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Avg CPA</div>
+      <div class="metric-value">$37.02</div>
+      <div class="metric-change up">▼ 15.2% vs last period</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">ROAS</div>
+      <div class="metric-value">3.2x</div>
+      <div class="metric-change up">▲ 5.1% vs last period</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <!-- Spend Chart -->
+    <div class="chart-container">
+      <div class="chart-header">
+        <span class="chart-title">Spend Over Time</span>
+      </div>
+      <div class="chart-area">
+        <svg width="100%" height="100%" viewBox="0 0 400 180" preserveAspectRatio="none">
+          <path class="chart-svg-area" d="M0,180 L0,140 Q50,120 100,100 T200,80 T300,60 T400,40 L400,180 Z"/>
+          <path class="chart-svg-line" d="M0,140 Q50,120 100,100 T200,80 T300,60 T400,40"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Top Recommendations -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Top Recommendations</span>
+        <span class="badge badge-error">12</span>
+      </div>
+      <div class="recommendation-card critical">
+        <div class="recommendation-body" style="padding: 12px;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+            <span class="badge badge-critical">CRITICAL</span>
+            <span style="font-weight: 600; font-size: 13px;">3 wasting keywords detected</span>
+          </div>
+          <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 8px;">
+            Potential savings: $245/mo
+          </div>
+          <button class="btn btn-primary btn-sm">View Details</button>
+        </div>
+      </div>
+      <div class="recommendation-card opportunity">
+        <div class="recommendation-body" style="padding: 12px;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+            <span class="badge badge-opportunity">OPPORTUNITY</span>
+            <span style="font-weight: 600; font-size: 13px;">Budget opportunity found</span>
+          </div>
+          <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 8px;">
+            Campaign X underspending by 40%
+          </div>
+          <button class="btn btn-primary btn-sm">Increase Budget</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2" style="margin-top: 24px;">
+    <!-- Health Score -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Account Health</span>
+      </div>
+      <div class="health-score">
+        <div class="health-score-value">78</div>
+        <div style="flex: 1;">
+          <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">out of 100</div>
+          <div class="health-score-bar">
+            <div class="health-score-fill" style="width: 78%;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="health-breakdown">
+        <div class="health-item">
+          <span class="health-item-label">Waste</span>
+          <div class="health-item-dots">
+            <div class="health-dot filled"></div>
+            <div class="health-dot filled"></div>
+            <div class="health-dot filled"></div>
+            <div class="health-dot filled"></div>
+            <div class="health-dot filled"></div>
+            <div class="health-dot filled"></div>
+            <div class="health-dot filled"></div>
+            <div class="health-dot filled"></div>
+            <div class="health-dot"></div>
+            <div class="health-dot"></div>
+          </div>
+        </div>
+        <div class="health-item">
+          <span class="health-item-label">Targeting</span>
+          <div class="health-item-dots">
+            <div class="health-dot filled"></div>
+            <div class="health-dot filled"></div>
+            <div class="health-dot filled"></div>
+            <div class="health-dot filled"></div>
+            <div class="health-dot filled"></div>
+            <div class="health-dot filled"></div>
+            <div class="health-dot"></div>
+            <div class="health-dot"></div>
+            <div class="health-dot"></div>
+            <div class="health-dot"></div>
+          </div>
+        </div>
+        <div class="health-item">
+          <span class="health-item-label">Tracking</span>
+          <div class="health-item-dots">
+            <div class="health-dot filled"></div>
+            <div class="health-dot filled"></div>
+            <div class="health-dot filled"></div>
+            <div class="health-dot filled"></div>
+            <div class="health-dot filled"></div>
+            <div class="health-dot filled"></div>
+            <div class="health-dot filled"></div>
+            <div class="health-dot filled"></div>
+            <div class="health-dot filled"></div>
+            <div class="health-dot"></div>
+          </div>
+        </div>
+        <div class="health-item">
+          <span class="health-item-label">ROI</span>
+          <div class="health-item-dots">
+            <div class="health-dot filled"></div>
+            <div class="health-dot filled"></div>
+            <div class="health-dot filled"></div>
+            <div class="health-dot filled"></div>
+            <div class="health-dot filled"></div>
+            <div class="health-dot filled"></div>
+            <div class="health-dot filled"></div>
+            <div class="health-dot"></div>
+            <div class="health-dot"></div>
+            <div class="health-dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Platform Breakdown -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Spend by Platform</span>
+      </div>
+      <div style="margin-top: 12px;">
+        <div class="platform-bar" style="margin-bottom: 16px;">
+          <div class="platform-bar-header">
+            <span class="platform-bar-label">Google Ads</span>
+            <span class="platform-bar-value">$28,320 (62%)</span>
+          </div>
+          <div class="platform-bar-track">
+            <div class="platform-bar-fill google" style="width: 62%;"></div>
+          </div>
+        </div>
+        <div class="platform-bar" style="margin-bottom: 16px;">
+          <div class="platform-bar-header">
+            <span class="platform-bar-label">Meta</span>
+            <span class="platform-bar-value">$16,987 (35%)</span>
+          </div>
+          <div class="platform-bar-track">
+            <div class="platform-bar-fill meta" style="width: 35%;"></div>
+          </div>
+        </div>
+        <div class="platform-bar">
+          <div class="platform-bar-header">
+            <span class="platform-bar-label">TikTok</span>
+            <span class="platform-bar-value">$1,371 (3%)</span>
+          </div>
+          <div class="platform-bar-track">
+            <div class="platform-bar-fill tiktok" style="width: 3%;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Campaigns Table -->
+  <div style="margin-top: 24px;">
+    <div class="card-header" style="margin-bottom: 12px;">
+      <span class="card-title">Campaign Performance</span>
+    </div>
+    <div class="table-container">
+      <table class="table">
+        <thead>
+          <tr>
+            <th style="width: 32px;"><input type="checkbox"></th>
+            <th>Campaign</th>
+            <th>Platform</th>
+            <th>Status</th>
+            <th class="right">Spend</th>
+            <th class="right">Conv</th>
+            <th class="right">CPA</th>
+            <th class="right">ROAS</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td>
+              <div class="campaign-name">
+                <div class="campaign-icon google">🔍</div>
+                <div>
+                  <div>Search - Brand</div>
+                  <div class="campaign-subtext">3 ad groups</div>
+                </div>
+              </div>
+            </td>
+            <td>Google</td>
+            <td><span class="badge badge-active"><span class="status-dot active"></span> Active</span></td>
+            <td class="right"><span class="table-value">$1,234</span><span class="table-change up">▲12%</span></td>
+            <td class="right"><span class="table-value">45</span></td>
+            <td class="right"><span class="table-value">$27.42</span></td>
+            <td class="right"><span class="table-value">3.21x</span></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td>
+              <div class="campaign-name">
+                <div class="campaign-icon google">⚡</div>
+                <div>
+                  <div>PMax - Products</div>
+                  <div class="campaign-subtext">Auto-managed</div>
+                </div>
+              </div>
+            </td>
+            <td>Google</td>
+            <td><span class="badge badge-active"><span class="status-dot active"></span> Active</span></td>
+            <td class="right"><span class="table-value">$2,567</span><span class="table-change up">▲18%</span></td>
+            <td class="right"><span class="table-value">89</span></td>
+            <td class="right"><span class="table-value">$28.84</span></td>
+            <td class="right"><span class="table-value">4.12x</span></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td>
+              <div class="campaign-name">
+                <div class="campaign-icon meta">📘</div>
+                <div>
+                  <div>Retargeting</div>
+                  <div class="campaign-subtext">2 ad sets</div>
+                </div>
+              </div>
+            </td>
+            <td>Meta</td>
+            <td><span class="badge badge-active"><span class="status-dot active"></span> Active</span></td>
+            <td class="right"><span class="table-value">$890</span><span class="table-change down">▼5%</span></td>
+            <td class="right"><span class="table-value">34</span></td>
+            <td class="right"><span class="table-value">$26.18</span></td>
+            <td class="right"><span class="table-value">3.82x</span></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td>
+              <div class="campaign-name">
+                <div class="campaign-icon meta">📘</div>
+                <div>
+                  <div>Prospecting</div>
+                  <div class="campaign-subtext">4 ad sets</div>
+                </div>
+              </div>
+            </td>
+            <td>Meta</td>
+            <td><span class="badge badge-learning"><span class="status-dot learning"></span> Learning</span></td>
+            <td class="right"><span class="table-value">$1,234</span></td>
+            <td class="right"><span class="table-value">23</span></td>
+            <td class="right"><span class="table-value">$53.65</span></td>
+            <td class="right"><span class="table-value">2.14x</span></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td>
+              <div class="campaign-name">
+                <div class="campaign-icon google">🔍</div>
+                <div>
+                  <div>Search - Generic</div>
+                  <div class="campaign-subtext">5 ad groups</div>
+                </div>
+              </div>
+            </td>
+            <td>Google</td>
+            <td><span class="badge badge-paused"><span class="status-dot paused"></span> Paused</span></td>
+            <td class="right"><span class="table-value">$0</span></td>
+            <td class="right"><span class="table-value">0</span></td>
+            <td class="right"><span class="table-value">—</span></td>
+            <td class="right"><span class="table-value">—</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    function setTheme(theme) {
+      document.body.setAttribute('data-theme', theme);
+      document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AdsMaster - Onboarding Flow (Critical View)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary-500: #10B981;
+      --success: #10B981;
+      --warning: #F59E0B;
+    }
+
+    :root, [data-theme="light"] {
+      --bg-primary: #FFFFFF;
+      --bg-secondary: #F9FAFB;
+      --bg-tertiary: #F3F4F6;
+      --text-primary: #111827;
+      --text-secondary: #6B7280;
+      --text-tertiary: #9CA3AF;
+      --text-inverse: #FFFFFF;
+      --border-default: #E5E7EB;
+      --border-strong: #D1D5DB;
+      --surface-card: #FFFFFF;
+      --surface-hover: #F9FAFB;
+      --primary: #10B981;
+      --primary-hover: #059669;
+      --primary-light: #ECFDF5;
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    }
+
+    [data-theme="dark"] {
+      --bg-primary: #0F0F0F;
+      --bg-secondary: #171717;
+      --bg-tertiary: #1F1F1F;
+      --text-primary: #FAFAFA;
+      --text-secondary: #A1A1AA;
+      --text-tertiary: #71717A;
+      --text-inverse: #0F0F0F;
+      --border-default: #27272A;
+      --border-strong: #3F3F46;
+      --surface-card: #171717;
+      --surface-hover: #1F1F1F;
+      --primary: #34D399;
+      --primary-hover: #10B981;
+      --primary-light: rgba(16, 185, 129, 0.1);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--text-primary);
+      background-color: var(--bg-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+    }
+
+    /* Theme Toggle */
+    .theme-toggle {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      display: flex;
+      gap: 4px;
+      padding: 4px;
+      background: var(--surface-card);
+      border: 1px solid var(--border-default);
+      border-radius: 8px;
+      z-index: 100;
+    }
+
+    .theme-btn {
+      padding: 6px 12px;
+      border: none;
+      background: transparent;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .theme-btn.active { background: var(--primary); color: var(--text-inverse); }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 0 16px;
+      height: 32px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn-primary { background: var(--primary); color: var(--text-inverse); }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-secondary { background: transparent; color: var(--text-primary); border: 1px solid var(--border-strong); }
+    .btn-ghost { background: transparent; color: var(--text-secondary); }
+    .btn-ghost:hover { background: var(--surface-hover); color: var(--text-primary); }
+    .btn-lg { height: 44px; padding: 0 24px; font-size: 15px; }
+
+    /* Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .badge-active { background: var(--primary-light); color: var(--primary); }
+
+    /* Progress Bar */
+    .onboarding-progress {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      margin-bottom: 48px;
+    }
+
+    .progress-step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      opacity: 0.4;
+      transition: opacity 0.3s ease;
+    }
+
+    .progress-step.active,
+    .progress-step.completed { opacity: 1; }
+
+    .progress-step .step-number {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--bg-tertiary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 14px;
+      transition: all 0.3s ease;
+    }
+
+    .progress-step.active .step-number,
+    .progress-step.completed .step-number {
+      background: var(--primary);
+      color: white;
+    }
+
+    .progress-step .step-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    .progress-step.active .step-label { color: var(--text-primary); }
+
+    .progress-line {
+      width: 60px;
+      height: 2px;
+      background: var(--border-default);
+      margin: 0 8px;
+      margin-bottom: 24px;
+    }
+
+    /* Onboarding Steps */
+    .onboarding-step { display: none; width: 100%; justify-content: center; }
+    .onboarding-step.active { display: flex; }
+
+    .onboarding-card {
+      background: var(--surface-card);
+      border: 1px solid var(--border-default);
+      border-radius: 16px;
+      padding: 40px;
+      box-shadow: var(--shadow-md);
+    }
+
+    /* Form Elements */
+    .form-input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid var(--border-default);
+      border-radius: 8px;
+      font-size: 14px;
+      background: var(--surface-card);
+      color: var(--text-primary);
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-light);
+    }
+
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 6px;
+    }
+
+    .form-group { margin-bottom: 20px; }
+
+    /* Connect Options */
+    .connect-option {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px;
+      border: 2px solid var(--border-default);
+      border-radius: 12px;
+      cursor: pointer;
+      margin-bottom: 12px;
+      transition: border-color 0.2s ease;
+    }
+
+    .connect-option:hover { border-color: var(--primary); }
+    .connect-option.selected { border-color: var(--primary); background: var(--primary-light); }
+
+    /* Type Cards */
+    .type-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px;
+      border: 1px solid var(--border-default);
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .type-card.selected {
+      border: 2px solid var(--primary);
+      background: var(--primary-light);
+    }
+
+    /* Team Member */
+    .team-member {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+
+    .team-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    /* Preference Toggle */
+    .preference-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      cursor: pointer;
+      margin-bottom: 8px;
+    }
+
+    .preference-item input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Theme Toggle -->
+  <div class="theme-toggle">
+    <button class="theme-btn active" onclick="setTheme('light')">☀️</button>
+    <button class="theme-btn" onclick="setTheme('dark')">🌙</button>
+  </div>
+
+  <!-- Progress Bar -->
+  <div class="onboarding-progress">
+    <div class="progress-step active" data-step="1">
+      <div class="step-number">1</div>
+      <div class="step-label">Welcome</div>
+    </div>
+    <div class="progress-line"></div>
+    <div class="progress-step" data-step="2">
+      <div class="step-number">2</div>
+      <div class="step-label">Connect</div>
+    </div>
+    <div class="progress-line"></div>
+    <div class="progress-step" data-step="3">
+      <div class="step-number">3</div>
+      <div class="step-label">Organization</div>
+    </div>
+    <div class="progress-line"></div>
+    <div class="progress-step" data-step="4">
+      <div class="step-number">4</div>
+      <div class="step-label">Team</div>
+    </div>
+    <div class="progress-line"></div>
+    <div class="progress-step" data-step="5">
+      <div class="step-number">5</div>
+      <div class="step-label">Preferences</div>
+    </div>
+    <div class="progress-line"></div>
+    <div class="progress-step" data-step="6">
+      <div class="step-number">6</div>
+      <div class="step-label">Done!</div>
+    </div>
+  </div>
+
+  <!-- Step 1: Welcome -->
+  <div class="onboarding-step active" id="step-1">
+    <div class="onboarding-card" style="max-width: 600px; text-align: center;">
+      <div style="font-size: 64px; margin-bottom: 24px;">🚀</div>
+      <h1 style="font-size: 32px; font-weight: 700; margin-bottom: 12px;">Welcome to AdsMaster!</h1>
+      <p style="font-size: 16px; color: var(--text-secondary); margin-bottom: 32px; line-height: 1.6;">
+        Let's get you set up in just a few minutes. We'll connect your ad accounts, configure your organization, and personalize your experience.
+      </p>
+
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; text-align: left;">
+        <div style="padding: 16px; background: var(--bg-secondary); border-radius: 8px;">
+          <div style="font-size: 24px; margin-bottom: 8px;">📊</div>
+          <div style="font-weight: 600; margin-bottom: 4px;">Unified Dashboard</div>
+          <div style="font-size: 12px; color: var(--text-secondary);">All your ad accounts in one place</div>
+        </div>
+        <div style="padding: 16px; background: var(--bg-secondary); border-radius: 8px;">
+          <div style="font-size: 24px; margin-bottom: 8px;">🤖</div>
+          <div style="font-weight: 600; margin-bottom: 4px;">AI Recommendations</div>
+          <div style="font-size: 12px; color: var(--text-secondary);">Smart optimization suggestions</div>
+        </div>
+        <div style="padding: 16px; background: var(--bg-secondary); border-radius: 8px;">
+          <div style="font-size: 24px; margin-bottom: 8px;">📈</div>
+          <div style="font-weight: 600; margin-bottom: 4px;">Advanced Analytics</div>
+          <div style="font-size: 12px; color: var(--text-secondary);">Deep insights across platforms</div>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 12px; justify-content: center;">
+        <button class="btn btn-primary btn-lg" onclick="goToStep(2)" style="padding: 14px 32px; font-size: 16px;">
+          Get Started →
+        </button>
+      </div>
+      <div style="margin-top: 16px;">
+        <button class="btn btn-ghost">I'll do this later</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 2: Connect Ad Accounts -->
+  <div class="onboarding-step" id="step-2">
+    <div class="onboarding-card" style="max-width: 700px;">
+      <div style="text-align: center; margin-bottom: 32px;">
+        <h1 style="font-size: 24px; font-weight: 700; margin-bottom: 8px;">Connect Your Ad Accounts</h1>
+        <p style="color: var(--text-secondary);">Connect at least one ad platform to get started.</p>
+      </div>
+
+      <div style="margin-bottom: 24px;">
+        <!-- Google Ads -->
+        <div class="connect-option" onclick="toggleConnect(this)">
+          <div style="display: flex; align-items: center; gap: 16px;">
+            <div style="width: 48px; height: 48px; background: #4285F4; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px;">G</div>
+            <div>
+              <div style="font-weight: 600; font-size: 16px;">Google Ads</div>
+              <div style="font-size: 13px; color: var(--text-secondary);">Search, Display, Shopping, YouTube</div>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span class="badge badge-active">Recommended</span>
+            <button class="btn btn-secondary">Connect</button>
+          </div>
+        </div>
+
+        <!-- Meta Ads -->
+        <div class="connect-option" onclick="toggleConnect(this)">
+          <div style="display: flex; align-items: center; gap: 16px;">
+            <div style="width: 48px; height: 48px; background: linear-gradient(45deg, #405DE6, #E1306C); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px;">M</div>
+            <div>
+              <div style="font-weight: 600; font-size: 16px;">Meta Ads</div>
+              <div style="font-size: 13px; color: var(--text-secondary);">Facebook, Instagram, Messenger</div>
+            </div>
+          </div>
+          <button class="btn btn-secondary">Connect</button>
+        </div>
+
+        <!-- Microsoft Ads -->
+        <div class="connect-option" onclick="toggleConnect(this)">
+          <div style="display: flex; align-items: center; gap: 16px;">
+            <div style="width: 48px; height: 48px; background: #00A4EF; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px;">M</div>
+            <div>
+              <div style="font-weight: 600; font-size: 16px;">Microsoft Ads</div>
+              <div style="font-size: 13px; color: var(--text-secondary);">Bing, MSN, Outlook</div>
+            </div>
+          </div>
+          <button class="btn btn-secondary">Connect</button>
+        </div>
+
+        <!-- TikTok -->
+        <div class="connect-option" onclick="toggleConnect(this)">
+          <div style="display: flex; align-items: center; gap: 16px;">
+            <div style="width: 48px; height: 48px; background: #000; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px;">♪</div>
+            <div>
+              <div style="font-weight: 600; font-size: 16px;">TikTok Ads</div>
+              <div style="font-size: 13px; color: var(--text-secondary);">Short-form video advertising</div>
+            </div>
+          </div>
+          <button class="btn btn-secondary">Connect</button>
+        </div>
+      </div>
+
+      <div style="padding: 16px; background: var(--primary-light); border-radius: 8px; margin-bottom: 24px;">
+        <div style="display: flex; align-items: center; gap: 8px; color: var(--primary); font-weight: 500;">
+          <span>✓</span> 2 accounts ready to connect
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: space-between;">
+        <button class="btn btn-ghost" onclick="goToStep(1)">← Back</button>
+        <div style="display: flex; gap: 12px;">
+          <button class="btn btn-ghost" onclick="goToStep(3)">Skip for now</button>
+          <button class="btn btn-primary" onclick="goToStep(3)">Continue →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 3: Organization Setup -->
+  <div class="onboarding-step" id="step-3">
+    <div class="onboarding-card" style="max-width: 550px;">
+      <div style="text-align: center; margin-bottom: 32px;">
+        <h1 style="font-size: 24px; font-weight: 700; margin-bottom: 8px;">Set Up Your Organization</h1>
+        <p style="color: var(--text-secondary);">Tell us about your business to customize your experience.</p>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Organization Name *</label>
+        <input type="text" class="form-input" placeholder="e.g., Acme Marketing Agency">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Website</label>
+        <input type="url" class="form-input" placeholder="https://yourcompany.com">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">What best describes you? *</label>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="type-card selected">
+            <span style="font-size: 20px;">🏢</span>
+            <div>
+              <div style="font-weight: 500;">Agency</div>
+              <div style="font-size: 12px; color: var(--text-secondary);">Manage multiple clients</div>
+            </div>
+          </div>
+          <div class="type-card" onclick="selectType(this)">
+            <span style="font-size: 20px;">🛍️</span>
+            <div>
+              <div style="font-weight: 500;">Brand/Business</div>
+              <div style="font-size: 12px; color: var(--text-secondary);">Manage own campaigns</div>
+            </div>
+          </div>
+          <div class="type-card" onclick="selectType(this)">
+            <span style="font-size: 20px;">👤</span>
+            <div>
+              <div style="font-weight: 500;">Freelancer</div>
+              <div style="font-size: 12px; color: var(--text-secondary);">Independent consultant</div>
+            </div>
+          </div>
+          <div class="type-card" onclick="selectType(this)">
+            <span style="font-size: 20px;">🎓</span>
+            <div>
+              <div style="font-weight: 500;">Learning</div>
+              <div style="font-size: 12px; color: var(--text-secondary);">Exploring the platform</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+        <div>
+          <label class="form-label">Team Size</label>
+          <select class="form-input" style="height: 44px;">
+            <option>Just me</option>
+            <option>2-5 people</option>
+            <option selected>6-20 people</option>
+            <option>21-50 people</option>
+            <option>50+ people</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Monthly Ad Spend</label>
+          <select class="form-input" style="height: 44px;">
+            <option>Under $10K</option>
+            <option>$10K - $50K</option>
+            <option selected>$50K - $200K</option>
+            <option>$200K - $1M</option>
+            <option>Over $1M</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: space-between;">
+        <button class="btn btn-ghost" onclick="goToStep(2)">← Back</button>
+        <button class="btn btn-primary" onclick="goToStep(4)">Continue →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 4: Invite Team -->
+  <div class="onboarding-step" id="step-4">
+    <div class="onboarding-card" style="max-width: 550px;">
+      <div style="text-align: center; margin-bottom: 32px;">
+        <h1 style="font-size: 24px; font-weight: 700; margin-bottom: 8px;">Invite Your Team</h1>
+        <p style="color: var(--text-secondary);">Collaborate with your team members.</p>
+      </div>
+
+      <div style="margin-bottom: 24px;">
+        <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+          <input type="email" class="form-input" style="flex: 1;" placeholder="colleague@company.com">
+          <select class="form-input" style="width: 140px;">
+            <option>Admin</option>
+            <option selected>Manager</option>
+            <option>Analyst</option>
+          </select>
+          <button class="btn btn-secondary">Add</button>
+        </div>
+
+        <div class="team-member">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div class="team-avatar" style="background: #3B82F6;">SW</div>
+            <div>
+              <div style="font-weight: 500;">sarah@company.com</div>
+              <div style="font-size: 12px; color: var(--text-secondary);">Admin</div>
+            </div>
+          </div>
+          <button class="btn btn-ghost" style="color: #EF4444;">Remove</button>
+        </div>
+        <div class="team-member">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div class="team-avatar" style="background: #8B5CF6;">MJ</div>
+            <div>
+              <div style="font-weight: 500;">mike@company.com</div>
+              <div style="font-size: 12px; color: var(--text-secondary);">Manager</div>
+            </div>
+          </div>
+          <button class="btn btn-ghost" style="color: #EF4444;">Remove</button>
+        </div>
+      </div>
+
+      <div style="padding: 16px; background: var(--bg-secondary); border-radius: 8px; margin-bottom: 24px;">
+        <h4 style="font-size: 12px; font-weight: 600; margin-bottom: 12px; color: var(--text-secondary);">ROLE PERMISSIONS</h4>
+        <div style="display: grid; gap: 8px; font-size: 13px;">
+          <div style="display: flex; justify-content: space-between;">
+            <span style="font-weight: 500;">Admin</span>
+            <span style="color: var(--text-secondary);">Full access, manage team & billing</span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="font-weight: 500;">Manager</span>
+            <span style="color: var(--text-secondary);">Edit campaigns, apply recommendations</span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="font-weight: 500;">Analyst</span>
+            <span style="color: var(--text-secondary);">View only, export reports</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: space-between;">
+        <button class="btn btn-ghost" onclick="goToStep(3)">← Back</button>
+        <div style="display: flex; gap: 12px;">
+          <button class="btn btn-ghost" onclick="goToStep(5)">Skip for now</button>
+          <button class="btn btn-primary" onclick="goToStep(5)">Send Invites & Continue →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 5: Preferences -->
+  <div class="onboarding-step" id="step-5">
+    <div class="onboarding-card" style="max-width: 550px;">
+      <div style="text-align: center; margin-bottom: 32px;">
+        <h1 style="font-size: 24px; font-weight: 700; margin-bottom: 8px;">Customize Your Experience</h1>
+        <p style="color: var(--text-secondary);">Set your preferences for notifications and display settings.</p>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+        <div>
+          <label class="form-label">Timezone</label>
+          <select class="form-input" style="height: 44px;">
+            <option selected>America/New_York (EST)</option>
+            <option>America/Los_Angeles (PST)</option>
+            <option>Europe/London (GMT)</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Currency</label>
+          <select class="form-input" style="height: 44px;">
+            <option selected>USD ($)</option>
+            <option>EUR (€)</option>
+            <option>GBP (£)</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 24px;">
+        <label class="form-label">Theme Preference</label>
+        <div style="display: flex; gap: 12px;">
+          <label style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 16px; border: 2px solid var(--primary); border-radius: 8px; cursor: pointer; background: var(--primary-light);">
+            <span style="font-size: 20px;">☀️</span>
+            <span style="font-weight: 500;">Light</span>
+          </label>
+          <label style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 16px; border: 1px solid var(--border-default); border-radius: 8px; cursor: pointer;">
+            <span style="font-size: 20px;">🌙</span>
+            <span style="font-weight: 500;">Dark</span>
+          </label>
+          <label style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 16px; border: 1px solid var(--border-default); border-radius: 8px; cursor: pointer;">
+            <span style="font-size: 20px;">💻</span>
+            <span style="font-weight: 500;">System</span>
+          </label>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 24px;">
+        <label class="form-label">Email Notifications</label>
+        <div class="preference-item">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span>🤖</span>
+            <span>AI Recommendations</span>
+          </div>
+          <input type="checkbox" checked>
+        </div>
+        <div class="preference-item">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span>🚨</span>
+            <span>Budget & Performance Alerts</span>
+          </div>
+          <input type="checkbox" checked>
+        </div>
+        <div class="preference-item">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span>📊</span>
+            <span>Weekly Performance Summary</span>
+          </div>
+          <input type="checkbox" checked>
+        </div>
+        <div class="preference-item">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span>📰</span>
+            <span>Product Updates & Tips</span>
+          </div>
+          <input type="checkbox">
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: space-between;">
+        <button class="btn btn-ghost" onclick="goToStep(4)">← Back</button>
+        <button class="btn btn-primary" onclick="goToStep(6)">Complete Setup →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 6: Completion -->
+  <div class="onboarding-step" id="step-6">
+    <div class="onboarding-card" style="max-width: 600px; text-align: center;">
+      <div style="font-size: 80px; margin-bottom: 24px;">🎉</div>
+      <h1 style="font-size: 32px; font-weight: 700; margin-bottom: 12px;">You're All Set!</h1>
+      <p style="font-size: 16px; color: var(--text-secondary); margin-bottom: 32px; line-height: 1.6;">
+        Your workspace is ready. We're syncing your ad accounts in the background - this usually takes 2-5 minutes.
+      </p>
+
+      <div style="display: grid; gap: 12px; margin-bottom: 32px; text-align: left;">
+        <div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--bg-secondary); border-radius: 8px;">
+          <span style="color: var(--success); font-size: 18px;">✓</span>
+          <div style="flex: 1;">
+            <div style="font-weight: 500;">2 Ad Accounts Connected</div>
+            <div style="font-size: 12px; color: var(--text-secondary);">Google Ads, Meta Ads</div>
+          </div>
+          <span class="badge badge-active">Syncing...</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--bg-secondary); border-radius: 8px;">
+          <span style="color: var(--success); font-size: 18px;">✓</span>
+          <div style="flex: 1;">
+            <div style="font-weight: 500;">Organization Created</div>
+            <div style="font-size: 12px; color: var(--text-secondary);">Acme Marketing Agency</div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--bg-secondary); border-radius: 8px;">
+          <span style="color: var(--success); font-size: 18px;">✓</span>
+          <div style="flex: 1;">
+            <div style="font-weight: 500;">2 Team Invites Sent</div>
+            <div style="font-size: 12px; color: var(--text-secondary);">sarah@company.com, mike@company.com</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="padding: 20px; background: var(--primary-light); border-radius: 12px; margin-bottom: 24px;">
+        <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 16px;">Quick Start</h3>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+          <button class="btn btn-ghost" style="flex-direction: column; height: auto; padding: 16px;">
+            <span style="font-size: 24px; margin-bottom: 8px;">📊</span>
+            <span>View Dashboard</span>
+          </button>
+          <button class="btn btn-ghost" style="flex-direction: column; height: auto; padding: 16px;">
+            <span style="font-size: 24px; margin-bottom: 8px;">🤖</span>
+            <span>AI Recommendations</span>
+          </button>
+          <button class="btn btn-ghost" style="flex-direction: column; height: auto; padding: 16px;">
+            <span style="font-size: 24px; margin-bottom: 8px;">📈</span>
+            <span>View Campaigns</span>
+          </button>
+        </div>
+      </div>
+
+      <button class="btn btn-primary btn-lg" style="padding: 14px 48px; font-size: 16px;">
+        Go to Dashboard →
+      </button>
+
+      <div style="margin-top: 20px; font-size: 13px; color: var(--text-secondary);">
+        Need help? <a href="#" style="color: var(--primary);">Watch the getting started video</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function setTheme(theme) {
+      document.body.setAttribute('data-theme', theme);
+      document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+    }
+
+    function goToStep(stepNumber) {
+      // Hide all steps
+      document.querySelectorAll('.onboarding-step').forEach(step => step.classList.remove('active'));
+      document.querySelectorAll('.progress-step').forEach(step => {
+        step.classList.remove('active', 'completed');
+      });
+
+      // Show target step
+      document.getElementById('step-' + stepNumber).classList.add('active');
+
+      // Update progress
+      document.querySelectorAll('.progress-step').forEach(step => {
+        const stepNum = parseInt(step.dataset.step);
+        if (stepNum < stepNumber) {
+          step.classList.add('completed');
+        } else if (stepNum === stepNumber) {
+          step.classList.add('active');
+        }
+      });
+    }
+
+    function toggleConnect(element) {
+      element.classList.toggle('selected');
+    }
+
+    function selectType(element) {
+      document.querySelectorAll('.type-card').forEach(card => card.classList.remove('selected'));
+      element.classList.add('selected');
+    }
+  </script>
+</body>
+</html>

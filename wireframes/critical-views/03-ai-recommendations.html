@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AdsMaster - AI Recommendations (Critical View)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary-500: #10B981;
+      --success: #10B981;
+      --warning: #F59E0B;
+      --error: #EF4444;
+      --opportunity: #8B5CF6;
+    }
+
+    :root, [data-theme="light"] {
+      --bg-primary: #FFFFFF;
+      --bg-secondary: #F9FAFB;
+      --bg-tertiary: #F3F4F6;
+      --text-primary: #111827;
+      --text-secondary: #6B7280;
+      --text-tertiary: #9CA3AF;
+      --text-inverse: #FFFFFF;
+      --border-default: #E5E7EB;
+      --border-strong: #D1D5DB;
+      --surface-card: #FFFFFF;
+      --surface-hover: #F9FAFB;
+      --primary: #10B981;
+      --primary-hover: #059669;
+      --primary-light: #ECFDF5;
+    }
+
+    [data-theme="dark"] {
+      --bg-primary: #0F0F0F;
+      --bg-secondary: #171717;
+      --bg-tertiary: #1F1F1F;
+      --text-primary: #FAFAFA;
+      --text-secondary: #A1A1AA;
+      --text-tertiary: #71717A;
+      --text-inverse: #0F0F0F;
+      --border-default: #27272A;
+      --border-strong: #3F3F46;
+      --surface-card: #171717;
+      --surface-hover: #1F1F1F;
+      --primary: #34D399;
+      --primary-hover: #10B981;
+      --primary-light: rgba(16, 185, 129, 0.1);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--text-primary);
+      background-color: var(--bg-secondary);
+      padding: 24px;
+    }
+
+    .mono { font-family: 'JetBrains Mono', monospace; }
+
+    /* Theme Toggle */
+    .theme-toggle {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      display: flex;
+      gap: 4px;
+      padding: 4px;
+      background: var(--surface-card);
+      border: 1px solid var(--border-default);
+      border-radius: 8px;
+      z-index: 100;
+    }
+
+    .theme-btn {
+      padding: 6px 12px;
+      border: none;
+      background: transparent;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .theme-btn.active { background: var(--primary); color: var(--text-inverse); }
+
+    /* Page Header */
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+
+    .page-title { font-size: 22px; font-weight: 600; }
+    .page-actions { display: flex; gap: 8px; }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 0 16px;
+      height: 32px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn-primary { background: var(--primary); color: var(--text-inverse); }
+    .btn-secondary { background: transparent; color: var(--text-primary); border: 1px solid var(--border-strong); }
+    .btn-ghost { background: transparent; color: var(--text-secondary); }
+    .btn-sm { height: 28px; padding: 0 12px; font-size: 12px; }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      padding: 4px;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      margin-bottom: 24px;
+    }
+
+    .tab {
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      border: none;
+      background: transparent;
+    }
+
+    .tab.active {
+      background: var(--surface-card);
+      color: var(--text-primary);
+      box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    }
+
+    /* Summary Bar */
+    .summary-bar {
+      display: flex;
+      gap: 24px;
+      padding: 12px 16px;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      margin-bottom: 24px;
+    }
+
+    .summary-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .badge-critical { background: var(--error); color: white; }
+    .badge-warning { background: var(--warning); color: white; }
+    .badge-opportunity { background: var(--opportunity); color: white; }
+
+    /* Recommendation Cards */
+    .recommendation-card {
+      background: var(--surface-card);
+      border: 1px solid var(--border-default);
+      border-radius: 8px;
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+
+    .recommendation-card.critical { border-left: 4px solid var(--error); }
+    .recommendation-card.warning { border-left: 4px solid var(--warning); }
+    .recommendation-card.opportunity { border-left: 4px solid var(--opportunity); }
+
+    .recommendation-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-default);
+    }
+
+    .recommendation-header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .recommendation-body { padding: 16px; }
+
+    .recommendation-desc {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin-bottom: 12px;
+    }
+
+    .recommendation-impact {
+      display: flex;
+      gap: 16px;
+      padding: 12px;
+      background: var(--bg-secondary);
+      border-radius: 6px;
+      margin-bottom: 16px;
+    }
+
+    .impact-item {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .impact-item strong { color: var(--text-primary); }
+
+    .recommendation-actions {
+      display: flex;
+      gap: 8px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Theme Toggle -->
+  <div class="theme-toggle">
+    <button class="theme-btn active" onclick="setTheme('light')">☀️</button>
+    <button class="theme-btn" onclick="setTheme('dark')">🌙</button>
+  </div>
+
+  <!-- AI Recommendations View -->
+  <div class="page-header">
+    <h1 class="page-title">AI Recommendations</h1>
+    <div class="page-actions">
+      <button class="btn btn-primary">✓ Apply All Safe (3)</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active">All (12)</button>
+    <button class="tab">Critical (2)</button>
+    <button class="tab">Warnings (5)</button>
+    <button class="tab">Opportunities (5)</button>
+  </div>
+
+  <div class="summary-bar">
+    <div class="summary-item">
+      <span>💰</span>
+      <span>Potential Monthly Savings: <strong>$1,234</strong></span>
+    </div>
+    <div class="summary-item">
+      <span>📈</span>
+      <span>Potential Gain: <strong>+45 conversions</strong></span>
+    </div>
+  </div>
+
+  <!-- Critical Section -->
+  <div style="margin-bottom: 24px;">
+    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+      <span style="font-size: 14px; font-weight: 600; color: var(--error);">🔴 CRITICAL</span>
+      <span class="badge badge-critical">2</span>
+    </div>
+
+    <div class="recommendation-card critical">
+      <div class="recommendation-header">
+        <div class="recommendation-header-left">
+          <span class="badge badge-critical">CRITICAL</span>
+          <span style="font-weight: 600;">Tracking Broken - Meta Pixel Not Firing</span>
+        </div>
+        <button class="btn btn-ghost btn-sm">Dismiss</button>
+      </div>
+      <div class="recommendation-body">
+        <p class="recommendation-desc">
+          Your Meta Pixel hasn't recorded any events in 48 hours. This means conversions aren't being tracked and your campaigns cannot optimize properly.
+        </p>
+        <div class="recommendation-impact">
+          <div class="impact-item">📊 Impact: <strong>~$2,400 spend without tracking</strong></div>
+          <div class="impact-item">🏷️ Account: <strong>Acme Corp - Meta</strong></div>
+        </div>
+        <div class="recommendation-actions">
+          <button class="btn btn-primary">Check Pixel Setup</button>
+          <button class="btn btn-secondary">Contact Support</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="recommendation-card critical">
+      <div class="recommendation-header">
+        <div class="recommendation-header-left">
+          <span class="badge badge-critical">CRITICAL</span>
+          <span style="font-weight: 600;">Emergency: Daily Budget Exceeded</span>
+        </div>
+        <button class="btn btn-ghost btn-sm">Dismiss</button>
+      </div>
+      <div class="recommendation-body">
+        <p class="recommendation-desc">
+          Campaign "PMax - Summer Sale" spent 150% of daily budget. Current spend: $450 / Budget: $300
+        </p>
+        <div class="recommendation-actions">
+          <button class="btn btn-primary">Pause Campaign</button>
+          <button class="btn btn-secondary">Increase Budget</button>
+          <button class="btn btn-secondary">Set Spend Cap</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Warnings Section -->
+  <div style="margin-bottom: 24px;">
+    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+      <span style="font-size: 14px; font-weight: 600; color: var(--warning);">⚠️ WARNINGS</span>
+      <span class="badge badge-warning">5</span>
+    </div>
+
+    <div class="recommendation-card warning">
+      <div class="recommendation-header">
+        <div class="recommendation-header-left">
+          <span class="badge badge-warning">WARNING</span>
+          <span style="font-weight: 600;">Wasting Keywords Detected (3 keywords)</span>
+        </div>
+        <button class="btn btn-ghost btn-sm">Dismiss</button>
+      </div>
+      <div class="recommendation-body">
+        <p class="recommendation-desc">
+          3 keywords spent $245 in 30 days with 0 conversions:
+        </p>
+        <div style="background: var(--bg-secondary); padding: 12px; border-radius: 6px; margin-bottom: 12px; font-size: 12px;">
+          <div style="display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid var(--border-default);">
+            <span>"cheap running shoes"</span>
+            <span class="mono">$89 • 0 conv</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid var(--border-default);">
+            <span>"buy sneakers online"</span>
+            <span class="mono">$76 • 0 conv</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding: 4px 0;">
+            <span>"athletic footwear sale"</span>
+            <span class="mono">$80 • 0 conv</span>
+          </div>
+        </div>
+        <div class="recommendation-impact">
+          <div class="impact-item">💰 Potential Savings: <strong>$245/month</strong></div>
+        </div>
+        <div class="recommendation-actions">
+          <button class="btn btn-primary">Pause All (3) ✓ Recommended</button>
+          <button class="btn btn-secondary">Add as Negatives</button>
+          <button class="btn btn-secondary">Review Each</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Opportunities Section -->
+  <div>
+    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+      <span style="font-size: 14px; font-weight: 600; color: var(--opportunity);">💡 OPPORTUNITIES</span>
+      <span class="badge badge-opportunity">5</span>
+    </div>
+
+    <div class="recommendation-card opportunity">
+      <div class="recommendation-header">
+        <div class="recommendation-header-left">
+          <span class="badge badge-opportunity">OPPORTUNITY</span>
+          <span style="font-weight: 600;">Budget Opportunity - Campaign Underspending</span>
+        </div>
+        <button class="btn btn-ghost btn-sm">Dismiss</button>
+      </div>
+      <div class="recommendation-body">
+        <p class="recommendation-desc">
+          "Search - Brand" is limited by budget and could get 35% more conversions with a $50/day budget increase.
+        </p>
+        <div class="recommendation-impact">
+          <div class="impact-item">📈 Est. additional conversions: <strong>+12/month</strong></div>
+          <div class="impact-item">💰 Est. additional cost: <strong>$1,500/month</strong></div>
+          <div class="impact-item">📊 Projected CPA: <strong>$28.50</strong> (current: $27.42)</div>
+        </div>
+        <div class="recommendation-actions">
+          <button class="btn btn-primary">Increase +$50/day</button>
+          <button class="btn btn-secondary">Increase +$25/day</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function setTheme(theme) {
+      document.body.setAttribute('data-theme', theme);
+      document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+    }
+  </script>
+</body>
+</html>

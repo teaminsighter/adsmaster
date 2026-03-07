@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AdsMaster - Analytics (Critical View)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary-500: #10B981;
+      --success: #10B981;
+      --warning: #F59E0B;
+      --error: #EF4444;
+      --chart-1: #10B981;
+      --chart-2: #3B82F6;
+      --chart-3: #8B5CF6;
+      --chart-4: #F59E0B;
+    }
+
+    :root, [data-theme="light"] {
+      --bg-primary: #FFFFFF;
+      --bg-secondary: #F9FAFB;
+      --bg-tertiary: #F3F4F6;
+      --text-primary: #111827;
+      --text-secondary: #6B7280;
+      --text-tertiary: #9CA3AF;
+      --text-inverse: #FFFFFF;
+      --border-default: #E5E7EB;
+      --border-strong: #D1D5DB;
+      --surface-card: #FFFFFF;
+      --surface-hover: #F9FAFB;
+      --primary: #10B981;
+      --primary-hover: #059669;
+      --primary-light: #ECFDF5;
+    }
+
+    [data-theme="dark"] {
+      --bg-primary: #0F0F0F;
+      --bg-secondary: #171717;
+      --bg-tertiary: #1F1F1F;
+      --text-primary: #FAFAFA;
+      --text-secondary: #A1A1AA;
+      --text-tertiary: #71717A;
+      --text-inverse: #0F0F0F;
+      --border-default: #27272A;
+      --border-strong: #3F3F46;
+      --surface-card: #171717;
+      --surface-hover: #1F1F1F;
+      --primary: #34D399;
+      --primary-hover: #10B981;
+      --primary-light: rgba(16, 185, 129, 0.1);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--text-primary);
+      background-color: var(--bg-secondary);
+      padding: 24px;
+    }
+
+    .mono { font-family: 'JetBrains Mono', monospace; }
+
+    /* Theme Toggle */
+    .theme-toggle {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      display: flex;
+      gap: 4px;
+      padding: 4px;
+      background: var(--surface-card);
+      border: 1px solid var(--border-default);
+      border-radius: 8px;
+      z-index: 100;
+    }
+
+    .theme-btn {
+      padding: 6px 12px;
+      border: none;
+      background: transparent;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .theme-btn.active { background: var(--primary); color: var(--text-inverse); }
+
+    /* Page Header */
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+
+    .page-title { font-size: 22px; font-weight: 600; }
+    .page-actions { display: flex; gap: 8px; }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 0 16px;
+      height: 32px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn-primary { background: var(--primary); color: var(--text-inverse); }
+    .btn-secondary { background: transparent; color: var(--text-primary); border: 1px solid var(--border-strong); }
+    .btn-ghost { background: transparent; color: var(--text-secondary); }
+    .btn-sm { height: 28px; padding: 0 12px; font-size: 12px; }
+
+    .filter-select {
+      padding: 6px 12px;
+      border: 1px solid var(--border-default);
+      border-radius: 6px;
+      background: var(--surface-card);
+      color: var(--text-primary);
+      font-size: 12px;
+    }
+
+    /* Analytics Tabs */
+    .analytics-tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid var(--border-default);
+      margin-bottom: 24px;
+    }
+
+    .analytics-tab {
+      padding: 12px 20px;
+      border: none;
+      background: none;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+    }
+
+    .analytics-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* Metric Cards */
+    .metrics-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .metric-card {
+      background: var(--surface-card);
+      border: 1px solid var(--border-default);
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .metric-label { font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
+    .metric-value { font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+    .metric-change { font-size: 12px; font-weight: 500; }
+    .metric-change.up { color: var(--success); }
+    .metric-change.down { color: var(--error); }
+
+    .sparkline { height: 24px; margin-top: 8px; display: flex; align-items: flex-end; gap: 2px; }
+    .sparkline-bar { flex: 1; background: var(--primary); border-radius: 2px; opacity: 0.6; }
+
+    /* Cards */
+    .card {
+      background: var(--surface-card);
+      border: 1px solid var(--border-default);
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .card-title { font-size: 13px; font-weight: 600; }
+
+    /* Grid Layout */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+
+    /* Charts */
+    .chart-container {
+      background: var(--surface-card);
+      border: 1px solid var(--border-default);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 24px;
+    }
+
+    .chart-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .chart-title { font-size: 14px; font-weight: 600; }
+
+    .chart-area {
+      height: 200px;
+      position: relative;
+      border-left: 1px solid var(--border-default);
+      border-bottom: 1px solid var(--border-default);
+      margin-left: 40px;
+    }
+
+    .chart-svg-line { fill: none; stroke: var(--primary); stroke-width: 2; }
+    .chart-svg-area { fill: var(--primary); opacity: 0.1; }
+
+    /* Platform Bars */
+    .platform-bar { flex: 1; }
+    .platform-bar-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
+    .platform-bar-label { font-size: 12px; color: var(--text-secondary); }
+    .platform-bar-value { font-size: 12px; font-weight: 600; color: var(--text-primary); }
+    .platform-bar-track { height: 8px; background: var(--bg-tertiary); border-radius: 4px; overflow: hidden; }
+    .platform-bar-fill { height: 100%; border-radius: 4px; }
+    .platform-bar-fill.google { background: #4285F4; }
+    .platform-bar-fill.meta { background: #1877F2; }
+
+    /* Funnel */
+    .funnel-step {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      margin-bottom: 8px;
+    }
+
+    .funnel-label { width: 120px; text-align: right; font-size: 13px; font-weight: 500; }
+    .funnel-bar { flex: 1; height: 48px; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+    .funnel-percent { width: 80px; font-size: 12px; color: var(--text-secondary); }
+
+    /* Data Table */
+    .data-table { width: 100%; border-collapse: collapse; }
+
+    .data-table th {
+      text-align: left;
+      padding: 10px 12px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-default);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+    }
+
+    .data-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border-default);
+      font-size: 13px;
+    }
+
+    .data-table tr:hover td { background: var(--surface-hover); }
+    .data-table .right { text-align: right; }
+    .data-table .center { text-align: center; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <!-- Theme Toggle -->
+  <div class="theme-toggle">
+    <button class="theme-btn active" onclick="setTheme('light')">☀️</button>
+    <button class="theme-btn" onclick="setTheme('dark')">🌙</button>
+  </div>
+
+  <!-- Analytics View -->
+  <div class="page-header">
+    <h1 class="page-title">Analytics</h1>
+    <div class="page-actions">
+      <select class="filter-select">
+        <option>Last 30 days</option>
+        <option>Last 7 days</option>
+        <option>This month</option>
+      </select>
+      <button class="btn btn-secondary">📥 Export</button>
+    </div>
+  </div>
+
+  <!-- Analytics Tabs -->
+  <div class="analytics-tabs">
+    <button class="analytics-tab active" onclick="showTab('overview')">Overview</button>
+    <button class="analytics-tab" onclick="showTab('platform')">By Platform</button>
+    <button class="analytics-tab" onclick="showTab('funnel')">Funnel</button>
+    <button class="analytics-tab" onclick="showTab('compare')">Compare</button>
+  </div>
+
+  <!-- TAB: Overview -->
+  <div class="tab-content active" id="tab-overview">
+    <div class="metrics-row">
+      <div class="metric-card">
+        <div class="metric-label">Spend</div>
+        <div class="metric-value">$45,678</div>
+        <div class="metric-change up">▲ 12.3%</div>
+        <div class="sparkline">
+          <div class="sparkline-bar" style="height: 30%;"></div>
+          <div class="sparkline-bar" style="height: 45%;"></div>
+          <div class="sparkline-bar" style="height: 60%;"></div>
+          <div class="sparkline-bar" style="height: 75%;"></div>
+          <div class="sparkline-bar" style="height: 85%;"></div>
+          <div class="sparkline-bar" style="height: 100%;"></div>
+        </div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Revenue</div>
+        <div class="metric-value">$156,234</div>
+        <div class="metric-change up">▲ 18.5%</div>
+        <div class="sparkline">
+          <div class="sparkline-bar" style="height: 40%;"></div>
+          <div class="sparkline-bar" style="height: 55%;"></div>
+          <div class="sparkline-bar" style="height: 70%;"></div>
+          <div class="sparkline-bar" style="height: 80%;"></div>
+          <div class="sparkline-bar" style="height: 90%;"></div>
+          <div class="sparkline-bar" style="height: 100%;"></div>
+        </div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">ROAS</div>
+        <div class="metric-value">3.42x</div>
+        <div class="metric-change up">▲ 5.5%</div>
+        <div class="sparkline">
+          <div class="sparkline-bar" style="height: 60%;"></div>
+          <div class="sparkline-bar" style="height: 70%;"></div>
+          <div class="sparkline-bar" style="height: 75%;"></div>
+          <div class="sparkline-bar" style="height: 85%;"></div>
+          <div class="sparkline-bar" style="height: 90%;"></div>
+          <div class="sparkline-bar" style="height: 100%;"></div>
+        </div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Conversions</div>
+        <div class="metric-value">1,234</div>
+        <div class="metric-change up">▲ 15.2%</div>
+        <div class="sparkline">
+          <div class="sparkline-bar" style="height: 35%;"></div>
+          <div class="sparkline-bar" style="height: 55%;"></div>
+          <div class="sparkline-bar" style="height: 70%;"></div>
+          <div class="sparkline-bar" style="height: 85%;"></div>
+          <div class="sparkline-bar" style="height: 95%;"></div>
+          <div class="sparkline-bar" style="height: 100%;"></div>
+        </div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">CPA</div>
+        <div class="metric-value">$37.02</div>
+        <div class="metric-change down" style="color: var(--success);">▼ 2.5%</div>
+        <div class="sparkline">
+          <div class="sparkline-bar" style="height: 100%;"></div>
+          <div class="sparkline-bar" style="height: 90%;"></div>
+          <div class="sparkline-bar" style="height: 80%;"></div>
+          <div class="sparkline-bar" style="height: 70%;"></div>
+          <div class="sparkline-bar" style="height: 60%;"></div>
+          <div class="sparkline-bar" style="height: 55%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-container">
+      <div class="chart-header">
+        <span class="chart-title">Performance Over Time</span>
+        <div style="display: flex; gap: 16px; font-size: 12px;">
+          <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 12px; height: 3px; background: var(--chart-1); border-radius: 2px;"></span> Spend</span>
+          <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 12px; height: 3px; background: var(--chart-2); border-radius: 2px;"></span> Revenue</span>
+          <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 12px; height: 3px; background: var(--chart-3); border-radius: 2px;"></span> Conversions</span>
+        </div>
+      </div>
+      <div class="chart-area">
+        <svg width="100%" height="100%" viewBox="0 0 400 180" preserveAspectRatio="none">
+          <path class="chart-svg-area" d="M0,180 L0,140 Q50,130 100,110 T200,90 T300,70 T400,50 L400,180 Z"/>
+          <path class="chart-svg-line" d="M0,140 Q50,130 100,110 T200,90 T300,70 T400,50"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">By Platform</span>
+        </div>
+        <div style="margin-top: 16px;">
+          <div class="platform-bar" style="margin-bottom: 16px;">
+            <div class="platform-bar-header">
+              <span class="platform-bar-label">Google Ads</span>
+              <span class="platform-bar-value">$28,320 (62%)</span>
+            </div>
+            <div class="platform-bar-track">
+              <div class="platform-bar-fill google" style="width: 62%;"></div>
+            </div>
+          </div>
+          <div class="platform-bar">
+            <div class="platform-bar-header">
+              <span class="platform-bar-label">Meta</span>
+              <span class="platform-bar-value">$16,987 (35%)</span>
+            </div>
+            <div class="platform-bar-track">
+              <div class="platform-bar-fill meta" style="width: 35%;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">By Campaign Type</span>
+        </div>
+        <div style="margin-top: 16px;">
+          <div class="platform-bar" style="margin-bottom: 16px;">
+            <div class="platform-bar-header">
+              <span class="platform-bar-label">Search</span>
+              <span class="platform-bar-value">45%</span>
+            </div>
+            <div class="platform-bar-track">
+              <div class="platform-bar-fill" style="width: 45%; background: var(--chart-1);"></div>
+            </div>
+          </div>
+          <div class="platform-bar" style="margin-bottom: 16px;">
+            <div class="platform-bar-header">
+              <span class="platform-bar-label">PMax</span>
+              <span class="platform-bar-value">32%</span>
+            </div>
+            <div class="platform-bar-track">
+              <div class="platform-bar-fill" style="width: 32%; background: var(--chart-2);"></div>
+            </div>
+          </div>
+          <div class="platform-bar">
+            <div class="platform-bar-header">
+              <span class="platform-bar-label">Display</span>
+              <span class="platform-bar-value">15%</span>
+            </div>
+            <div class="platform-bar-track">
+              <div class="platform-bar-fill" style="width: 15%; background: var(--chart-3);"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: Platform -->
+  <div class="tab-content" id="tab-platform">
+    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px;">
+      <!-- Google Ads Card -->
+      <div class="card" style="border-top: 3px solid #4285F4;">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+          <div style="width: 40px; height: 40px; background: #4285F4; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-size: 18px;">🔍</div>
+          <div>
+            <div style="font-weight: 600;">Google Ads</div>
+            <div style="font-size: 12px; color: var(--text-secondary);">2 accounts connected</div>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div>
+            <div style="font-size: 11px; color: var(--text-tertiary);">Spend</div>
+            <div class="mono" style="font-size: 18px; font-weight: 600;">$28,320</div>
+            <div style="font-size: 11px; color: var(--success);">▲ 15.2%</div>
+          </div>
+          <div>
+            <div style="font-size: 11px; color: var(--text-tertiary);">ROAS</div>
+            <div class="mono" style="font-size: 18px; font-weight: 600; color: var(--success);">3.48x</div>
+            <div style="font-size: 11px; color: var(--success);">▲ 6.0%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Meta Card -->
+      <div class="card" style="border-top: 3px solid #1877F2;">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+          <div style="width: 40px; height: 40px; background: #1877F2; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-size: 18px;">📘</div>
+          <div>
+            <div style="font-weight: 600;">Meta Ads</div>
+            <div style="font-size: 12px; color: var(--text-secondary);">2 accounts connected</div>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div>
+            <div style="font-size: 11px; color: var(--text-tertiary);">Spend</div>
+            <div class="mono" style="font-size: 18px; font-weight: 600;">$16,987</div>
+            <div style="font-size: 11px; color: var(--success);">▲ 8.4%</div>
+          </div>
+          <div>
+            <div style="font-size: 11px; color: var(--text-tertiary);">ROAS</div>
+            <div class="mono" style="font-size: 18px; font-weight: 600; color: var(--success);">3.19x</div>
+            <div style="font-size: 11px; color: var(--success);">▲ 3.6%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Platform Comparison</span>
+      </div>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Metric</th>
+            <th class="center">Google Ads</th>
+            <th class="center">Meta Ads</th>
+            <th class="center">Winner</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="font-weight: 500;">Cost per Click</td>
+            <td class="center mono">$1.24</td>
+            <td class="center mono">$0.98</td>
+            <td class="center"><span class="badge" style="background: #1877F2; color: white;">Meta</span></td>
+          </tr>
+          <tr>
+            <td style="font-weight: 500;">Conversion Rate</td>
+            <td class="center mono">3.45%</td>
+            <td class="center mono">2.89%</td>
+            <td class="center"><span class="badge" style="background: #4285F4; color: white;">Google</span></td>
+          </tr>
+          <tr>
+            <td style="font-weight: 500;">ROAS</td>
+            <td class="center mono">3.48x</td>
+            <td class="center mono">3.19x</td>
+            <td class="center"><span class="badge" style="background: #4285F4; color: white;">Google</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB: Funnel -->
+  <div class="tab-content" id="tab-funnel">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Conversion Funnel (Last 30 Days)</span>
+      </div>
+
+      <div style="padding: 24px 0;">
+        <div class="funnel-step">
+          <div class="funnel-label">Impressions</div>
+          <div class="funnel-bar" style="background: var(--primary); width: 100%;">
+            <span style="color: white; font-weight: 600;">2.4M</span>
+          </div>
+          <div class="funnel-percent">100%</div>
+        </div>
+
+        <div class="funnel-step">
+          <div class="funnel-label">Clicks</div>
+          <div class="funnel-bar" style="background: rgba(16, 185, 129, 0.8); width: 65%;">
+            <span style="color: white; font-weight: 600;">67.2K</span>
+          </div>
+          <div class="funnel-percent">2.8% CTR</div>
+        </div>
+
+        <div class="funnel-step">
+          <div class="funnel-label">Add to Cart</div>
+          <div class="funnel-bar" style="background: rgba(16, 185, 129, 0.6); width: 25%;">
+            <span style="color: white; font-weight: 600;">8.4K</span>
+          </div>
+          <div class="funnel-percent">12.5%</div>
+        </div>
+
+        <div class="funnel-step">
+          <div class="funnel-label">Checkout</div>
+          <div class="funnel-bar" style="background: rgba(16, 185, 129, 0.4); width: 12%;">
+            <span style="font-weight: 600;">2.1K</span>
+          </div>
+          <div class="funnel-percent">25.0%</div>
+        </div>
+
+        <div class="funnel-step">
+          <div class="funnel-label">Purchase</div>
+          <div class="funnel-bar" style="background: var(--success); width: 8%;">
+            <span style="color: white; font-weight: 600;">1,234</span>
+          </div>
+          <div class="funnel-percent" style="color: var(--success); font-weight: 500;">58.8%</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Drop-off Analysis -->
+    <div class="card" style="margin-top: 24px; border-left: 4px solid var(--warning);">
+      <div class="card-header">
+        <span class="card-title">⚠️ Drop-off Analysis</span>
+      </div>
+      <div style="padding: 12px 0;">
+        <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(245, 158, 11, 0.1); border-radius: 8px; margin-bottom: 12px;">
+          <div style="font-size: 24px;">🛒</div>
+          <div style="flex: 1;">
+            <div style="font-weight: 500;">Cart Abandonment Rate: 75%</div>
+            <div style="font-size: 12px; color: var(--text-secondary);">6,300 users added items but didn't checkout</div>
+          </div>
+          <button class="btn btn-secondary btn-sm">Create Retargeting →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: Compare -->
+  <div class="tab-content" id="tab-compare">
+    <div class="card" style="margin-bottom: 24px; background: var(--primary-light); border: 1px solid var(--primary);">
+      <div style="display: flex; gap: 12px;">
+        <div style="font-size: 24px;">🤖</div>
+        <div>
+          <div style="font-weight: 600; margin-bottom: 8px;">AI Performance Summary</div>
+          <div style="font-size: 13px; line-height: 1.6;">
+            <strong>Great news!</strong> Your ads performed significantly better this period. Key improvements:
+            <ul style="margin: 8px 0 0 16px;">
+              <li>Conversions up 18.1% while spend only increased 13.8%</li>
+              <li>CPA decreased by 3.6%, improving efficiency</li>
+              <li>ROAS improved from 3.35x to 3.42x</li>
+            </ul>
+            <div style="margin-top: 8px;"><strong>Recommendation:</strong> Consider scaling budget by 15-20%.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+      <div class="card" style="text-align: center; border-top: 3px solid var(--success);">
+        <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">Spend</div>
+        <div style="display: flex; justify-content: center; gap: 16px; margin-bottom: 8px;">
+          <div>
+            <div style="font-size: 11px; color: var(--text-tertiary);">Current</div>
+            <div class="mono" style="font-size: 20px; font-weight: 600;">$45,678</div>
+          </div>
+          <div style="font-size: 20px; color: var(--text-tertiary);">→</div>
+          <div>
+            <div style="font-size: 11px; color: var(--text-tertiary);">Previous</div>
+            <div class="mono" style="font-size: 20px; font-weight: 600;">$40,123</div>
+          </div>
+        </div>
+        <div style="font-size: 14px; font-weight: 600; color: var(--success);">▲ +13.8%</div>
+      </div>
+
+      <div class="card" style="text-align: center; border-top: 3px solid var(--success);">
+        <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">Conversions</div>
+        <div style="display: flex; justify-content: center; gap: 16px; margin-bottom: 8px;">
+          <div>
+            <div style="font-size: 11px; color: var(--text-tertiary);">Current</div>
+            <div class="mono" style="font-size: 20px; font-weight: 600;">1,234</div>
+          </div>
+          <div style="font-size: 20px; color: var(--text-tertiary);">→</div>
+          <div>
+            <div style="font-size: 11px; color: var(--text-tertiary);">Previous</div>
+            <div class="mono" style="font-size: 20px; font-weight: 600;">1,045</div>
+          </div>
+        </div>
+        <div style="font-size: 14px; font-weight: 600; color: var(--success);">▲ +18.1%</div>
+      </div>
+
+      <div class="card" style="text-align: center; border-top: 3px solid var(--success);">
+        <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">CPA</div>
+        <div style="display: flex; justify-content: center; gap: 16px; margin-bottom: 8px;">
+          <div>
+            <div style="font-size: 11px; color: var(--text-tertiary);">Current</div>
+            <div class="mono" style="font-size: 20px; font-weight: 600;">$37.02</div>
+          </div>
+          <div style="font-size: 20px; color: var(--text-tertiary);">→</div>
+          <div>
+            <div style="font-size: 11px; color: var(--text-tertiary);">Previous</div>
+            <div class="mono" style="font-size: 20px; font-weight: 600;">$38.40</div>
+          </div>
+        </div>
+        <div style="font-size: 14px; font-weight: 600; color: var(--success);">▼ -3.6% (better)</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function setTheme(theme) {
+      document.body.setAttribute('data-theme', theme);
+      document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+    }
+
+    function showTab(tabName) {
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.analytics-tab').forEach(t => t.classList.remove('active'));
+      document.getElementById('tab-' + tabName).classList.add('active');
+      event.target.classList.add('active');
+    }
+  </script>
+</body>
+</html>

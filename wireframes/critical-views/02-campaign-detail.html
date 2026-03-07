@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AdsMaster - Campaign Detail (Critical View)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    /* ========================================
+       CSS VARIABLES - DESIGN TOKENS
+       ======================================== */
+    :root {
+      --primary-50: #ECFDF5;
+      --primary-500: #10B981;
+      --primary-600: #059669;
+      --success: #10B981;
+      --warning: #F59E0B;
+      --error: #EF4444;
+      --info: #3B82F6;
+    }
+
+    :root, [data-theme="light"] {
+      --bg-primary: #FFFFFF;
+      --bg-secondary: #F9FAFB;
+      --bg-tertiary: #F3F4F6;
+      --text-primary: #111827;
+      --text-secondary: #6B7280;
+      --text-tertiary: #9CA3AF;
+      --text-inverse: #FFFFFF;
+      --border-default: #E5E7EB;
+      --border-strong: #D1D5DB;
+      --surface-card: #FFFFFF;
+      --surface-hover: #F9FAFB;
+      --primary: #10B981;
+      --primary-hover: #059669;
+      --primary-light: #ECFDF5;
+    }
+
+    [data-theme="dark"] {
+      --bg-primary: #0F0F0F;
+      --bg-secondary: #171717;
+      --bg-tertiary: #1F1F1F;
+      --text-primary: #FAFAFA;
+      --text-secondary: #A1A1AA;
+      --text-tertiary: #71717A;
+      --text-inverse: #0F0F0F;
+      --border-default: #27272A;
+      --border-strong: #3F3F46;
+      --surface-card: #171717;
+      --surface-hover: #1F1F1F;
+      --primary: #34D399;
+      --primary-hover: #10B981;
+      --primary-light: rgba(16, 185, 129, 0.1);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--text-primary);
+      background-color: var(--bg-secondary);
+      -webkit-font-smoothing: antialiased;
+      padding: 24px;
+    }
+
+    .mono { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+
+    /* Theme Toggle */
+    .theme-toggle {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      display: flex;
+      gap: 4px;
+      padding: 4px;
+      background: var(--surface-card);
+      border: 1px solid var(--border-default);
+      border-radius: 8px;
+      z-index: 100;
+    }
+
+    .theme-btn {
+      padding: 6px 12px;
+      border: none;
+      background: transparent;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .theme-btn.active { background: var(--primary); color: var(--text-inverse); }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 0 16px;
+      height: 32px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn-primary { background: var(--primary); color: var(--text-inverse); }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-secondary { background: transparent; color: var(--text-primary); border: 1px solid var(--border-strong); }
+    .btn-secondary:hover { background: var(--surface-hover); }
+    .btn-ghost { background: transparent; color: var(--text-secondary); }
+    .btn-ghost:hover { background: var(--surface-hover); color: var(--text-primary); }
+    .btn-sm { height: 28px; padding: 0 12px; font-size: 12px; }
+
+    /* Page Header */
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+
+    .page-title { font-size: 22px; font-weight: 600; }
+    .page-actions { display: flex; gap: 8px; }
+
+    /* Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .badge-active { background: var(--primary-light); color: var(--primary); }
+    .badge-paused { background: var(--bg-tertiary); color: var(--text-secondary); }
+    .badge-learning { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+
+    /* Campaign Tabs */
+    .campaign-tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid var(--border-default);
+      margin-bottom: 24px;
+    }
+
+    .campaign-tab {
+      padding: 12px 20px;
+      border: none;
+      background: none;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+    }
+
+    .campaign-tab:hover { color: var(--text-primary); }
+    .campaign-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+    .campaign-tab-content { display: none; }
+    .campaign-tab-content.active { display: block; }
+
+    /* Metric Cards */
+    .metrics-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .metric-card {
+      background: var(--surface-card);
+      border: 1px solid var(--border-default);
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .metric-label { font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
+    .metric-value { font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+    .metric-change { font-size: 12px; font-weight: 500; }
+    .metric-change.up { color: var(--success); }
+    .metric-change.down { color: var(--error); }
+
+    /* Cards */
+    .card {
+      background: var(--surface-card);
+      border: 1px solid var(--border-default);
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .card-title { font-size: 13px; font-weight: 600; }
+
+    /* Data Table */
+    .data-table { width: 100%; border-collapse: collapse; }
+
+    .data-table th {
+      text-align: left;
+      padding: 10px 12px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-default);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+    }
+
+    .data-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border-default);
+      font-size: 13px;
+    }
+
+    .data-table tr:hover td { background: var(--surface-hover); }
+    .data-table .right { text-align: right; }
+    .data-table .center { text-align: center; }
+
+    /* Filter Input */
+    .auth-input {
+      padding: 10px 14px;
+      border: 1px solid var(--border-default);
+      border-radius: 8px;
+      font-size: 14px;
+      background: var(--surface-card);
+      color: var(--text-primary);
+    }
+
+    .filter-select {
+      padding: 6px 12px;
+      border: 1px solid var(--border-default);
+      border-radius: 6px;
+      background: var(--surface-card);
+      color: var(--text-primary);
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Theme Toggle -->
+  <div class="theme-toggle">
+    <button class="theme-btn active" onclick="setTheme('light')">☀️</button>
+    <button class="theme-btn" onclick="setTheme('dark')">🌙</button>
+  </div>
+
+  <!-- Campaign Detail Header -->
+  <div class="page-header">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <button class="btn btn-ghost">← Back</button>
+      <div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <h1 class="page-title" style="margin: 0;">Search - Brand</h1>
+          <span class="badge badge-active">● Active</span>
+        </div>
+        <div style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">
+          Google Ads • Acme Corp • $100/day budget
+        </div>
+      </div>
+    </div>
+    <div class="page-actions">
+      <button class="btn btn-secondary">⏸ Pause</button>
+      <button class="btn btn-secondary">📋 Duplicate</button>
+      <button class="btn btn-primary">✏️ Edit</button>
+    </div>
+  </div>
+
+  <!-- Campaign Tabs -->
+  <div class="campaign-tabs">
+    <button class="campaign-tab active" onclick="showTab('overview')">Overview</button>
+    <button class="campaign-tab" onclick="showTab('adgroups')">Ad Groups (3)</button>
+    <button class="campaign-tab" onclick="showTab('keywords')">Keywords (45)</button>
+    <button class="campaign-tab" onclick="showTab('ads')">Ads (12)</button>
+    <button class="campaign-tab" onclick="showTab('searchterms')">Search Terms</button>
+    <button class="campaign-tab" onclick="showTab('settings')">Settings</button>
+  </div>
+
+  <!-- TAB: Overview -->
+  <div class="campaign-tab-content active" id="tab-overview">
+    <!-- Metrics -->
+    <div class="metrics-row">
+      <div class="metric-card">
+        <div class="metric-label">Spend (30d)</div>
+        <div class="metric-value">$5,234</div>
+        <div class="metric-change up">▲ 12.3%</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Impressions</div>
+        <div class="metric-value">125K</div>
+        <div class="metric-change up">▲ 8.2%</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Clicks</div>
+        <div class="metric-value">4,521</div>
+        <div class="metric-change up">▲ 15.1%</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">CTR</div>
+        <div class="metric-value">3.62%</div>
+        <div class="metric-change up">▲ 0.3%</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Conversions</div>
+        <div class="metric-value">156</div>
+        <div class="metric-change up">▲ 22.5%</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">CPA</div>
+        <div class="metric-value">$33.55</div>
+        <div class="metric-change down" style="color: var(--success);">▼ 8.2%</div>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-top: 24px;">
+      <!-- Performance Chart -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Performance Trend</span>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn btn-ghost btn-sm" style="background: var(--primary-light); color: var(--primary);">7D</button>
+            <button class="btn btn-ghost btn-sm">14D</button>
+            <button class="btn btn-ghost btn-sm">30D</button>
+          </div>
+        </div>
+        <div style="height: 200px; display: flex; align-items: flex-end; gap: 8px; padding: 16px 0;">
+          <div style="flex: 1; height: 60%; background: var(--primary); border-radius: 4px 4px 0 0; opacity: 0.7;"></div>
+          <div style="flex: 1; height: 75%; background: var(--primary); border-radius: 4px 4px 0 0; opacity: 0.7;"></div>
+          <div style="flex: 1; height: 50%; background: var(--primary); border-radius: 4px 4px 0 0; opacity: 0.7;"></div>
+          <div style="flex: 1; height: 85%; background: var(--primary); border-radius: 4px 4px 0 0; opacity: 0.7;"></div>
+          <div style="flex: 1; height: 70%; background: var(--primary); border-radius: 4px 4px 0 0; opacity: 0.7;"></div>
+          <div style="flex: 1; height: 90%; background: var(--primary); border-radius: 4px 4px 0 0; opacity: 0.7;"></div>
+          <div style="flex: 1; height: 100%; background: var(--primary); border-radius: 4px 4px 0 0;"></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-tertiary); padding-top: 8px; border-top: 1px solid var(--border-default);">
+          <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+        </div>
+      </div>
+
+      <!-- AI Insights -->
+      <div class="card" style="border-left: 3px solid var(--primary);">
+        <div class="card-header">
+          <span class="card-title">🤖 AI Insights</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <div style="padding: 12px; background: var(--primary-light); border-radius: 6px;">
+            <div style="font-size: 12px; font-weight: 500; color: var(--primary); margin-bottom: 4px;">💡 Opportunity</div>
+            <div style="font-size: 13px;">Your brand campaign is performing 23% better than industry average. Consider increasing budget by $25/day.</div>
+          </div>
+          <div style="padding: 12px; background: rgba(245, 158, 11, 0.1); border-radius: 6px;">
+            <div style="font-size: 12px; font-weight: 500; color: var(--warning); margin-bottom: 4px;">⚠️ Warning</div>
+            <div style="font-size: 13px;">3 keywords have high spend with low conversions. Review recommended.</div>
+          </div>
+        </div>
+        <button class="btn btn-ghost btn-sm" style="margin-top: 12px; width: 100%;">View All Recommendations →</button>
+      </div>
+    </div>
+
+    <!-- Top Performing -->
+    <div class="card" style="margin-top: 24px;">
+      <div class="card-header">
+        <span class="card-title">Top Performing Keywords</span>
+        <button class="btn btn-ghost btn-sm">View All →</button>
+      </div>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Keyword</th>
+            <th>Match Type</th>
+            <th class="right">Clicks</th>
+            <th class="right">Conv</th>
+            <th class="right">CPA</th>
+            <th class="right">ROAS</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="mono" style="font-size: 12px;">acme corp</td>
+            <td><span class="badge badge-active" style="font-size: 10px;">[Exact]</span></td>
+            <td class="right mono">1,234</td>
+            <td class="right mono">45</td>
+            <td class="right mono">$27.42</td>
+            <td class="right mono" style="color: var(--success);">5.2x</td>
+          </tr>
+          <tr>
+            <td class="mono" style="font-size: 12px;">acme products</td>
+            <td><span class="badge badge-active" style="font-size: 10px;">[Exact]</span></td>
+            <td class="right mono">987</td>
+            <td class="right mono">38</td>
+            <td class="right mono">$29.18</td>
+            <td class="right mono" style="color: var(--success);">4.8x</td>
+          </tr>
+          <tr>
+            <td class="mono" style="font-size: 12px;">"acme store"</td>
+            <td><span class="badge badge-paused" style="font-size: 10px;">"Phrase"</span></td>
+            <td class="right mono">654</td>
+            <td class="right mono">28</td>
+            <td class="right mono">$31.25</td>
+            <td class="right mono" style="color: var(--success);">4.1x</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB: Ad Groups -->
+  <div class="campaign-tab-content" id="tab-adgroups">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+      <div style="font-size: 14px; color: var(--text-secondary);">3 ad groups in this campaign</div>
+      <button class="btn btn-primary btn-sm">+ New Ad Group</button>
+    </div>
+
+    <div class="card">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width: 30px;"><input type="checkbox"></th>
+            <th>Ad Group</th>
+            <th>Status</th>
+            <th class="right">Keywords</th>
+            <th class="right">Ads</th>
+            <th class="right">Spend</th>
+            <th class="right">Clicks</th>
+            <th class="right">Conv</th>
+            <th class="right">CPA</th>
+            <th class="center">Avg QS</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td>
+              <div style="font-weight: 500;">Brand - Exact Match</div>
+              <div style="font-size: 11px; color: var(--text-tertiary);">High intent brand searches</div>
+            </td>
+            <td><span class="badge badge-active">● Active</span></td>
+            <td class="right mono">15</td>
+            <td class="right mono">4</td>
+            <td class="right mono">$2,456</td>
+            <td class="right mono">1,890</td>
+            <td class="right mono">68</td>
+            <td class="right mono">$36.12</td>
+            <td class="center"><span style="color: var(--success); font-weight: 600;">9/10</span></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td>
+              <div style="font-weight: 500;">Brand - Phrase Match</div>
+              <div style="font-size: 11px; color: var(--text-tertiary);">Broader brand variations</div>
+            </td>
+            <td><span class="badge badge-active">● Active</span></td>
+            <td class="right mono">18</td>
+            <td class="right mono">4</td>
+            <td class="right mono">$1,890</td>
+            <td class="right mono">1,456</td>
+            <td class="right mono">52</td>
+            <td class="right mono">$36.35</td>
+            <td class="center"><span style="color: var(--success); font-weight: 600;">8/10</span></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td>
+              <div style="font-weight: 500;">Brand - Broad Match</div>
+              <div style="font-size: 11px; color: var(--text-tertiary);">Discovery & related terms</div>
+            </td>
+            <td><span class="badge badge-learning">◐ Learning</span></td>
+            <td class="right mono">12</td>
+            <td class="right mono">4</td>
+            <td class="right mono">$888</td>
+            <td class="right mono">1,175</td>
+            <td class="right mono">36</td>
+            <td class="right mono">$24.67</td>
+            <td class="center"><span style="color: var(--warning); font-weight: 600;">6/10</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB: Keywords -->
+  <div class="campaign-tab-content" id="tab-keywords">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+      <div style="display: flex; gap: 12px; align-items: center;">
+        <input type="text" class="auth-input" style="width: 250px; height: 36px;" placeholder="🔍 Search keywords...">
+        <select class="filter-select">
+          <option>All Ad Groups</option>
+          <option>Brand - Exact</option>
+        </select>
+      </div>
+      <button class="btn btn-primary btn-sm">+ Add Keywords</button>
+    </div>
+
+    <div class="card">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width: 30px;"><input type="checkbox"></th>
+            <th>Keyword</th>
+            <th>Match</th>
+            <th>Status</th>
+            <th class="right">Impr</th>
+            <th class="right">Clicks</th>
+            <th class="right">CTR</th>
+            <th class="right">Avg CPC</th>
+            <th class="right">Conv</th>
+            <th class="right">CPA</th>
+            <th class="center">QS</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td class="mono" style="font-size: 12px;">acme corp</td>
+            <td><span class="badge badge-active" style="font-size: 10px;">[Exact]</span></td>
+            <td><span style="color: var(--success);">●</span></td>
+            <td class="right mono">45,234</td>
+            <td class="right mono">1,234</td>
+            <td class="right mono">2.73%</td>
+            <td class="right mono">$1.12</td>
+            <td class="right mono">45</td>
+            <td class="right mono">$30.71</td>
+            <td class="center"><span style="color: var(--success);">10</span></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td class="mono" style="font-size: 12px;">acme products</td>
+            <td><span class="badge badge-active" style="font-size: 10px;">[Exact]</span></td>
+            <td><span style="color: var(--success);">●</span></td>
+            <td class="right mono">32,456</td>
+            <td class="right mono">987</td>
+            <td class="right mono">3.04%</td>
+            <td class="right mono">$1.08</td>
+            <td class="right mono">38</td>
+            <td class="right mono">$28.05</td>
+            <td class="center"><span style="color: var(--success);">9</span></td>
+          </tr>
+          <tr style="background: rgba(239, 68, 68, 0.05);">
+            <td><input type="checkbox"></td>
+            <td class="mono" style="font-size: 12px;">cheap acme alternative</td>
+            <td><span class="badge" style="background: var(--bg-tertiary); font-size: 10px;">Broad</span></td>
+            <td><span style="color: var(--success);">●</span></td>
+            <td class="right mono">8,765</td>
+            <td class="right mono">234</td>
+            <td class="right mono">2.67%</td>
+            <td class="right mono">$2.45</td>
+            <td class="right mono" style="color: var(--error);">0</td>
+            <td class="right mono" style="color: var(--error);">—</td>
+            <td class="center"><span style="color: var(--error);">4</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- AI Recommendation inline -->
+    <div style="margin-top: 16px; padding: 16px; background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.2); border-left: 4px solid var(--error); border-radius: 8px;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div>
+          <div style="font-weight: 600; color: var(--error); margin-bottom: 4px;">⚠️ Wasting Keywords Detected</div>
+          <div style="font-size: 13px; color: var(--text-secondary);">2 keywords spent $1,060 with 0 conversions in the last 30 days.</div>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-secondary btn-sm">Review</button>
+          <button class="btn btn-primary btn-sm" style="background: var(--error);">Pause Both</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function setTheme(theme) {
+      document.body.setAttribute('data-theme', theme);
+      document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+    }
+
+    function showTab(tabName) {
+      document.querySelectorAll('.campaign-tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.campaign-tab').forEach(t => t.classList.remove('active'));
+      document.getElementById('tab-' + tabName).classList.add('active');
+      event.target.classList.add('active');
+    }
+  </script>
+</body>
+</html>
