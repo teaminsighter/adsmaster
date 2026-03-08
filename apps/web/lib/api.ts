@@ -95,6 +95,68 @@ export interface SyncStatus {
   sync_in_progress: boolean;
 }
 
+export interface AffectedEntity {
+  type: string;
+  id: string;
+  name: string;
+  campaign_id?: string;
+  campaign_name?: string;
+}
+
+export interface RecommendationOption {
+  id: number;
+  label: string;
+  action: string;
+  description: string;
+  risk: string;
+}
+
+export interface ImpactEstimate {
+  monthly_savings: number | null;
+  potential_gain: number | null;
+  summary: string;
+}
+
+export interface Recommendation {
+  id: string;
+  ad_account_id: string;
+  organization_id: string;
+  rule_id: string;
+  type: string;
+  severity: 'critical' | 'warning' | 'opportunity' | 'info';
+  title: string;
+  description: string;
+  impact_estimate: ImpactEstimate;
+  affected_entity: AffectedEntity;
+  options: RecommendationOption[];
+  status: 'pending' | 'applied' | 'dismissed' | 'expired';
+  confidence: number;
+  expires_at: string;
+  created_at: string;
+  applied_at?: string;
+  applied_option_id?: number;
+  dismissed_at?: string;
+  dismiss_reason?: string;
+}
+
+export interface RecommendationsResponse {
+  recommendations: Recommendation[];
+  total: number;
+  pending: number;
+  applied: number;
+  dismissed: number;
+  total_savings: number;
+  total_potential_gain: number;
+}
+
+export interface RecommendationSummary {
+  total: number;
+  by_severity: Record<string, number>;
+  by_type: Record<string, number>;
+  total_savings: number;
+  total_potential_gain: number;
+}
+
 // =============================================================================
 // API Functions
 // =============================================================================
@@ -176,6 +238,89 @@ export async function triggerSync(accountId: string, syncType: string = 'full') 
 // Auth
 export function getGoogleAdsConnectUrl(organizationId: string): string {
   return `${API_BASE_URL}/auth/google-ads/connect?organization_id=${organizationId}`;
+}
+
+// Recommendations
+export async function getRecommendations(params?: {
+  account_id?: string;
+  severity?: string;
+  type?: string;
+  status?: string;
+  limit?: number;
+  offset?: number;
+}) {
+  const searchParams = new URLSearchParams();
+  if (params?.account_id) searchParams.set('account_id', params.account_id);
+  if (params?.severity) searchParams.set('severity', params.severity);
+  if (params?.type) searchParams.set('type', params.type);
+  if (params?.status) searchParams.set('status', params.status);
+  if (params?.limit) searchParams.set('limit', params.limit.toString());
+  if (params?.offset) searchParams.set('offset', params.offset.toString());
+  const query = searchParams.toString() ? `?${searchParams}` : '';
+  return fetchApi<RecommendationsResponse>(`/api/v1/recommendations${query}`);
+}
+
+export async function getRecommendationsSummary(accountId?: string) {
+  const query = accountId ? `?account_id=${accountId}` : '';
+  return fetchApi<RecommendationSummary>(`/api/v1/recommendations/summary${query}`);
+}
+
+export async function applyRecommendation(recommendationId: string, optionId: number) {
+  return fetchApi<{
+    success: boolean;
+    recommendation_id: string;
+    action_taken: string;
+    message: string;
+    can_undo: boolean;
+    undo_expires_at?: string;
+  }>(`/api/v1/recommendations/${recommendationId}/apply`, {
+    method: 'POST',
+    body: JSON.stringify({ option_id: optionId }),
+  });
+}
+
+export async function dismissRecommendation(recommendationId: string, reason?: string) {
+  return fetchApi<{
+    success: boolean;
+    recommendation_id: string;
+    message: string;
+  }>(`/api/v1/recommendations/${recommendationId}/dismiss`, {
+    method: 'POST',
+    body: JSON.stringify({ reason }),
+  });
+}
+
+export async function undoRecommendation(recommendationId: string) {
+  return fetchApi<{
+    success: boolean;
+    recommendation_id: string;
+    message: string;
+    reverted_action: string;
+  }>(`/api/v1/recommendations/${recommendationId}/undo`, {
+    method: 'POST',
+  });
+}
+
+export async function bulkApplyRecommendations(recommendationIds: string[], optionId: number) {
+  return fetchApi<{
+    success: boolean;
+    results: Array<{ id: string; success: boolean; action?: string; error?: string }>;
+    applied_count: number;
+  }>(`/api/v1/recommendations/bulk/apply?option_id=${optionId}`, {
+    method: 'POST',
+    body: JSON.stringify(recommendationIds),
+  });
+}
+
+export async function bulkDismissRecommendations(recommendationIds: string[], reason?: string) {
+  return fetchApi<{
+    success: boolean;
+    results: Array<{ id: string; success: boolean; error?: string }>;
+    dismissed_count: number;
+  }>(`/api/v1/recommendations/bulk/dismiss${reason ? `?reason=${encodeURIComponent(reason)}` : ''}`, {
+    method: 'POST',
+    body: JSON.stringify(recommendationIds),
+  });
 }
 
 // =============================================================================

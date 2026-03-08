@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .api import auth, accounts, campaigns, sync
+from .api import auth, accounts, campaigns, sync, recommendations
 
 app = FastAPI(
     title="AdsMaster API",
@@ -25,6 +25,7 @@ app.include_router(auth.router)
 app.include_router(accounts.router)
 app.include_router(campaigns.router)
 app.include_router(sync.router)
+app.include_router(recommendations.router)
 
 
 @app.get("/")
