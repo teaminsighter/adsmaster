@@ -1,8 +1,8 @@
 # AdsMaster - Current Status
 
 > Last Updated: 2026-03-08
-> Current Sprint: 4 (AI Recommendations) - Complete
-> Overall Progress: 60%
+> Current Sprint: 5 (Meta Integration) - Complete
+> Overall Progress: 80%
 
 ---
 
@@ -12,97 +12,97 @@
 |------|--------|-------|
 | Planning | ✅ Complete | 14 phases documented |
 | Sprint 1 | ✅ Complete | Scaffold done |
-| Sprint 2 | ✅ Complete | OAuth + API endpoints |
+| Sprint 2 | ✅ Complete | Google OAuth + API |
 | Sprint 3 | ✅ Complete | Frontend MVP |
 | Sprint 4 | ✅ Complete | AI Recommendations |
-| Sprint 5 | 🔲 Not Started | Meta + Full API |
+| Sprint 5 | ✅ Complete | Meta Integration |
 | Sprint 6 | 🔲 Not Started | Launch Prep |
 
 ---
 
 ## What's Done
 
-### Sprint 4: AI Recommendations (Complete)
+### Sprint 5: Meta Integration (Complete)
 
-- [x] Recommendation rules engine (5 rules)
-- [x] Rule types: pause_keyword, add_negative, increase_budget, fix_tracking, reduce_bid
-- [x] Severity levels: critical, warning, opportunity, info
-- [x] Recommendations API endpoints (list, apply, dismiss, undo)
-- [x] Bulk apply/dismiss endpoints
-- [x] AI Recommendations page with filters
-- [x] RecommendationCard component
-- [x] Apply/dismiss/undo functionality
-- [x] Confidence scores and impact estimates
+- [x] Meta Ads OAuth service (60-day tokens)
+- [x] Meta auth API endpoints (connect, callback, refresh)
+- [x] Meta campaigns API endpoints
+- [x] Meta Ads v21.0 adapter with standardized objects
+- [x] Platform selector in sidebar
+- [x] Account connection page (/settings/accounts)
+- [x] Loading state components (LoadingState, Skeleton, Empty, Error)
+- [x] API client functions for Meta
 
 **Key Files Created:**
 ```
-apps/api/app/services/recommendations/rules.py    ← 5 detection rules
-apps/api/app/services/recommendations/engine.py   ← Recommendation engine
-apps/api/app/api/recommendations.py               ← API endpoints
-apps/web/app/recommendations/page.tsx             ← Recommendations UI
-apps/web/components/recommendations/RecommendationCard.tsx
+apps/api/app/services/meta_ads_oauth.py           ← Meta OAuth service
+apps/api/app/api/meta_auth.py                     ← Auth endpoints
+apps/api/app/api/meta_campaigns.py                ← Campaign endpoints
+apps/api/app/integrations/meta_ads/adapters/base.py   ← Base adapter
+apps/api/app/integrations/meta_ads/adapters/v21.py    ← v21.0 implementation
+apps/web/app/settings/accounts/page.tsx           ← Account connection UI
+apps/web/components/ui/LoadingState.tsx           ← Loading components
 ```
 
-**Rules Implemented:**
-1. `wasting_keyword_high` - Keywords spending $50+ with 0 conversions
-2. `wasting_keyword_medium` - Keywords spending $25-50 with 0 conversions
-3. `budget_constrained` - Profitable campaigns limited by budget
-4. `tracking_broken` - Conversion tracking may be broken
-5. `low_quality_score` - Low QS keywords with high spend
+**API Endpoints Added:**
+```
+/auth/meta/connect          ← Start Meta OAuth
+/auth/meta/callback         ← OAuth callback
+/auth/meta/accounts         ← List connected accounts
+/auth/meta/refresh/{id}     ← Refresh token
+/api/v1/meta/accounts/{id}/campaigns    ← List campaigns
+/api/v1/meta/accounts/{id}/summary      ← Account summary
+```
+
+### Sprint 4: AI Recommendations (Complete)
+
+- [x] Recommendation engine (5 rules)
+- [x] Recommendations API
+- [x] AI Recommendations page
+- [x] Apply/dismiss/undo functionality
 
 ### Sprint 3: Frontend MVP (Complete)
 
-- [x] Design system (CSS variables, light/dark theme)
-- [x] Layout components (Sidebar, Header)
-- [x] Dashboard page with mock data
-- [x] MetricCard, BudgetPacing, HealthScore components
-- [x] CampaignsTable with bulk actions
-- [x] Campaigns list page
-- [x] Campaign detail page with tabs
-- [x] API client library (`lib/api.ts`)
-
-**Pages Ready:**
-```
-/                    ← Dashboard with metrics, pacing, campaigns
-/campaigns           ← Campaigns list with filters
-/campaigns/[id]      ← Campaign detail with Overview, Keywords tabs
-/recommendations     ← AI Recommendations with apply/dismiss
-```
+- [x] Design system with light/dark theme
+- [x] Dashboard, Campaigns, Campaign Detail pages
+- [x] Layout components and API client
 
 ### Sprint 2: Google Ads Integration (Complete)
 
-- [x] Google Ads OAuth endpoints
-- [x] OAuth service with token exchange
-- [x] Ad accounts API
-- [x] Campaigns API
-- [x] Sync API
-- [x] Sync worker
+- [x] Google Ads OAuth
+- [x] Accounts/Campaigns/Sync APIs
 
 ### Sprint 1: Foundation (Complete)
 
-- [x] Monorepo setup with Turbo
+- [x] Monorepo with Turbo
 - [x] Next.js 15 + FastAPI
-- [x] Google Ads adapter (Phase 13)
-- [x] Database schema (Phase 1)
+- [x] Database schema
 
 ---
 
 ## What's Next
 
-### Sprint 5: Meta Integration + Full API
+### Sprint 6: Launch Prep (Final)
 
-- Meta Ads OAuth flow
-- Meta campaigns sync
-- Wire frontend to real API
-- Connect Google Ads account flow
-- Loading states and error handling
+- [ ] Supabase production setup & migrations
+- [ ] Auth (Clerk or NextAuth)
+- [ ] Billing (Stripe integration)
+- [ ] Monitoring & alerting
+- [ ] Error tracking (Sentry)
+- [ ] Rate limiting
+- [ ] Final testing & QA
 
-### Sprint 6: Launch Prep
+---
 
-- Supabase production setup
-- Auth (Clerk/NextAuth)
-- Billing (Stripe)
-- Monitoring & alerts
+## Pages Ready
+
+```
+/                          ← Dashboard
+/campaigns                 ← Campaigns list
+/campaigns/[id]           ← Campaign detail
+/recommendations          ← AI Recommendations
+/settings/accounts        ← Connect accounts
+```
 
 ---
 
@@ -125,8 +125,8 @@ python3 -m poetry run uvicorn app.main:app --reload --port 8000
 
 | Commit | Description |
 |--------|-------------|
-| *pending* | Sprint 4: AI Recommendations engine + UI |
-| `f225f49` | Sprint 3: Frontend MVP with dashboard and campaigns |
-| `e6d9676` | Sprint 2: Google Ads OAuth + API endpoints |
-| `b3e5d34` | Add status tracking system |
-| `e606f46` | Sprint 1: Project scaffold with monorepo structure |
+| *pending* | Sprint 5: Meta Ads integration |
+| `2483fa8` | Sprint 4: AI Recommendations engine + UI |
+| `f225f49` | Sprint 3: Frontend MVP |
+| `e6d9676` | Sprint 2: Google Ads OAuth + API |
+| `e606f46` | Sprint 1: Project scaffold |

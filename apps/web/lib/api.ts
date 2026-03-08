@@ -235,9 +235,118 @@ export async function triggerSync(accountId: string, syncType: string = 'full') 
   );
 }
 
-// Auth
+// Auth - Google Ads
 export function getGoogleAdsConnectUrl(organizationId: string): string {
   return `${API_BASE_URL}/auth/google-ads/connect?organization_id=${organizationId}`;
+}
+
+// Auth - Meta Ads
+export function getMetaAdsConnectUrl(organizationId: string): string {
+  return `${API_BASE_URL}/auth/meta/connect?organization_id=${organizationId}`;
+}
+
+export async function getMetaAccounts(organizationId: string) {
+  return fetchApi<Array<{
+    account_id: string;
+    name: string;
+    status: string;
+    currency: string;
+    timezone: string;
+    business_id?: string;
+    business_name?: string;
+    amount_spent: number;
+  }>>(`/auth/meta/accounts?organization_id=${organizationId}`);
+}
+
+export async function disconnectMetaAccount(accountId: string) {
+  return fetchApi<{ success: boolean; message: string }>(
+    `/auth/meta/disconnect/${accountId}`,
+    { method: 'DELETE' }
+  );
+}
+
+// Meta Campaigns
+export interface MetaCampaign {
+  id: string;
+  name: string;
+  status: string;
+  objective: string;
+  daily_budget: number | null;
+  lifetime_budget: number | null;
+  spend: number;
+  impressions: number;
+  clicks: number;
+  conversions: number;
+  created_time: string;
+  updated_time: string;
+}
+
+export interface MetaInsights {
+  date_start: string;
+  date_stop: string;
+  spend: number;
+  impressions: number;
+  clicks: number;
+  ctr: number;
+  cpc: number;
+  cpm: number;
+  conversions: number;
+  cost_per_conversion: number | null;
+  reach: number;
+  frequency: number;
+}
+
+export async function getMetaCampaigns(accountId: string, params?: { status?: string; objective?: string }) {
+  const searchParams = new URLSearchParams();
+  if (params?.status) searchParams.set('status', params.status);
+  if (params?.objective) searchParams.set('objective', params.objective);
+  const query = searchParams.toString() ? `?${searchParams}` : '';
+  return fetchApi<{ campaigns: MetaCampaign[]; total: number }>(
+    `/api/v1/meta/accounts/${accountId}/campaigns${query}`
+  );
+}
+
+export async function getMetaCampaign(accountId: string, campaignId: string) {
+  return fetchApi<MetaCampaign>(`/api/v1/meta/accounts/${accountId}/campaigns/${campaignId}`);
+}
+
+export async function getMetaCampaignInsights(
+  accountId: string,
+  campaignId: string,
+  datePreset: string = 'last_30d'
+) {
+  return fetchApi<MetaInsights>(
+    `/api/v1/meta/accounts/${accountId}/campaigns/${campaignId}/insights?date_preset=${datePreset}`
+  );
+}
+
+export async function pauseMetaCampaign(accountId: string, campaignId: string) {
+  return fetchApi<{ success: boolean; message: string }>(
+    `/api/v1/meta/accounts/${accountId}/campaigns/${campaignId}/pause`,
+    { method: 'POST' }
+  );
+}
+
+export async function enableMetaCampaign(accountId: string, campaignId: string) {
+  return fetchApi<{ success: boolean; message: string }>(
+    `/api/v1/meta/accounts/${accountId}/campaigns/${campaignId}/enable`,
+    { method: 'POST' }
+  );
+}
+
+export async function getMetaAccountSummary(accountId: string) {
+  return fetchApi<{
+    account_id: string;
+    total_campaigns: number;
+    active_campaigns: number;
+    total_spend: number;
+    total_impressions: number;
+    total_clicks: number;
+    total_conversions: number;
+    avg_ctr: number;
+    avg_cpc: number;
+    cost_per_conversion: number | null;
+  }>(`/api/v1/meta/accounts/${accountId}/summary`);
 }
 
 // Recommendations
