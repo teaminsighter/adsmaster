@@ -1,8 +1,8 @@
 # AdsMaster - Current Status
 
 > Last Updated: 2026-03-08
-> Current Sprint: 2 (Google Ads Integration)
-> Overall Progress: 30%
+> Current Sprint: 3 (Frontend MVP)
+> Overall Progress: 45%
 
 ---
 
@@ -12,8 +12,8 @@
 |------|--------|-------|
 | Planning | ✅ Complete | 14 phases documented |
 | Sprint 1 | ✅ Complete | Scaffold done |
-| Sprint 2 | 🟡 In Progress | OAuth + API endpoints done |
-| Sprint 3 | 🔲 Not Started | Frontend MVP |
+| Sprint 2 | ✅ Complete | OAuth + API endpoints |
+| Sprint 3 | 🟡 In Progress | Frontend MVP |
 | Sprint 4 | 🔲 Not Started | AI Recommendations |
 | Sprint 5 | 🔲 Not Started | Meta + Full API |
 | Sprint 6 | 🔲 Not Started | Launch Prep |
@@ -22,104 +22,87 @@
 
 ## What's Done
 
-### Sprint 2: Google Ads Integration (In Progress)
+### Sprint 3: Frontend MVP (In Progress)
 
-- [x] Google Ads OAuth endpoints (`/auth/google-ads/connect`, `/callback`)
-- [x] OAuth service with token exchange and refresh
-- [x] Ad accounts API (`/accounts`, `/accounts/{id}`, `/accounts/{id}/stats`)
-- [x] Campaigns API (`/campaigns`, metrics, pause/enable, PMax breakdown)
-- [x] Sync API (`/sync/trigger`, `/sync/status`, `/sync/logs`)
-- [x] Sync worker (background task for data sync)
-- [ ] Create Supabase project and run migration
-- [ ] Test end-to-end: Connect account → see campaigns
+- [x] Design system (CSS variables, light/dark theme)
+- [x] Layout components (Sidebar, Header)
+- [x] Dashboard page with mock data
+- [x] MetricCard, BudgetPacing, HealthScore components
+- [x] CampaignsTable with bulk actions
+- [x] Campaigns list page
+- [x] Campaign detail page with tabs
+- [x] API client library (`lib/api.ts`)
+- [ ] Wire up to real API data
+- [ ] Connect Google Ads account flow
 
 **Key Files Created:**
 ```
-apps/api/app/api/auth.py           ← OAuth endpoints
-apps/api/app/api/accounts.py       ← Account CRUD
-apps/api/app/api/campaigns.py      ← Campaign operations
-apps/api/app/api/sync.py           ← Sync triggers
-apps/api/app/services/google_ads_oauth.py
-apps/api/app/services/supabase_client.py
-apps/api/app/workers/sync_worker.py
+apps/web/app/globals.css              ← Full design system
+apps/web/app/page.tsx                 ← Dashboard
+apps/web/app/campaigns/page.tsx       ← Campaigns list
+apps/web/app/campaigns/[id]/page.tsx  ← Campaign detail
+apps/web/components/layout/Sidebar.tsx
+apps/web/components/layout/Header.tsx
+apps/web/components/dashboard/MetricCard.tsx
+apps/web/components/dashboard/BudgetPacing.tsx
+apps/web/components/dashboard/HealthScore.tsx
+apps/web/components/dashboard/CampaignsTable.tsx
+apps/web/lib/api.ts                   ← API client
 ```
 
-**API Endpoints Ready:**
+**Pages Ready:**
 ```
-GET  /auth/google-ads/connect     ← Start OAuth flow
-GET  /auth/google-ads/callback    ← OAuth callback
-POST /auth/google-ads/refresh/{account_id}
-
-GET  /accounts?organization_id=X
-GET  /accounts/{account_id}
-GET  /accounts/{account_id}/stats
-DELETE /accounts/{account_id}     ← Disconnect
-
-GET  /accounts/{id}/campaigns
-GET  /accounts/{id}/campaigns/{campaign_id}
-GET  /accounts/{id}/campaigns/{campaign_id}/metrics
-GET  /accounts/{id}/campaigns/{campaign_id}/pmax-breakdown
-POST /accounts/{id}/campaigns/{campaign_id}/pause
-POST /accounts/{id}/campaigns/{campaign_id}/enable
-
-GET  /sync/status/{account_id}
-POST /sync/trigger/{account_id}
-GET  /sync/logs/{account_id}
+/                    ← Dashboard with metrics, pacing, campaigns
+/campaigns           ← Campaigns list with filters
+/campaigns/[id]      ← Campaign detail with Overview, Keywords tabs
 ```
 
-### Sprint 1: Foundation (Completed 2026-03-08)
+### Sprint 2: Google Ads Integration (Complete)
+
+- [x] Google Ads OAuth endpoints
+- [x] OAuth service with token exchange
+- [x] Ad accounts API
+- [x] Campaigns API
+- [x] Sync API
+- [x] Sync worker
+
+### Sprint 1: Foundation (Complete)
 
 - [x] Monorepo setup with Turbo
-- [x] Next.js 15 app (`apps/web`)
-- [x] FastAPI backend (`apps/api`)
-- [x] Google Ads adapter base interface (Phase 13)
-- [x] Database schema - 15 core tables (Phase 1)
-- [x] Configuration and env setup
+- [x] Next.js 15 + FastAPI
+- [x] Google Ads adapter (Phase 13)
+- [x] Database schema (Phase 1)
 
 ---
 
 ## What's Next
 
-### To Complete Sprint 2:
+### To Complete Sprint 3:
 
-1. Create Supabase project at supabase.com
-2. Copy connection strings to `.env`
-3. Run migration: `npx supabase db push`
-4. Get Google Ads API credentials
-5. Test OAuth flow end-to-end
+1. Run frontend: `cd apps/web && npm run dev`
+2. Test UI at http://localhost:3000
+3. Wire dashboard to real API when backend is running
+4. Add loading states and error handling
 
-### Sprint 3: Frontend MVP
+### Sprint 4: AI Recommendations
 
-- Build dashboard with real data
-- Campaign list + detail views
-- Design system components
-
----
-
-## Blockers / Issues
-
-| Issue | Status | Notes |
-|-------|--------|-------|
-| Need Supabase project | Pending | User needs to create |
-| Need Google Ads credentials | Pending | Developer token, OAuth client |
+- Build recommendation engine
+- First 5 AI rules
+- Apply/dismiss/undo flow
 
 ---
 
 ## Commands to Run
 
 ```bash
-# Start frontend
+# Start frontend (Sprint 3)
 cd apps/web && npm run dev
+# Open http://localhost:3000
 
-# Start backend
+# Start backend (Sprint 2)
 cd apps/api && python3 -m poetry install
-cd apps/api && python3 -m poetry run uvicorn app.main:app --reload --port 8000
-
-# View API docs
-open http://localhost:8000/docs
-
-# Run database migration
-npx supabase db push
+python3 -m poetry run uvicorn app.main:app --reload --port 8000
+# API docs at http://localhost:8000/docs
 ```
 
 ---
@@ -128,8 +111,7 @@ npx supabase db push
 
 | Commit | Description |
 |--------|-------------|
-| *pending* | Sprint 2: Google Ads OAuth + API endpoints |
+| *pending* | Sprint 3: Frontend MVP with dashboard and campaigns |
+| `e6d9676` | Sprint 2: Google Ads OAuth + API endpoints |
 | `b3e5d34` | Add status tracking system |
 | `e606f46` | Sprint 1: Project scaffold with monorepo structure |
-| `422ff93` | Add BUILD-ORDER.md - 14 phases → 6 sprints roadmap |
-| `75da6a4` | Add Phase 14: Critical Pre-Launch Fixes |
