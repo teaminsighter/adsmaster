@@ -32,6 +32,7 @@
       --chart-1: #10B981;
       --chart-2: #3B82F6;
       --chart-3: #8B5CF6;
+      --chart-4: #F59E0B;
     }
 
     /* Light Theme (Default) */
@@ -54,6 +55,7 @@
       --primary-light: #ECFDF5;
       --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
       --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
     }
 
     /* Dark Theme */
@@ -76,6 +78,7 @@
       --primary-light: rgba(16, 185, 129, 0.1);
       --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
       --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5);
     }
 
     /* ========================================
@@ -136,16 +139,11 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 24px;
+      margin-bottom: 16px;
     }
 
-    .page-title {
-      font-size: 22px;
-      font-weight: 600;
-      color: var(--text-primary);
-    }
-
-    .page-actions { display: flex; gap: 8px; }
+    .page-title { font-size: 22px; font-weight: 600; }
+    .page-actions { display: flex; gap: 8px; align-items: center; }
 
     /* Buttons */
     .btn {
@@ -163,22 +161,14 @@
       border: none;
     }
 
-    .btn-primary {
-      background: var(--primary);
-      color: var(--text-inverse);
-    }
-
+    .btn-primary { background: var(--primary); color: var(--text-inverse); }
     .btn-primary:hover { background: var(--primary-hover); }
-
-    .btn-secondary {
-      background: transparent;
-      color: var(--text-primary);
-      border: 1px solid var(--border-strong);
-    }
-
+    .btn-secondary { background: transparent; color: var(--text-primary); border: 1px solid var(--border-strong); }
     .btn-secondary:hover { background: var(--surface-hover); }
-
+    .btn-ghost { background: transparent; color: var(--text-secondary); border: none; }
+    .btn-ghost:hover { background: var(--surface-hover); color: var(--text-primary); }
     .btn-sm { height: 28px; padding: 0 12px; font-size: 12px; }
+    .btn-xs { height: 24px; padding: 0 8px; font-size: 11px; }
 
     /* Filter Select */
     .filter-select {
@@ -206,16 +196,153 @@
       margin-bottom: 12px;
     }
 
-    .card-title {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text-primary);
+    .card-title { font-size: 13px; font-weight: 600; }
+
+    /* ========================================
+       AI SAVINGS BANNER (NEW)
+       ======================================== */
+    .ai-savings-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: linear-gradient(135deg, var(--primary-light) 0%, rgba(59, 130, 246, 0.1) 100%);
+      border: 1px solid var(--primary);
+      border-radius: 8px;
+      margin-bottom: 16px;
     }
 
-    /* Metric Cards */
+    .ai-savings-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .ai-savings-icon {
+      width: 40px;
+      height: 40px;
+      background: var(--primary);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .ai-savings-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .ai-savings-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    /* ========================================
+       BUDGET PACING BAR (NEW)
+       ======================================== */
+    .budget-pacing {
+      background: var(--surface-card);
+      border: 1px solid var(--border-default);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 24px;
+    }
+
+    .budget-pacing.warning {
+      border-color: var(--warning);
+      background: rgba(245, 158, 11, 0.05);
+    }
+
+    .budget-pacing-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+
+    .budget-pacing-title {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .budget-pacing-alert {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: rgba(245, 158, 11, 0.15);
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--warning);
+    }
+
+    .budget-pacing-stats {
+      display: flex;
+      gap: 32px;
+      margin-bottom: 12px;
+    }
+
+    .budget-pacing-stat {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .budget-pacing-stat-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .budget-pacing-stat-label {
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .budget-pacing-bar {
+      height: 12px;
+      background: var(--bg-tertiary);
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .budget-pacing-fill {
+      height: 100%;
+      border-radius: 6px;
+      transition: width 0.3s ease;
+    }
+
+    .budget-pacing-fill.on-track { background: var(--success); }
+    .budget-pacing-fill.fast { background: var(--warning); }
+    .budget-pacing-fill.critical { background: var(--error); }
+
+    .budget-pacing-marker {
+      position: absolute;
+      top: 0;
+      height: 100%;
+      width: 2px;
+      background: var(--text-primary);
+    }
+
+    .budget-pacing-footer {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 8px;
+      font-size: 11px;
+      color: var(--text-tertiary);
+    }
+
+    /* ========================================
+       METRIC CARDS WITH BENCHMARKS
+       ======================================== */
     .metrics-row {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
       gap: 16px;
       margin-bottom: 24px;
     }
@@ -227,17 +354,12 @@
       padding: 16px;
     }
 
-    .metric-label {
-      font-size: 12px;
-      color: var(--text-secondary);
-      margin-bottom: 4px;
-    }
+    .metric-label { font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
 
     .metric-value {
       font-family: 'JetBrains Mono', monospace;
       font-size: 24px;
       font-weight: 700;
-      color: var(--text-primary);
       margin-bottom: 4px;
     }
 
@@ -247,42 +369,29 @@
       display: flex;
       align-items: center;
       gap: 4px;
+      margin-bottom: 8px;
     }
 
     .metric-change.up { color: var(--success); }
     .metric-change.down { color: var(--error); }
 
-    /* Badges */
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 2px 8px;
-      border-radius: 4px;
+    .metric-benchmark {
       font-size: 11px;
-      font-weight: 500;
+      color: var(--text-tertiary);
+      padding-top: 8px;
+      border-top: 1px solid var(--border-default);
     }
 
-    .badge-active { background: var(--primary-light); color: var(--primary); }
-    .badge-paused { background: var(--bg-tertiary); color: var(--text-secondary); }
-    .badge-learning { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
-    .badge-error { background: rgba(239, 68, 68, 0.1); color: var(--error); }
-    .badge-critical { background: var(--error); color: white; }
-    .badge-opportunity { background: var(--opportunity); color: white; }
-
-    .status-dot { width: 6px; height: 6px; border-radius: 50%; }
-    .status-dot.active { background: var(--success); }
-    .status-dot.paused { background: var(--text-tertiary); }
-    .status-dot.learning { background: var(--warning); }
-
-    /* Grid Layout */
-    .grid-2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 24px;
+    .metric-benchmark strong {
+      color: var(--text-secondary);
     }
 
-    /* Charts */
+    .metric-benchmark .above { color: var(--error); }
+    .metric-benchmark .below { color: var(--success); }
+
+    /* ========================================
+       CHART WITH TOGGLES
+       ======================================== */
     .chart-container {
       background: var(--surface-card);
       border: 1px solid var(--border-default);
@@ -299,6 +408,36 @@
 
     .chart-title { font-size: 14px; font-weight: 600; }
 
+    .chart-toggles {
+      display: flex;
+      gap: 4px;
+      padding: 3px;
+      background: var(--bg-tertiary);
+      border-radius: 6px;
+    }
+
+    .chart-toggle {
+      padding: 4px 10px;
+      border: none;
+      background: transparent;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .chart-toggle.active {
+      background: var(--surface-card);
+      color: var(--text-primary);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .chart-toggle:hover:not(.active) {
+      color: var(--text-primary);
+    }
+
     .chart-area {
       height: 200px;
       position: relative;
@@ -310,7 +449,29 @@
     .chart-svg-line { fill: none; stroke: var(--primary); stroke-width: 2; }
     .chart-svg-area { fill: var(--primary); opacity: 0.1; }
 
-    /* Recommendation Cards */
+    .chart-legend {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      margin-top: 12px;
+      font-size: 11px;
+    }
+
+    .chart-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .chart-legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    /* ========================================
+       RECOMMENDATIONS WITH CONFIDENCE
+       ======================================== */
     .recommendation-card {
       background: var(--surface-card);
       border: 1px solid var(--border-default);
@@ -320,11 +481,46 @@
     }
 
     .recommendation-card.critical { border-left: 4px solid var(--error); }
+    .recommendation-card.warning { border-left: 4px solid var(--warning); }
     .recommendation-card.opportunity { border-left: 4px solid var(--opportunity); }
 
-    .recommendation-body { padding: 16px; }
+    .recommendation-body { padding: 12px 16px; }
 
-    /* Health Score */
+    .recommendation-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .recommendation-confidence {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      background: var(--bg-tertiary);
+      border-radius: 4px;
+      font-size: 10px;
+      color: var(--text-secondary);
+    }
+
+    .confidence-bar {
+      width: 40px;
+      height: 4px;
+      background: var(--border-default);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .confidence-fill {
+      height: 100%;
+      background: var(--primary);
+      border-radius: 2px;
+    }
+
+    /* ========================================
+       HEALTH SCORE WITH PERCENTAGES
+       ======================================== */
     .health-score {
       display: flex;
       align-items: center;
@@ -363,34 +559,84 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 8px 0;
-      border-bottom: 1px solid var(--border-default);
+      padding: 10px 12px;
+      background: var(--bg-secondary);
+      border-radius: 6px;
     }
 
     .health-item-label { font-size: 12px; color: var(--text-secondary); }
-    .health-item-dots { display: flex; gap: 3px; }
 
-    .health-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--border-default);
+    .health-item-value {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      font-weight: 600;
     }
 
-    .health-dot.filled { background: var(--primary); }
+    .health-item-value.good { color: var(--success); }
+    .health-item-value.warning { color: var(--warning); }
+    .health-item-value.bad { color: var(--error); }
 
-    /* Platform Bars */
-    .platform-bar { flex: 1; }
-    .platform-bar-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
-    .platform-bar-label { font-size: 12px; color: var(--text-secondary); }
-    .platform-bar-value { font-size: 12px; font-weight: 600; color: var(--text-primary); }
-    .platform-bar-track { height: 8px; background: var(--bg-tertiary); border-radius: 4px; overflow: hidden; }
-    .platform-bar-fill { height: 100%; border-radius: 4px; }
-    .platform-bar-fill.google { background: #4285F4; }
-    .platform-bar-fill.meta { background: #1877F2; }
-    .platform-bar-fill.tiktok { background: #000000; }
+    /* ========================================
+       PMAX NETWORK BREAKDOWN (NEW)
+       ======================================== */
+    .pmax-breakdown {
+      margin-top: 16px;
+      padding: 12px;
+      background: var(--bg-secondary);
+      border-radius: 6px;
+    }
 
-    /* Tables */
+    .pmax-breakdown-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-bottom: 12px;
+    }
+
+    .pmax-breakdown-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    .pmax-breakdown-item {
+      text-align: center;
+      padding: 8px;
+      background: var(--surface-card);
+      border-radius: 4px;
+    }
+
+    .pmax-breakdown-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .pmax-breakdown-label {
+      font-size: 10px;
+      color: var(--text-tertiary);
+    }
+
+    /* ========================================
+       ENHANCED TABLE
+       ======================================== */
+    .table-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .table-actions {
+      display: flex;
+      gap: 8px;
+    }
+
     .table-container {
       background: var(--surface-card);
       border: 1px solid var(--border-default);
@@ -413,6 +659,7 @@
     }
 
     .table th.right, .table td.right { text-align: right; }
+    .table th.center, .table td.center { text-align: center; }
 
     .table td {
       padding: 10px 12px;
@@ -422,6 +669,7 @@
 
     .table tr:last-child td { border-bottom: none; }
     .table tr:hover td { background: var(--surface-hover); }
+    .table tr.selected td { background: var(--primary-light); }
 
     .campaign-name { display: flex; align-items: center; gap: 8px; }
 
@@ -441,9 +689,216 @@
     .campaign-subtext { font-size: 11px; color: var(--text-tertiary); }
 
     .table-value { font-family: 'JetBrains Mono', monospace; font-size: 12px; }
-    .table-change { font-size: 11px; margin-left: 4px; }
+    .table-change { font-size: 10px; margin-left: 4px; }
     .table-change.up { color: var(--success); }
     .table-change.down { color: var(--error); }
+
+    /* Pacing in table */
+    .pacing-cell {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .pacing-bar {
+      width: 50px;
+      height: 6px;
+      background: var(--bg-tertiary);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .pacing-fill {
+      height: 100%;
+      border-radius: 3px;
+    }
+
+    .pacing-fill.good { background: var(--success); }
+    .pacing-fill.warning { background: var(--warning); }
+    .pacing-fill.danger { background: var(--error); }
+
+    /* Row actions menu */
+    .row-actions {
+      position: relative;
+    }
+
+    .row-actions-btn {
+      width: 28px;
+      height: 28px;
+      border: none;
+      background: transparent;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      color: var(--text-tertiary);
+    }
+
+    .row-actions-btn:hover {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+    }
+
+    .row-actions-menu {
+      position: absolute;
+      right: 0;
+      top: 100%;
+      min-width: 160px;
+      background: var(--surface-card);
+      border: 1px solid var(--border-default);
+      border-radius: 8px;
+      box-shadow: var(--shadow-lg);
+      z-index: 50;
+      display: none;
+    }
+
+    .row-actions-menu.active {
+      display: block;
+    }
+
+    .row-actions-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      font-size: 13px;
+      color: var(--text-primary);
+      cursor: pointer;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+    }
+
+    .row-actions-menu-item:hover {
+      background: var(--surface-hover);
+    }
+
+    .row-actions-menu-item.danger {
+      color: var(--error);
+    }
+
+    .row-actions-menu-divider {
+      height: 1px;
+      background: var(--border-default);
+      margin: 4px 0;
+    }
+
+    /* Bulk actions bar */
+    .bulk-actions {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 20px;
+      background: var(--text-primary);
+      color: var(--bg-primary);
+      border-radius: 12px;
+      box-shadow: var(--shadow-lg);
+      z-index: 50;
+      display: none;
+    }
+
+    .bulk-actions.active {
+      display: flex;
+    }
+
+    .bulk-actions-count {
+      font-weight: 600;
+      padding-right: 12px;
+      border-right: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .bulk-actions-btn {
+      padding: 6px 12px;
+      border: none;
+      background: rgba(255,255,255,0.1);
+      color: inherit;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .bulk-actions-btn:hover {
+      background: rgba(255,255,255,0.2);
+    }
+
+    /* Table footer */
+    .table-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: var(--bg-secondary);
+      border-top: 1px solid var(--border-default);
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .table-pagination {
+      display: flex;
+      gap: 4px;
+    }
+
+    .table-pagination-btn {
+      width: 28px;
+      height: 28px;
+      border: 1px solid var(--border-default);
+      background: var(--surface-card);
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      color: var(--text-primary);
+    }
+
+    .table-pagination-btn.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: var(--text-inverse);
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .badge-active { background: var(--primary-light); color: var(--primary); }
+    .badge-paused { background: var(--bg-tertiary); color: var(--text-secondary); }
+    .badge-learning { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+    .badge-error { background: rgba(239, 68, 68, 0.1); color: var(--error); }
+    .badge-critical { background: var(--error); color: white; }
+    .badge-warning { background: var(--warning); color: white; }
+    .badge-opportunity { background: var(--opportunity); color: white; }
+
+    .status-dot { width: 6px; height: 6px; border-radius: 50%; }
+    .status-dot.active { background: var(--success); }
+    .status-dot.paused { background: var(--text-tertiary); }
+    .status-dot.learning { background: var(--warning); }
+
+    /* Platform Bars */
+    .platform-bar { margin-bottom: 12px; }
+    .platform-bar:last-child { margin-bottom: 0; }
+    .platform-bar-header { display: flex; justify-content: space-between; margin-bottom: 6px; }
+    .platform-bar-label { font-size: 12px; color: var(--text-secondary); }
+    .platform-bar-value { font-size: 12px; font-weight: 600; color: var(--text-primary); }
+    .platform-bar-track { height: 8px; background: var(--bg-tertiary); border-radius: 4px; overflow: hidden; }
+    .platform-bar-fill { height: 100%; border-radius: 4px; }
+    .platform-bar-fill.google { background: #4285F4; }
+    .platform-bar-fill.meta { background: #1877F2; }
+    .platform-bar-fill.tiktok { background: #000000; }
+
+    /* Grid Layout */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; }
   </style>
 </head>
 <body>
@@ -453,7 +908,7 @@
     <button class="theme-btn" onclick="setTheme('dark')">🌙 Dark</button>
   </div>
 
-  <!-- Dashboard View -->
+  <!-- Dashboard Header -->
   <div class="page-header">
     <h1 class="page-title">Dashboard</h1>
     <div class="page-actions">
@@ -461,40 +916,117 @@
         <option>Last 7 days</option>
         <option>Last 30 days</option>
         <option>This month</option>
+        <option>Custom Range...</option>
+      </select>
+      <select class="filter-select">
+        <option>All Accounts</option>
+        <option>Acme Corp - Google</option>
+        <option>Acme Corp - Meta</option>
       </select>
       <button class="btn btn-secondary">↻ Refresh</button>
     </div>
   </div>
 
-  <!-- Metrics Row -->
+  <!-- AI Savings Banner (NEW) -->
+  <div class="ai-savings-banner">
+    <div class="ai-savings-left">
+      <div class="ai-savings-icon">🤖</div>
+      <div>
+        <div class="ai-savings-value">$1,247</div>
+        <div class="ai-savings-label">saved by AI this month</div>
+      </div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 16px;">
+      <div style="text-align: right;">
+        <div style="font-size: 12px; color: var(--text-secondary);">12 recommendations applied</div>
+        <div style="font-size: 12px; color: var(--text-secondary);">3 keywords paused • 2 budgets optimized</div>
+      </div>
+      <button class="btn btn-sm btn-secondary">View History</button>
+    </div>
+  </div>
+
+  <!-- Budget Pacing Bar (NEW) -->
+  <div class="budget-pacing warning">
+    <div class="budget-pacing-header">
+      <div class="budget-pacing-title">Monthly Budget Pacing</div>
+      <div class="budget-pacing-alert">⚠️ PACING FAST — on track to overspend by $12,400</div>
+    </div>
+    <div class="budget-pacing-stats">
+      <div class="budget-pacing-stat">
+        <div class="budget-pacing-stat-value mono">$45,678</div>
+        <div class="budget-pacing-stat-label">Spent (57%)</div>
+      </div>
+      <div class="budget-pacing-stat">
+        <div class="budget-pacing-stat-value mono">$80,000</div>
+        <div class="budget-pacing-stat-label">Monthly Budget</div>
+      </div>
+      <div class="budget-pacing-stat">
+        <div class="budget-pacing-stat-value mono">Day 14</div>
+        <div class="budget-pacing-stat-label">of 31 (45% elapsed)</div>
+      </div>
+      <div class="budget-pacing-stat">
+        <div class="budget-pacing-stat-value mono" style="color: var(--warning);">$92,400</div>
+        <div class="budget-pacing-stat-label">Projected spend</div>
+      </div>
+    </div>
+    <div class="budget-pacing-bar">
+      <div class="budget-pacing-fill fast" style="width: 57%;"></div>
+      <div class="budget-pacing-marker" style="left: 45%;" title="Expected pace"></div>
+    </div>
+    <div class="budget-pacing-footer">
+      <span>$0</span>
+      <span>Expected: $36,000 (45%)</span>
+      <span>$80,000</span>
+    </div>
+  </div>
+
+  <!-- Metrics Row with Benchmarks -->
   <div class="metrics-row">
     <div class="metric-card">
       <div class="metric-label">Total Spend</div>
       <div class="metric-value">$45,678</div>
       <div class="metric-change up">▲ 12.3% vs last period</div>
+      <div class="metric-benchmark">
+        <strong>Budget:</strong> $80,000 · <span class="above">57% used</span>
+      </div>
     </div>
     <div class="metric-card">
       <div class="metric-label">Conversions</div>
       <div class="metric-value">1,234</div>
       <div class="metric-change up">▲ 8.5% vs last period</div>
+      <div class="metric-benchmark">
+        <strong>Target:</strong> 1,500 · <span class="above">82% achieved</span>
+      </div>
     </div>
     <div class="metric-card">
       <div class="metric-label">Avg CPA</div>
       <div class="metric-value">$37.02</div>
-      <div class="metric-change up">▼ 15.2% vs last period</div>
+      <div class="metric-change" style="color: var(--success);">▼ 15.2% vs last period</div>
+      <div class="metric-benchmark">
+        <strong>Industry avg:</strong> $28.10 · <span class="above">▲32% above</span>
+      </div>
     </div>
     <div class="metric-card">
       <div class="metric-label">ROAS</div>
       <div class="metric-value">3.2x</div>
       <div class="metric-change up">▲ 5.1% vs last period</div>
+      <div class="metric-benchmark">
+        <strong>Industry avg:</strong> 2.8x · <span class="below">▼14% better</span>
+      </div>
     </div>
   </div>
 
   <div class="grid-2">
-    <!-- Spend Chart -->
+    <!-- Spend Chart with Toggles -->
     <div class="chart-container">
       <div class="chart-header">
-        <span class="chart-title">Spend Over Time</span>
+        <span class="chart-title">Performance Over Time</span>
+        <div class="chart-toggles">
+          <button class="chart-toggle active" onclick="toggleChart(this)">Spend</button>
+          <button class="chart-toggle" onclick="toggleChart(this)">Revenue</button>
+          <button class="chart-toggle" onclick="toggleChart(this)">Conv</button>
+          <button class="chart-toggle" onclick="toggleChart(this)">ROAS</button>
+        </div>
       </div>
       <div class="chart-area">
         <svg width="100%" height="100%" viewBox="0 0 400 180" preserveAspectRatio="none">
@@ -502,43 +1034,91 @@
           <path class="chart-svg-line" d="M0,140 Q50,120 100,100 T200,80 T300,60 T400,40"/>
         </svg>
       </div>
+      <div class="chart-legend">
+        <div class="chart-legend-item">
+          <div class="chart-legend-dot" style="background: var(--chart-1);"></div>
+          <span>Spend</span>
+        </div>
+        <div class="chart-legend-item">
+          <div class="chart-legend-dot" style="background: var(--chart-2);"></div>
+          <span>Conversions</span>
+        </div>
+      </div>
     </div>
 
-    <!-- Top Recommendations -->
+    <!-- Top Recommendations with Confidence -->
     <div class="card">
       <div class="card-header">
         <span class="card-title">Top Recommendations</span>
         <span class="badge badge-error">12</span>
       </div>
+
       <div class="recommendation-card critical">
-        <div class="recommendation-body" style="padding: 12px;">
-          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-            <span class="badge badge-critical">CRITICAL</span>
-            <span style="font-weight: 600; font-size: 13px;">3 wasting keywords detected</span>
+        <div class="recommendation-body">
+          <div class="recommendation-header">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="badge badge-critical">CRITICAL</span>
+              <span style="font-weight: 600; font-size: 13px;">3 wasting keywords detected</span>
+            </div>
+            <div class="recommendation-confidence">
+              <span>94%</span>
+              <div class="confidence-bar"><div class="confidence-fill" style="width: 94%;"></div></div>
+            </div>
+          </div>
+          <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 4px;">
+            Based on 21 days, $340 spent, 0 conversions
           </div>
           <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 8px;">
-            Potential savings: $245/mo
+            💰 Potential savings: <strong>$245/mo</strong>
           </div>
-          <button class="btn btn-primary btn-sm">View Details</button>
+          <button class="btn btn-primary btn-sm">Pause All (3)</button>
         </div>
       </div>
+
+      <div class="recommendation-card warning">
+        <div class="recommendation-body">
+          <div class="recommendation-header">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="badge badge-warning">WARNING</span>
+              <span style="font-weight: 600; font-size: 13px;">Meta Pixel not firing</span>
+            </div>
+            <div class="recommendation-confidence">
+              <span>100%</span>
+              <div class="confidence-bar"><div class="confidence-fill" style="width: 100%;"></div></div>
+            </div>
+          </div>
+          <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 8px;">
+            No events recorded in 48 hours · ~$2,400 untracked
+          </div>
+          <button class="btn btn-primary btn-sm">Fix Tracking</button>
+        </div>
+      </div>
+
       <div class="recommendation-card opportunity">
-        <div class="recommendation-body" style="padding: 12px;">
-          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-            <span class="badge badge-opportunity">OPPORTUNITY</span>
-            <span style="font-weight: 600; font-size: 13px;">Budget opportunity found</span>
+        <div class="recommendation-body">
+          <div class="recommendation-header">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="badge badge-opportunity">OPPORTUNITY</span>
+              <span style="font-weight: 600; font-size: 13px;">Budget opportunity found</span>
+            </div>
+            <div class="recommendation-confidence">
+              <span>87%</span>
+              <div class="confidence-bar"><div class="confidence-fill" style="width: 87%;"></div></div>
+            </div>
           </div>
           <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 8px;">
-            Campaign X underspending by 40%
+            Search - Brand underspending by 40% · Est. +12 conv/mo
           </div>
-          <button class="btn btn-primary btn-sm">Increase Budget</button>
+          <button class="btn btn-primary btn-sm">Increase +$50/day</button>
         </div>
       </div>
+
+      <button class="btn btn-ghost btn-sm" style="width: 100%; margin-top: 8px;">View All 12 Recommendations →</button>
     </div>
   </div>
 
   <div class="grid-2" style="margin-top: 24px;">
-    <!-- Health Score -->
+    <!-- Health Score with Percentages -->
     <div class="card">
       <div class="card-header">
         <span class="card-title">Account Health</span>
@@ -554,75 +1134,31 @@
       </div>
       <div class="health-breakdown">
         <div class="health-item">
-          <span class="health-item-label">Waste</span>
-          <div class="health-item-dots">
-            <div class="health-dot filled"></div>
-            <div class="health-dot filled"></div>
-            <div class="health-dot filled"></div>
-            <div class="health-dot filled"></div>
-            <div class="health-dot filled"></div>
-            <div class="health-dot filled"></div>
-            <div class="health-dot filled"></div>
-            <div class="health-dot filled"></div>
-            <div class="health-dot"></div>
-            <div class="health-dot"></div>
-          </div>
+          <span class="health-item-label">Waste Control</span>
+          <span class="health-item-value good">82% 🟢</span>
         </div>
         <div class="health-item">
           <span class="health-item-label">Targeting</span>
-          <div class="health-item-dots">
-            <div class="health-dot filled"></div>
-            <div class="health-dot filled"></div>
-            <div class="health-dot filled"></div>
-            <div class="health-dot filled"></div>
-            <div class="health-dot filled"></div>
-            <div class="health-dot filled"></div>
-            <div class="health-dot"></div>
-            <div class="health-dot"></div>
-            <div class="health-dot"></div>
-            <div class="health-dot"></div>
-          </div>
+          <span class="health-item-value warning">61% 🟡</span>
         </div>
         <div class="health-item">
           <span class="health-item-label">Tracking</span>
-          <div class="health-item-dots">
-            <div class="health-dot filled"></div>
-            <div class="health-dot filled"></div>
-            <div class="health-dot filled"></div>
-            <div class="health-dot filled"></div>
-            <div class="health-dot filled"></div>
-            <div class="health-dot filled"></div>
-            <div class="health-dot filled"></div>
-            <div class="health-dot filled"></div>
-            <div class="health-dot filled"></div>
-            <div class="health-dot"></div>
-          </div>
+          <span class="health-item-value good">90% 🟢</span>
         </div>
         <div class="health-item">
-          <span class="health-item-label">ROI</span>
-          <div class="health-item-dots">
-            <div class="health-dot filled"></div>
-            <div class="health-dot filled"></div>
-            <div class="health-dot filled"></div>
-            <div class="health-dot filled"></div>
-            <div class="health-dot filled"></div>
-            <div class="health-dot filled"></div>
-            <div class="health-dot filled"></div>
-            <div class="health-dot"></div>
-            <div class="health-dot"></div>
-            <div class="health-dot"></div>
-          </div>
+          <span class="health-item-label">ROI Efficiency</span>
+          <span class="health-item-value warning">70% 🟡</span>
         </div>
       </div>
     </div>
 
-    <!-- Platform Breakdown -->
+    <!-- Platform Breakdown with PMax Detail -->
     <div class="card">
       <div class="card-header">
         <span class="card-title">Spend by Platform</span>
       </div>
-      <div style="margin-top: 12px;">
-        <div class="platform-bar" style="margin-bottom: 16px;">
+      <div style="margin-top: 8px;">
+        <div class="platform-bar">
           <div class="platform-bar-header">
             <span class="platform-bar-label">Google Ads</span>
             <span class="platform-bar-value">$28,320 (62%)</span>
@@ -631,7 +1167,7 @@
             <div class="platform-bar-fill google" style="width: 62%;"></div>
           </div>
         </div>
-        <div class="platform-bar" style="margin-bottom: 16px;">
+        <div class="platform-bar">
           <div class="platform-bar-header">
             <span class="platform-bar-label">Meta</span>
             <span class="platform-bar-value">$16,987 (35%)</span>
@@ -650,122 +1186,276 @@
           </div>
         </div>
       </div>
+
+      <!-- PMax Network Breakdown (NEW) -->
+      <div class="pmax-breakdown">
+        <div class="pmax-breakdown-title">⚡ PMax Network Breakdown ($2,567 total)</div>
+        <div class="pmax-breakdown-grid">
+          <div class="pmax-breakdown-item">
+            <div class="pmax-breakdown-value">$1,745</div>
+            <div class="pmax-breakdown-label">Search (68%)</div>
+          </div>
+          <div class="pmax-breakdown-item">
+            <div class="pmax-breakdown-value">$412</div>
+            <div class="pmax-breakdown-label">YouTube (16%)</div>
+          </div>
+          <div class="pmax-breakdown-item">
+            <div class="pmax-breakdown-value">$308</div>
+            <div class="pmax-breakdown-label">Display (12%)</div>
+          </div>
+          <div class="pmax-breakdown-item">
+            <div class="pmax-breakdown-value">$102</div>
+            <div class="pmax-breakdown-label">Discovery (4%)</div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- Campaigns Table -->
+  <!-- Enhanced Campaigns Table -->
   <div style="margin-top: 24px;">
-    <div class="card-header" style="margin-bottom: 12px;">
+    <div class="table-header">
       <span class="card-title">Campaign Performance</span>
+      <div class="table-actions">
+        <button class="btn btn-ghost btn-sm">Filter ▾</button>
+        <button class="btn btn-ghost btn-sm">Columns ⚙️</button>
+        <button class="btn btn-primary btn-sm">+ New Campaign</button>
+      </div>
     </div>
     <div class="table-container">
       <table class="table">
         <thead>
           <tr>
-            <th style="width: 32px;"><input type="checkbox"></th>
+            <th style="width: 32px;"><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
             <th>Campaign</th>
-            <th>Platform</th>
             <th>Status</th>
+            <th class="right">Budget</th>
+            <th class="right">Pacing</th>
             <th class="right">Spend</th>
+            <th class="right">Impr</th>
+            <th class="right">CTR</th>
             <th class="right">Conv</th>
             <th class="right">CPA</th>
             <th class="right">ROAS</th>
+            <th style="width: 40px;"></th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td><input type="checkbox"></td>
+            <td><input type="checkbox" class="row-checkbox" onchange="updateBulkActions()"></td>
             <td>
               <div class="campaign-name">
                 <div class="campaign-icon google">🔍</div>
                 <div>
                   <div>Search - Brand</div>
-                  <div class="campaign-subtext">3 ad groups</div>
+                  <div class="campaign-subtext">Google · 3 ad groups</div>
                 </div>
               </div>
             </td>
-            <td>Google</td>
             <td><span class="badge badge-active"><span class="status-dot active"></span> Active</span></td>
+            <td class="right"><span class="table-value">$100/d</span></td>
+            <td class="right">
+              <div class="pacing-cell">
+                <span class="table-value">92%</span>
+                <div class="pacing-bar"><div class="pacing-fill good" style="width: 92%;"></div></div>
+              </div>
+            </td>
             <td class="right"><span class="table-value">$1,234</span><span class="table-change up">▲12%</span></td>
+            <td class="right"><span class="table-value">45.2K</span></td>
+            <td class="right"><span class="table-value">5.18%</span></td>
             <td class="right"><span class="table-value">45</span></td>
             <td class="right"><span class="table-value">$27.42</span></td>
             <td class="right"><span class="table-value">3.21x</span></td>
+            <td class="right">
+              <div class="row-actions">
+                <button class="row-actions-btn" onclick="toggleMenu(this)">⋮</button>
+                <div class="row-actions-menu">
+                  <button class="row-actions-menu-item">✏️ Edit</button>
+                  <button class="row-actions-menu-item">⏸ Pause</button>
+                  <button class="row-actions-menu-item">📋 Duplicate</button>
+                  <button class="row-actions-menu-item">📊 View Details</button>
+                  <div class="row-actions-menu-divider"></div>
+                  <button class="row-actions-menu-item danger">🗑 Delete</button>
+                </div>
+              </div>
+            </td>
           </tr>
           <tr>
-            <td><input type="checkbox"></td>
+            <td><input type="checkbox" class="row-checkbox" onchange="updateBulkActions()"></td>
             <td>
               <div class="campaign-name">
                 <div class="campaign-icon google">⚡</div>
                 <div>
                   <div>PMax - Products</div>
-                  <div class="campaign-subtext">Auto-managed</div>
+                  <div class="campaign-subtext">Google · Auto-managed</div>
                 </div>
               </div>
             </td>
-            <td>Google</td>
             <td><span class="badge badge-active"><span class="status-dot active"></span> Active</span></td>
+            <td class="right"><span class="table-value">$200/d</span></td>
+            <td class="right">
+              <div class="pacing-cell">
+                <span class="table-value" style="color: var(--warning);">118%</span>
+                <div class="pacing-bar"><div class="pacing-fill warning" style="width: 100%;"></div></div>
+              </div>
+            </td>
             <td class="right"><span class="table-value">$2,567</span><span class="table-change up">▲18%</span></td>
+            <td class="right"><span class="table-value">89.1K</span></td>
+            <td class="right"><span class="table-value">4.32%</span></td>
             <td class="right"><span class="table-value">89</span></td>
             <td class="right"><span class="table-value">$28.84</span></td>
             <td class="right"><span class="table-value">4.12x</span></td>
+            <td class="right">
+              <div class="row-actions">
+                <button class="row-actions-btn" onclick="toggleMenu(this)">⋮</button>
+                <div class="row-actions-menu">
+                  <button class="row-actions-menu-item">✏️ Edit</button>
+                  <button class="row-actions-menu-item">⏸ Pause</button>
+                  <button class="row-actions-menu-item">📋 Duplicate</button>
+                  <button class="row-actions-menu-item">📊 View Details</button>
+                  <div class="row-actions-menu-divider"></div>
+                  <button class="row-actions-menu-item danger">🗑 Delete</button>
+                </div>
+              </div>
+            </td>
           </tr>
           <tr>
-            <td><input type="checkbox"></td>
+            <td><input type="checkbox" class="row-checkbox" onchange="updateBulkActions()"></td>
             <td>
               <div class="campaign-name">
                 <div class="campaign-icon meta">📘</div>
                 <div>
                   <div>Retargeting</div>
-                  <div class="campaign-subtext">2 ad sets</div>
+                  <div class="campaign-subtext">Meta · 2 ad sets</div>
                 </div>
               </div>
             </td>
-            <td>Meta</td>
             <td><span class="badge badge-active"><span class="status-dot active"></span> Active</span></td>
+            <td class="right"><span class="table-value">$75/d</span></td>
+            <td class="right">
+              <div class="pacing-cell">
+                <span class="table-value">85%</span>
+                <div class="pacing-bar"><div class="pacing-fill good" style="width: 85%;"></div></div>
+              </div>
+            </td>
             <td class="right"><span class="table-value">$890</span><span class="table-change down">▼5%</span></td>
+            <td class="right"><span class="table-value">32.4K</span></td>
+            <td class="right"><span class="table-value">3.21%</span></td>
             <td class="right"><span class="table-value">34</span></td>
             <td class="right"><span class="table-value">$26.18</span></td>
             <td class="right"><span class="table-value">3.82x</span></td>
+            <td class="right">
+              <div class="row-actions">
+                <button class="row-actions-btn" onclick="toggleMenu(this)">⋮</button>
+                <div class="row-actions-menu">
+                  <button class="row-actions-menu-item">✏️ Edit</button>
+                  <button class="row-actions-menu-item">⏸ Pause</button>
+                  <button class="row-actions-menu-item">📋 Duplicate</button>
+                  <button class="row-actions-menu-item">📊 View Details</button>
+                  <div class="row-actions-menu-divider"></div>
+                  <button class="row-actions-menu-item danger">🗑 Delete</button>
+                </div>
+              </div>
+            </td>
           </tr>
           <tr>
-            <td><input type="checkbox"></td>
+            <td><input type="checkbox" class="row-checkbox" onchange="updateBulkActions()"></td>
             <td>
               <div class="campaign-name">
                 <div class="campaign-icon meta">📘</div>
                 <div>
                   <div>Prospecting</div>
-                  <div class="campaign-subtext">4 ad sets</div>
+                  <div class="campaign-subtext">Meta · 4 ad sets</div>
                 </div>
               </div>
             </td>
-            <td>Meta</td>
             <td><span class="badge badge-learning"><span class="status-dot learning"></span> Learning</span></td>
+            <td class="right"><span class="table-value">$150/d</span></td>
+            <td class="right">
+              <div class="pacing-cell">
+                <span class="table-value">78%</span>
+                <div class="pacing-bar"><div class="pacing-fill good" style="width: 78%;"></div></div>
+              </div>
+            </td>
             <td class="right"><span class="table-value">$1,234</span></td>
+            <td class="right"><span class="table-value">67.8K</span></td>
+            <td class="right"><span class="table-value">2.89%</span></td>
             <td class="right"><span class="table-value">23</span></td>
             <td class="right"><span class="table-value">$53.65</span></td>
             <td class="right"><span class="table-value">2.14x</span></td>
+            <td class="right">
+              <div class="row-actions">
+                <button class="row-actions-btn" onclick="toggleMenu(this)">⋮</button>
+                <div class="row-actions-menu">
+                  <button class="row-actions-menu-item">✏️ Edit</button>
+                  <button class="row-actions-menu-item">⏸ Pause</button>
+                  <button class="row-actions-menu-item">📋 Duplicate</button>
+                  <button class="row-actions-menu-item">📊 View Details</button>
+                  <div class="row-actions-menu-divider"></div>
+                  <button class="row-actions-menu-item danger">🗑 Delete</button>
+                </div>
+              </div>
+            </td>
           </tr>
           <tr>
-            <td><input type="checkbox"></td>
+            <td><input type="checkbox" class="row-checkbox" onchange="updateBulkActions()"></td>
             <td>
               <div class="campaign-name">
                 <div class="campaign-icon google">🔍</div>
                 <div>
                   <div>Search - Generic</div>
-                  <div class="campaign-subtext">5 ad groups</div>
+                  <div class="campaign-subtext">Google · 5 ad groups</div>
                 </div>
               </div>
             </td>
-            <td>Google</td>
             <td><span class="badge badge-paused"><span class="status-dot paused"></span> Paused</span></td>
+            <td class="right"><span class="table-value">$50/d</span></td>
+            <td class="right">
+              <div class="pacing-cell">
+                <span class="table-value" style="color: var(--text-tertiary);">—</span>
+              </div>
+            </td>
             <td class="right"><span class="table-value">$0</span></td>
             <td class="right"><span class="table-value">0</span></td>
             <td class="right"><span class="table-value">—</span></td>
+            <td class="right"><span class="table-value">0</span></td>
             <td class="right"><span class="table-value">—</span></td>
+            <td class="right"><span class="table-value">—</span></td>
+            <td class="right">
+              <div class="row-actions">
+                <button class="row-actions-btn" onclick="toggleMenu(this)">⋮</button>
+                <div class="row-actions-menu">
+                  <button class="row-actions-menu-item">✏️ Edit</button>
+                  <button class="row-actions-menu-item">▶️ Enable</button>
+                  <button class="row-actions-menu-item">📋 Duplicate</button>
+                  <button class="row-actions-menu-item">📊 View Details</button>
+                  <div class="row-actions-menu-divider"></div>
+                  <button class="row-actions-menu-item danger">🗑 Delete</button>
+                </div>
+              </div>
+            </td>
           </tr>
         </tbody>
       </table>
+      <div class="table-footer">
+        <span>Showing 5 of 23 campaigns</span>
+        <div class="table-pagination">
+          <button class="table-pagination-btn active">1</button>
+          <button class="table-pagination-btn">2</button>
+          <button class="table-pagination-btn">3</button>
+          <button class="table-pagination-btn">→</button>
+        </div>
+      </div>
     </div>
+  </div>
+
+  <!-- Bulk Actions Bar (shows when rows selected) -->
+  <div class="bulk-actions" id="bulkActionsBar">
+    <span class="bulk-actions-count"><span id="selectedCount">0</span> selected</span>
+    <button class="bulk-actions-btn">⏸ Pause</button>
+    <button class="bulk-actions-btn">▶️ Enable</button>
+    <button class="bulk-actions-btn">💰 Change Budget</button>
+    <button class="bulk-actions-btn">📥 Export</button>
   </div>
 
   <script>
@@ -773,6 +1463,42 @@
       document.body.setAttribute('data-theme', theme);
       document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
       event.target.classList.add('active');
+    }
+
+    function toggleChart(btn) {
+      document.querySelectorAll('.chart-toggle').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    function toggleMenu(btn) {
+      // Close all other menus first
+      document.querySelectorAll('.row-actions-menu').forEach(m => m.classList.remove('active'));
+      btn.nextElementSibling.classList.toggle('active');
+    }
+
+    // Close menus when clicking outside
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.row-actions')) {
+        document.querySelectorAll('.row-actions-menu').forEach(m => m.classList.remove('active'));
+      }
+    });
+
+    function toggleSelectAll() {
+      const checked = document.getElementById('selectAll').checked;
+      document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = checked);
+      updateBulkActions();
+    }
+
+    function updateBulkActions() {
+      const checked = document.querySelectorAll('.row-checkbox:checked').length;
+      const bar = document.getElementById('bulkActionsBar');
+      document.getElementById('selectedCount').textContent = checked;
+
+      if (checked > 0) {
+        bar.classList.add('active');
+      } else {
+        bar.classList.remove('active');
+      }
     }
   </script>
 </body>
