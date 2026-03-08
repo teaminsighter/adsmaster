@@ -1,10 +1,14 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from .api import auth, accounts, campaigns, sync
+
 app = FastAPI(
     title="AdsMaster API",
     description="AI-powered Google & Meta Ads management platform",
     version="0.1.0",
+    docs_url="/docs",
+    redoc_url="/redoc",
 )
 
 # CORS middleware
@@ -15,6 +19,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include routers
+app.include_router(auth.router)
+app.include_router(accounts.router)
+app.include_router(campaigns.router)
+app.include_router(sync.router)
 
 
 @app.get("/")
