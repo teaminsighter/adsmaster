@@ -1,13 +1,30 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import DateRangePicker from '@/components/ui/DateRangePicker';
+
+interface DateRange {
+  start: Date;
+  end: Date;
+}
 
 interface HeaderProps {
   title?: string;
+  onDateRangeChange?: (range: DateRange) => void;
 }
 
-export default function Header({ title = 'Dashboard' }: HeaderProps) {
+// Get default date range (last 7 days)
+function getDefaultDateRange(): DateRange {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const start = new Date(today);
+  start.setDate(today.getDate() - 6);
+  return { start, end: today };
+}
+
+export default function Header({ title = 'Dashboard', onDateRangeChange }: HeaderProps) {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [dateRange, setDateRange] = useState<DateRange>(getDefaultDateRange);
 
   useEffect(() => {
     // Check for saved theme or system preference
@@ -27,6 +44,11 @@ export default function Header({ title = 'Dashboard' }: HeaderProps) {
     localStorage.setItem('theme', newTheme);
   };
 
+  const handleDateRangeChange = (range: DateRange) => {
+    setDateRange(range);
+    onDateRangeChange?.(range);
+  };
+
   return (
     <header className="header">
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
@@ -34,15 +56,11 @@ export default function Header({ title = 'Dashboard' }: HeaderProps) {
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-        {/* Date Range Selector */}
-        <select className="select" style={{ minWidth: '150px' }}>
-          <option>Last 7 days</option>
-          <option>Last 14 days</option>
-          <option>Last 30 days</option>
-          <option>This month</option>
-          <option>Last month</option>
-          <option>Custom range</option>
-        </select>
+        {/* Date Range Picker */}
+        <DateRangePicker
+          value={dateRange}
+          onChange={handleDateRangeChange}
+        />
 
         {/* Theme Toggle */}
         <div className="theme-toggle">
