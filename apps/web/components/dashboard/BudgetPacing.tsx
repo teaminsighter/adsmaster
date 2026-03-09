@@ -46,23 +46,23 @@ export default function BudgetPacing({
         )}
       </div>
 
-      <div style={{ display: 'flex', gap: '24px', marginBottom: '12px' }}>
+      <div style={{ display: 'flex', gap: '48px', marginBottom: '16px' }}>
         <div>
-          <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Spent</div>
+          <div style={{ fontSize: '12px', color: 'var(--text-primary)', fontWeight: 500, marginBottom: '4px', opacity: 0.7 }}>Spent</div>
           <div className="mono" style={{ fontSize: '18px', fontWeight: 600 }}>
-            {formatCurrency(spent)} <span style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>({spentPercent.toFixed(0)}%)</span>
+            {formatCurrency(spent)} <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 400 }}>({spentPercent.toFixed(0)}%)</span>
           </div>
         </div>
         <div>
-          <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Budget</div>
+          <div style={{ fontSize: '12px', color: 'var(--text-primary)', fontWeight: 500, marginBottom: '4px', opacity: 0.7 }}>Budget</div>
           <div className="mono" style={{ fontSize: '18px', fontWeight: 600 }}>
             {formatCurrency(budget)}
           </div>
         </div>
         <div>
-          <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Time Elapsed</div>
+          <div style={{ fontSize: '12px', color: 'var(--text-primary)', fontWeight: 500, marginBottom: '4px', opacity: 0.7 }}>Time Elapsed</div>
           <div className="mono" style={{ fontSize: '18px', fontWeight: 600 }}>
-            Day {daysElapsed} of {daysInMonth} <span style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>({expectedPercent.toFixed(0)}%)</span>
+            Day {daysElapsed} of {daysInMonth} <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 400 }}>({expectedPercent.toFixed(0)}%)</span>
           </div>
         </div>
       </div>
