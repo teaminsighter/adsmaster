@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/layout/Header';
 import DemoBanner from '@/components/ui/DemoBanner';
-import { useKeywords } from '@/lib/hooks/useApi';
+import AddKeywordsModal from '@/components/keywords/AddKeywordsModal';
+import { useKeywords, useCampaigns } from '@/lib/hooks/useApi';
 import { formatMicros, formatNumber } from '@/lib/api';
 
 export default function KeywordsPage() {
@@ -12,10 +13,14 @@ export default function KeywordsPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
-  const { data, loading, error, isDemo } = useKeywords({
+  const { data, loading, error, isDemo, refetch } = useKeywords({
     status: statusFilter || undefined,
   });
+
+  const { data: campaignsData } = useCampaigns({});
 
   // Loading state
   if (loading) {
@@ -91,11 +96,67 @@ export default function KeywordsPage() {
     setSelectedIds(new Set());
   };
 
+  const handleAddKeywords = async (formData: {
+    campaignId: string;
+    adGroupId: string;
+    keywords: string[];
+    matchType: 'BROAD' | 'PHRASE' | 'EXACT';
+    maxCpc?: number;
+  }) => {
+    // In demo mode, simulate adding keywords
+    const campaign = campaignsData?.campaigns.find(c => c.id === formData.campaignId);
+
+    // Simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 800));
+
+    // Show success message
+    setSuccessMessage(
+      `Successfully added ${formData.keywords.length} keywords to "${campaign?.name || 'campaign'}" as [${formData.matchType}] match`
+    );
+
+    // Clear success message after 5 seconds
+    setTimeout(() => setSuccessMessage(''), 5000);
+
+    // Refetch keywords (in real mode this would show the new keywords)
+    refetch();
+  };
+
+  // Get campaigns for the modal
+  const campaigns = campaignsData?.campaigns
+    .filter(c => c.platform === 'google') // Keywords are Google-only for now
+    .map(c => ({ id: c.id, name: c.name })) || [];
+
   return (
     <>
       {isDemo && <DemoBanner onConnect={() => router.push('/connect')} />}
       <Header title="Keywords" />
       <div className="page-content">
+        {/* Success Message */}
+        {successMessage && (
+          <div style={{
+            marginBottom: '24px',
+            padding: '16px',
+            background: 'rgba(16, 185, 129, 0.1)',
+            border: '1px solid rgba(16, 185, 129, 0.3)',
+            borderLeft: '4px solid var(--success)',
+            borderRadius: '8px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ color: 'var(--success)', fontSize: '18px' }}>✓</span>
+              <span style={{ fontWeight: 500 }}>{successMessage}</span>
+            </div>
+            <button
+              onClick={() => setSuccessMessage('')}
+              style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '18px' }}
+            >
+              ×
+            </button>
+          </div>
+        )}
+
         {/* Summary Stats */}
         <div className="metrics-grid" style={{ marginBottom: '24px' }}>
           <div className="metric-card">
@@ -198,7 +259,7 @@ export default function KeywordsPage() {
                   <div style={{ width: '1px', height: '20px', background: 'var(--border-default)' }} />
                 </>
               )}
-              <button className="btn btn-primary btn-sm" onClick={() => alert('Demo: Would open add keywords modal')}>
+              <button className="btn btn-primary btn-sm" onClick={() => setShowAddModal(true)}>
                 + Add Keywords
               </button>
             </div>
@@ -305,6 +366,15 @@ export default function KeywordsPage() {
           </div>
         </div>
       </div>
+
+      {/* Add Keywords Modal */}
+      <AddKeywordsModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onSubmit={handleAddKeywords}
+        campaigns={campaigns}
+        isDemo={isDemo}
+      />
     </>
   );
 }
