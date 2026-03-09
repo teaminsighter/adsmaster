@@ -78,15 +78,6 @@ export default function Header({ title = 'Dashboard', onDateRangeChange }: Heade
           </button>
         </div>
 
-        {/* AI Chat Button */}
-        <button
-          className="btn btn-primary"
-          style={{ gap: '6px' }}
-          onClick={() => window.dispatchEvent(new CustomEvent('openAIAdvisor'))}
-        >
-          AI Advisor
-        </button>
-
         {/* User Avatar */}
         <div style={{
           width: '36px',
