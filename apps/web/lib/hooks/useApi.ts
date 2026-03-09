@@ -435,3 +435,437 @@ export async function dismissRecommendation(id: string, reason?: string) {
   });
   return response.json();
 }
+
+// ============================================================================
+// SETTINGS HOOKS
+// ============================================================================
+
+/**
+ * Hook for user preferences
+ */
+export function usePreferences(userId: string) {
+  return useApi<{
+    id: string;
+    user_id: string;
+    timezone: string;
+    currency: string;
+    date_format: string;
+    theme: string;
+    compact_mode: boolean;
+    show_cents: boolean;
+    default_date_range: string;
+    created_at: string;
+    updated_at: string;
+  }>(`/api/v1/settings/preferences?user_id=${userId}`, { enabled: !!userId });
+}
+
+/**
+ * Update user preferences
+ */
+export async function updatePreferences(
+  userId: string,
+  data: {
+    timezone?: string;
+    currency?: string;
+    date_format?: string;
+    theme?: string;
+    compact_mode?: boolean;
+    show_cents?: boolean;
+    default_date_range?: string;
+  }
+) {
+  const response = await fetch(
+    `${API_BASE_URL}/api/v1/settings/preferences?user_id=${userId}`,
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }
+  );
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to update preferences');
+  }
+  return response.json();
+}
+
+/**
+ * Hook for notification settings
+ */
+export function useNotificationSettings(userId: string, organizationId?: string) {
+  const params = new URLSearchParams({ user_id: userId });
+  if (organizationId) params.set('organization_id', organizationId);
+
+  return useApi<{
+    user_id: string;
+    organization_id: string | null;
+    settings: Array<{
+      notification_type: string;
+      email_enabled: boolean;
+      push_enabled: boolean;
+      slack_enabled: boolean;
+    }>;
+    slack_connected: boolean;
+  }>(`/api/v1/settings/notifications?${params}`, { enabled: !!userId });
+}
+
+/**
+ * Update notification settings
+ */
+export async function updateNotificationSettings(
+  userId: string,
+  organizationId: string | undefined,
+  settings: Array<{
+    notification_type: string;
+    email_enabled: boolean;
+    push_enabled: boolean;
+    slack_enabled: boolean;
+  }>
+) {
+  const params = new URLSearchParams({ user_id: userId });
+  if (organizationId) params.set('organization_id', organizationId);
+
+  const response = await fetch(
+    `${API_BASE_URL}/api/v1/settings/notifications?${params}`,
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ settings }),
+    }
+  );
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to update notification settings');
+  }
+  return response.json();
+}
+
+/**
+ * Hook for team members
+ */
+export function useTeamMembers(organizationId: string) {
+  return useApi<{
+    organization_id: string;
+    members: Array<{
+      id: string;
+      email: string;
+      name: string | null;
+      role: string;
+      status: string;
+      last_active_at: string | null;
+      invited_at: string | null;
+      accepted_at: string | null;
+    }>;
+    total: number;
+    max_members: number;
+  }>(`/api/v1/settings/team?organization_id=${organizationId}`, { enabled: !!organizationId });
+}
+
+/**
+ * Invite team member
+ */
+export async function inviteTeamMember(
+  organizationId: string,
+  data: { email: string; role: string }
+) {
+  const response = await fetch(
+    `${API_BASE_URL}/api/v1/settings/team/invite?organization_id=${organizationId}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }
+  );
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to invite team member');
+  }
+  return response.json();
+}
+
+/**
+ * Update team member role
+ */
+export async function updateTeamMember(
+  organizationId: string,
+  memberId: string,
+  data: { role: string }
+) {
+  const response = await fetch(
+    `${API_BASE_URL}/api/v1/settings/team/${memberId}?organization_id=${organizationId}`,
+    {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }
+  );
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to update team member');
+  }
+  return response.json();
+}
+
+/**
+ * Remove team member
+ */
+export async function removeTeamMember(organizationId: string, memberId: string) {
+  const response = await fetch(
+    `${API_BASE_URL}/api/v1/settings/team/${memberId}?organization_id=${organizationId}`,
+    {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+    }
+  );
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to remove team member');
+  }
+  return response.json();
+}
+
+/**
+ * Hook for API keys
+ */
+export function useApiKeys(organizationId: string) {
+  return useApi<{
+    organization_id: string;
+    api_keys: Array<{
+      id: string;
+      name: string;
+      key_prefix: string;
+      permissions: string[];
+      rate_limit_per_minute: number;
+      rate_limit_per_day: number;
+      last_used_at: string | null;
+      usage_count: number;
+      is_active: boolean;
+      created_at: string;
+      expires_at: string | null;
+    }>;
+    total: number;
+    max_keys: number;
+  }>(`/api/v1/settings/api-keys?organization_id=${organizationId}`, { enabled: !!organizationId });
+}
+
+/**
+ * Create API key
+ */
+export async function createApiKey(
+  organizationId: string,
+  data: {
+    name: string;
+    permissions: string[];
+    rate_limit_per_minute?: number;
+    rate_limit_per_day?: number;
+    expires_in_days?: number;
+  }
+) {
+  const response = await fetch(
+    `${API_BASE_URL}/api/v1/settings/api-keys?organization_id=${organizationId}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }
+  );
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to create API key');
+  }
+  return response.json();
+}
+
+/**
+ * Revoke API key
+ */
+export async function revokeApiKey(organizationId: string, keyId: string) {
+  const response = await fetch(
+    `${API_BASE_URL}/api/v1/settings/api-keys/${keyId}?organization_id=${organizationId}`,
+    {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+    }
+  );
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to revoke API key');
+  }
+  return response.json();
+}
+
+/**
+ * Hook for billing info
+ */
+export function useBilling(organizationId: string) {
+  return useApi<{
+    organization_id: string;
+    subscription: {
+      id: string;
+      plan_name: string;
+      plan_price_cents: number;
+      billing_interval: string;
+      status: string;
+      trial_ends_at: string | null;
+      current_period_start: string;
+      current_period_end: string;
+      cancel_at_period_end: boolean;
+      max_ad_accounts: number;
+      max_team_members: number;
+      max_api_calls_per_month: number;
+    };
+    payment_method: {
+      id: string;
+      card_brand: string;
+      card_last4: string;
+      card_exp_month: number;
+      card_exp_year: number;
+      is_default: boolean;
+    } | null;
+    usage: {
+      ad_accounts_used: number;
+      team_members_used: number;
+      api_calls_this_month: number;
+    };
+    invoices: Array<{
+      id: string;
+      invoice_number: string;
+      amount_cents: number;
+      currency: string;
+      status: string;
+      invoice_date: string;
+      paid_at: string | null;
+    }>;
+  }>(`/api/v1/settings/billing?organization_id=${organizationId}`, { enabled: !!organizationId });
+}
+
+/**
+ * Hook for available plans
+ */
+export function usePlans() {
+  return useApi<{
+    plans: Array<{
+      name: string;
+      display_name: string;
+      price_cents_monthly: number | null;
+      price_cents_yearly: number | null;
+      features: {
+        max_ad_accounts: number;
+        max_team_members: number;
+        max_api_calls_per_month: number;
+        ai_recommendations: boolean;
+        custom_reports: boolean;
+        priority_support: boolean;
+        white_label: boolean;
+      };
+    }>;
+  }>('/api/v1/settings/billing/plans');
+}
+
+// ============================================================================
+// CONNECTED ACCOUNTS HOOKS
+// ============================================================================
+
+/**
+ * Hook for connected ad accounts
+ */
+export function useConnectedAccounts() {
+  return useApi<{
+    demo_mode: boolean;
+    accounts: Array<{
+      id: string;
+      platform: 'google' | 'meta';
+      name: string;
+      external_id: string;
+      status: 'active' | 'paused' | 'error' | 'disconnected';
+      currency: string;
+      timezone: string;
+      last_sync: string;
+      spend_30d_micros: number;
+    }>;
+    total: number;
+  }>('/api/v1/demo/accounts');
+}
+
+/**
+ * Disconnect an ad account
+ */
+export async function disconnectAccount(accountId: string) {
+  const response = await fetch(
+    `${API_BASE_URL}/accounts/${accountId}`,
+    {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+    }
+  );
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to disconnect account');
+  }
+  return response.json();
+}
+
+/**
+ * Trigger sync for an ad account
+ */
+export async function syncAccount(accountId: string) {
+  const response = await fetch(
+    `${API_BASE_URL}/api/v1/sync/trigger?account_id=${accountId}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    }
+  );
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to trigger sync');
+  }
+  return response.json();
+}
+
+// ============================================================================
+// USER PROFILE HOOKS
+// ============================================================================
+
+/**
+ * Hook for user profile
+ */
+export function useUserProfile(userId: string) {
+  return useApi<{
+    id: string;
+    email: string;
+    name: string;
+    avatar_url: string | null;
+    organization: {
+      id: string;
+      name: string;
+      role: string;
+    };
+    subscription: {
+      plan_name: string;
+      status: string;
+    };
+  }>(`/api/v1/settings/profile?user_id=${userId}`, { enabled: !!userId });
+}
+
+/**
+ * Update user profile
+ */
+export async function updateProfile(
+  userId: string,
+  data: { name?: string; email?: string }
+) {
+  const response = await fetch(
+    `${API_BASE_URL}/api/v1/settings/profile?user_id=${userId}`,
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }
+  );
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to update profile');
+  }
+  return response.json();
+}

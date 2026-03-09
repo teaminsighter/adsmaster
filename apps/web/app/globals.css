@@ -587,6 +587,36 @@ body {
 }
 
 /* =============================================================================
+   Slide-in Panels (Modals)
+   ============================================================================= */
+
+.slide-panel {
+  background: #FFFFFF;
+}
+
+[data-theme="dark"] .slide-panel {
+  background: #1E293B;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOut {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/* =============================================================================
    Responsive
    ============================================================================= */
 

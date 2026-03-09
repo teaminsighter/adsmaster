@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Header from '@/components/layout/Header';
+import { useNotificationSettings, updateNotificationSettings } from '@/lib/hooks/useApi';
 
 interface NotificationSetting {
   id: string;
@@ -12,34 +13,88 @@ interface NotificationSetting {
   slack: boolean;
 }
 
-const defaultSettings: NotificationSetting[] = [
-  { id: 'budget_alerts', label: 'Budget Alerts', description: 'Get notified when campaigns exceed budget thresholds', email: true, push: true, slack: true },
-  { id: 'performance_drops', label: 'Performance Drops', description: 'Alert when ROAS or conversion rates drop significantly', email: true, push: true, slack: false },
-  { id: 'ai_recommendations', label: 'AI Recommendations', description: 'New AI-powered optimization suggestions', email: true, push: false, slack: false },
-  { id: 'campaign_status', label: 'Campaign Status Changes', description: 'Notifications when campaigns are paused or enabled', email: false, push: true, slack: true },
-  { id: 'weekly_report', label: 'Weekly Performance Report', description: 'Summary of account performance sent every Monday', email: true, push: false, slack: false },
-  { id: 'billing', label: 'Billing Notifications', description: 'Invoice and payment related notifications', email: true, push: false, slack: false },
-];
+const notificationLabels: Record<string, { label: string; description: string }> = {
+  budget_alerts: { label: 'Budget Alerts', description: 'Get notified when campaigns exceed budget thresholds' },
+  performance_drops: { label: 'Performance Drops', description: 'Alert when ROAS or conversion rates drop significantly' },
+  ai_recommendations: { label: 'AI Recommendations', description: 'New AI-powered optimization suggestions' },
+  campaign_status: { label: 'Campaign Status Changes', description: 'Notifications when campaigns are paused or enabled' },
+  weekly_report: { label: 'Weekly Performance Report', description: 'Summary of account performance sent every Monday' },
+  billing: { label: 'Billing Notifications', description: 'Invoice and payment related notifications' },
+};
 
 export default function NotificationsSettingsPage() {
-  const [settings, setSettings] = useState<NotificationSetting[]>(defaultSettings);
+  // TODO: Get real user/org ID from auth context
+  const userId = 'demo_user';
+  const organizationId = 'demo_org';
+  const { data, loading, error, refetch } = useNotificationSettings(userId, organizationId);
+
+  const [settings, setSettings] = useState<NotificationSetting[]>([]);
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  // Update local state when data is fetched
+  useEffect(() => {
+    if (data?.settings) {
+      setSettings(
+        data.settings.map((s) => ({
+          id: s.notification_type,
+          label: notificationLabels[s.notification_type]?.label || s.notification_type,
+          description: notificationLabels[s.notification_type]?.description || '',
+          email: s.email_enabled,
+          push: s.push_enabled,
+          slack: s.slack_enabled,
+        }))
+      );
+    }
+  }, [data]);
 
   const handleToggle = (id: string, channel: 'email' | 'push' | 'slack') => {
     setSettings(settings.map(s =>
       s.id === id ? { ...s, [channel]: !s[channel] } : s
     ));
-    setSaved(false);
   };
 
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+  const handleSave = async () => {
+    setSaving(true);
+    setSaveError(null);
+    try {
+      await updateNotificationSettings(
+        userId,
+        organizationId,
+        settings.map((s) => ({
+          notification_type: s.id,
+          email_enabled: s.email,
+          push_enabled: s.push,
+          slack_enabled: s.slack,
+        }))
+      );
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+      refetch();
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Failed to save settings');
+    } finally {
+      setSaving(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <>
+        <Header title="Notification Settings" showDateFilter={false} />
+        <div className="page-content">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '300px' }}>
+            <div style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>Loading notification settings...</div>
+          </div>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
-      <Header title="Notification Settings" />
+      <Header title="Notification Settings" showDateFilter={false} />
       <div className="page-content">
         <div style={{ maxWidth: '800px' }}>
           {saved && (
@@ -52,6 +107,19 @@ export default function NotificationsSettingsPage() {
               color: 'var(--success)',
             }}>
               Settings saved successfully
+            </div>
+          )}
+
+          {saveError && (
+            <div style={{
+              padding: '12px 16px',
+              marginBottom: '24px',
+              borderRadius: '8px',
+              background: 'rgba(239, 68, 68, 0.1)',
+              border: '1px solid var(--error)',
+              color: 'var(--error)',
+            }}>
+              {saveError}
             </div>
           )}
 
@@ -115,14 +183,26 @@ export default function NotificationsSettingsPage() {
                     type="checkbox"
                     checked={setting.slack}
                     onChange={() => handleToggle(setting.id, 'slack')}
-                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                    disabled={!data?.slack_connected}
+                    style={{
+                      width: '18px',
+                      height: '18px',
+                      cursor: data?.slack_connected ? 'pointer' : 'not-allowed',
+                      opacity: data?.slack_connected ? 1 : 0.5,
+                    }}
                   />
                 </div>
               </div>
             ))}
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '16px' }}>
-              <button className="btn btn-primary" onClick={handleSave}>Save Changes</button>
+              <button
+                className="btn btn-primary"
+                onClick={handleSave}
+                disabled={saving}
+              >
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
             </div>
           </div>
 
@@ -130,15 +210,24 @@ export default function NotificationsSettingsPage() {
           <div className="card" style={{ marginTop: '24px' }}>
             <div className="card-header">
               <span className="card-title">Slack Integration</span>
+              {data?.slack_connected && (
+                <span className="badge badge-success">Connected</span>
+              )}
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <div style={{ fontWeight: 500, marginBottom: '4px' }}>Connect to Slack</div>
+                <div style={{ fontWeight: 500, marginBottom: '4px' }}>
+                  {data?.slack_connected ? 'Slack Connected' : 'Connect to Slack'}
+                </div>
                 <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-                  Receive notifications directly in your Slack workspace
+                  {data?.slack_connected
+                    ? 'Your Slack workspace is connected. Enable Slack notifications above.'
+                    : 'Receive notifications directly in your Slack workspace'}
                 </div>
               </div>
-              <button className="btn btn-secondary">Connect Slack</button>
+              <button className="btn btn-secondary">
+                {data?.slack_connected ? 'Manage' : 'Connect Slack'}
+              </button>
             </div>
           </div>
         </div>

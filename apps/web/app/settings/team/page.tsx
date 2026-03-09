@@ -2,22 +2,7 @@
 
 import { useState } from 'react';
 import Header from '@/components/layout/Header';
-
-interface TeamMember {
-  id: string;
-  name: string;
-  email: string;
-  role: 'owner' | 'admin' | 'editor' | 'viewer';
-  status: 'active' | 'pending';
-  lastActive: string;
-}
-
-const mockTeam: TeamMember[] = [
-  { id: '1', name: 'John Doe', email: 'john@example.com', role: 'owner', status: 'active', lastActive: '2 minutes ago' },
-  { id: '2', name: 'Sarah Smith', email: 'sarah@example.com', role: 'admin', status: 'active', lastActive: '1 hour ago' },
-  { id: '3', name: 'Mike Johnson', email: 'mike@example.com', role: 'editor', status: 'active', lastActive: '3 hours ago' },
-  { id: '4', name: 'Pending User', email: 'pending@example.com', role: 'viewer', status: 'pending', lastActive: 'Never' },
-];
+import { useTeamMembers, inviteTeamMember, updateTeamMember, removeTeamMember } from '@/lib/hooks/useApi';
 
 const rolePermissions = {
   owner: 'Full access, billing, delete account',
@@ -26,20 +11,139 @@ const rolePermissions = {
   viewer: 'View-only access to dashboards',
 };
 
+// Format relative time
+const formatRelativeTime = (dateStr: string | null) => {
+  if (!dateStr) return 'Never';
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins} minute${diffMins !== 1 ? 's' : ''} ago`;
+  if (diffHours < 24) return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
+  if (diffDays < 30) return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
+  return date.toLocaleDateString();
+};
+
 export default function TeamSettingsPage() {
+  // TODO: Get real organization ID from auth context
+  const organizationId = 'demo_org';
+  const { data, loading, error, refetch } = useTeamMembers(organizationId);
+
   const [showInvite, setShowInvite] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<string>('viewer');
+  const [inviting, setInviting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const handleInvite = async () => {
+    if (!inviteEmail.trim()) return;
+
+    setInviting(true);
+    setErrorMessage('');
+    try {
+      await inviteTeamMember(organizationId, {
+        email: inviteEmail,
+        role: inviteRole,
+      });
+      setSuccessMessage(`Invitation sent to ${inviteEmail}`);
+      setTimeout(() => setSuccessMessage(''), 5000);
+      setInviteEmail('');
+      setInviteRole('viewer');
+      setShowInvite(false);
+      refetch();
+    } catch (err) {
+      setErrorMessage(err instanceof Error ? err.message : 'Failed to send invitation');
+    } finally {
+      setInviting(false);
+    }
+  };
+
+  const handleRoleChange = async (memberId: string, newRole: string) => {
+    try {
+      await updateTeamMember(organizationId, memberId, { role: newRole });
+      setSuccessMessage('Role updated successfully');
+      setTimeout(() => setSuccessMessage(''), 3000);
+      refetch();
+    } catch (err) {
+      setErrorMessage(err instanceof Error ? err.message : 'Failed to update role');
+    }
+  };
+
+  const handleRemove = async (memberId: string, memberName: string) => {
+    if (!confirm(`Are you sure you want to remove ${memberName} from the team?`)) return;
+
+    try {
+      await removeTeamMember(organizationId, memberId);
+      setSuccessMessage('Team member removed');
+      setTimeout(() => setSuccessMessage(''), 3000);
+      refetch();
+    } catch (err) {
+      setErrorMessage(err instanceof Error ? err.message : 'Failed to remove team member');
+    }
+  };
+
+  if (loading) {
+    return (
+      <>
+        <Header title="Team Members" showDateFilter={false} />
+        <div className="page-content">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '300px' }}>
+            <div style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>Loading team members...</div>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  const members = data?.members || [];
 
   return (
     <>
-      <Header title="Team Members" />
+      <Header title="Team Members" showDateFilter={false} />
       <div className="page-content">
         <div style={{ maxWidth: '900px' }}>
+          {/* Success Message */}
+          {successMessage && (
+            <div style={{
+              padding: '12px 16px',
+              marginBottom: '24px',
+              borderRadius: '8px',
+              background: 'rgba(16, 185, 129, 0.1)',
+              border: '1px solid var(--success)',
+              color: 'var(--success)',
+            }}>
+              {successMessage}
+            </div>
+          )}
+
+          {/* Error Message */}
+          {errorMessage && (
+            <div style={{
+              padding: '12px 16px',
+              marginBottom: '24px',
+              borderRadius: '8px',
+              background: 'rgba(239, 68, 68, 0.1)',
+              border: '1px solid var(--error)',
+              color: 'var(--error)',
+            }}>
+              {errorMessage}
+            </div>
+          )}
+
           {/* Invite Section */}
           <div className="card" style={{ marginBottom: '24px' }}>
             <div className="card-header">
               <span className="card-title">Invite Team Member</span>
+              {data && (
+                <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                  {data.total} / {data.max_members} members
+                </span>
+              )}
             </div>
             {showInvite ? (
               <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end' }}>
@@ -54,6 +158,7 @@ export default function TeamSettingsPage() {
                     value={inviteEmail}
                     onChange={(e) => setInviteEmail(e.target.value)}
                     style={{ width: '100%' }}
+                    disabled={inviting}
                   />
                 </div>
                 <div style={{ width: '150px' }}>
@@ -65,19 +170,41 @@ export default function TeamSettingsPage() {
                     value={inviteRole}
                     onChange={(e) => setInviteRole(e.target.value)}
                     style={{ width: '100%' }}
+                    disabled={inviting}
                   >
                     <option value="viewer">Viewer</option>
                     <option value="editor">Editor</option>
                     <option value="admin">Admin</option>
                   </select>
                 </div>
-                <button className="btn btn-primary">Send Invite</button>
-                <button className="btn btn-ghost" onClick={() => setShowInvite(false)}>Cancel</button>
+                <button
+                  className="btn btn-primary"
+                  onClick={handleInvite}
+                  disabled={inviting || !inviteEmail.trim()}
+                >
+                  {inviting ? 'Sending...' : 'Send Invite'}
+                </button>
+                <button
+                  className="btn btn-ghost"
+                  onClick={() => setShowInvite(false)}
+                  disabled={inviting}
+                >
+                  Cancel
+                </button>
               </div>
             ) : (
-              <button className="btn btn-primary" onClick={() => setShowInvite(true)}>
+              <button
+                className="btn btn-primary"
+                onClick={() => setShowInvite(true)}
+                disabled={data && data.total >= data.max_members}
+              >
                 + Invite Team Member
               </button>
+            )}
+            {data && data.total >= data.max_members && (
+              <div style={{ marginTop: '12px', fontSize: '13px', color: 'var(--warning)' }}>
+                You've reached the maximum number of team members for your plan.
+              </div>
             )}
           </div>
 
@@ -86,7 +213,7 @@ export default function TeamSettingsPage() {
             <div className="card-header">
               <span className="card-title">Team Members</span>
               <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-                {mockTeam.length} members
+                {members.length} members
               </span>
             </div>
             <table className="data-table">
@@ -100,7 +227,7 @@ export default function TeamSettingsPage() {
                 </tr>
               </thead>
               <tbody>
-                {mockTeam.map((member) => (
+                {members.map((member) => (
                   <tr key={member.id}>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -116,10 +243,12 @@ export default function TeamSettingsPage() {
                           fontWeight: 600,
                           fontSize: '14px',
                         }}>
-                          {member.name.split(' ').map(n => n[0]).join('')}
+                          {member.name
+                            ? member.name.split(' ').map(n => n[0]).join('')
+                            : member.email[0].toUpperCase()}
                         </div>
                         <div>
-                          <div style={{ fontWeight: 500 }}>{member.name}</div>
+                          <div style={{ fontWeight: 500 }}>{member.name || 'Pending'}</div>
                           <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{member.email}</div>
                         </div>
                       </div>
@@ -134,12 +263,29 @@ export default function TeamSettingsPage() {
                         {member.status === 'active' ? '● Active' : '○ Pending'}
                       </span>
                     </td>
-                    <td style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{member.lastActive}</td>
+                    <td style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                      {formatRelativeTime(member.last_active_at)}
+                    </td>
                     <td className="right">
                       {member.role !== 'owner' && (
                         <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                          <button className="btn btn-ghost btn-sm">Edit</button>
-                          <button className="btn btn-ghost btn-sm" style={{ color: 'var(--error)' }}>Remove</button>
+                          <select
+                            className="select"
+                            value={member.role}
+                            onChange={(e) => handleRoleChange(member.id, e.target.value)}
+                            style={{ width: '100px', padding: '4px 8px', fontSize: '12px' }}
+                          >
+                            <option value="viewer">Viewer</option>
+                            <option value="editor">Editor</option>
+                            <option value="admin">Admin</option>
+                          </select>
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            style={{ color: 'var(--error)' }}
+                            onClick={() => handleRemove(member.id, member.name || member.email)}
+                          >
+                            Remove
+                          </button>
                         </div>
                       )}
                     </td>

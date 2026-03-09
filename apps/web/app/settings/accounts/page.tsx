@@ -4,55 +4,52 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Header from '@/components/layout/Header';
 import { getGoogleAdsConnectUrl, getMetaAdsConnectUrl } from '@/lib/api';
-
-interface ConnectedAccount {
-  id: string;
-  name: string;
-  platform: 'google' | 'meta';
-  status: 'active' | 'paused' | 'error';
-  lastSync: string;
-  spend30d: number;
-}
-
-// Mock connected accounts
-const mockAccounts: ConnectedAccount[] = [
-  {
-    id: 'google_1',
-    name: 'Acme Corp - Google Ads',
-    platform: 'google',
-    status: 'active',
-    lastSync: '2026-03-08T10:30:00Z',
-    spend30d: 45678,
-  },
-  {
-    id: 'meta_1',
-    name: 'Acme Corp - Meta Ads',
-    platform: 'meta',
-    status: 'active',
-    lastSync: '2026-03-08T10:25:00Z',
-    spend30d: 21119,
-  },
-];
+import { useConnectedAccounts, disconnectAccount, syncAccount } from '@/lib/hooks/useApi';
 
 const platformConfig = {
   google: {
     name: 'Google Ads',
-    icon: '🔵',
+    icon: 'G',
     color: '#4285F4',
     description: 'Connect your Google Ads account to manage Search, Display, Shopping, and YouTube campaigns.',
   },
   meta: {
     name: 'Meta Ads',
-    icon: '🔷',
+    icon: 'f',
     color: '#0668E1',
     description: 'Connect your Meta account to manage Facebook, Instagram, and Messenger ads.',
   },
 };
 
+// Format currency from micros
+const formatSpend = (micros: number) => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(micros / 1_000_000);
+};
+
+// Format relative time
+const formatLastSync = (dateStr: string) => {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMins / 60);
+
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins} min ago`;
+  if (diffHours < 24) return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
+  return date.toLocaleString();
+};
+
 export default function AccountsSettingsPage() {
   const searchParams = useSearchParams();
-  const [accounts, setAccounts] = useState<ConnectedAccount[]>(mockAccounts);
+  const { data, loading, error, refetch, isDemo } = useConnectedAccounts();
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [syncing, setSyncing] = useState<string | null>(null);
 
   // Handle OAuth callback status
   useEffect(() => {
@@ -67,6 +64,7 @@ export default function AccountsSettingsPage() {
           type: 'success',
           message: `Successfully connected ${count || 1} ${platform === 'google' ? 'Google' : 'Meta'} ad account(s)!`,
         });
+        refetch(); // Refresh the list
       } else {
         setNotification({
           type: 'error',
@@ -77,7 +75,7 @@ export default function AccountsSettingsPage() {
       // Clear notification after 5 seconds
       setTimeout(() => setNotification(null), 5000);
     }
-  }, [searchParams]);
+  }, [searchParams, refetch]);
 
   const handleConnect = (platform: 'google' | 'meta') => {
     const orgId = 'org_demo'; // In production, get from auth context
@@ -87,32 +85,86 @@ export default function AccountsSettingsPage() {
     window.location.href = url;
   };
 
-  const handleDisconnect = (accountId: string) => {
-    if (confirm('Are you sure you want to disconnect this account? This will stop syncing data.')) {
-      setAccounts(accounts.filter((a) => a.id !== accountId));
+  const handleDisconnect = async (accountId: string, accountName: string) => {
+    if (!confirm(`Are you sure you want to disconnect "${accountName}"? This will stop syncing data.`)) {
+      return;
+    }
+
+    try {
+      await disconnectAccount(accountId);
       setNotification({
         type: 'success',
         message: 'Account disconnected successfully.',
       });
-      setTimeout(() => setNotification(null), 3000);
+      refetch();
+    } catch (err) {
+      setNotification({
+        type: 'error',
+        message: err instanceof Error ? err.message : 'Failed to disconnect account',
+      });
     }
+    setTimeout(() => setNotification(null), 3000);
   };
 
-  const handleSync = (accountId: string) => {
-    const account = accounts.find((a) => a.id === accountId);
-    if (account) {
+  const handleSync = async (accountId: string, accountName: string) => {
+    setSyncing(accountId);
+    try {
+      await syncAccount(accountId);
       setNotification({
         type: 'success',
-        message: `Syncing ${account.name}... This may take a few minutes.`,
+        message: `Syncing ${accountName}... This may take a few minutes.`,
       });
-      setTimeout(() => setNotification(null), 3000);
+      refetch();
+    } catch (err) {
+      setNotification({
+        type: 'error',
+        message: err instanceof Error ? err.message : 'Failed to trigger sync',
+      });
+    } finally {
+      setSyncing(null);
     }
+    setTimeout(() => setNotification(null), 3000);
   };
+
+  if (loading) {
+    return (
+      <>
+        <Header title="Connected Accounts" showDateFilter={false} />
+        <div className="page-content">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '300px' }}>
+            <div style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>Loading accounts...</div>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  const accounts = data?.accounts || [];
 
   return (
     <>
-      <Header title="Connected Accounts" />
+      <Header title="Connected Accounts" showDateFilter={false} />
       <div className="page-content">
+        {/* Demo Mode Banner */}
+        {isDemo && (
+          <div
+            style={{
+              padding: '12px 16px',
+              marginBottom: '24px',
+              borderRadius: '8px',
+              background: 'rgba(251, 191, 36, 0.1)',
+              border: '1px solid var(--warning)',
+              color: 'var(--warning)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+            }}
+          >
+            <span>Demo Mode</span>
+            <span style={{ color: 'var(--text-secondary)' }}>- Connect your real ad accounts to see your actual data</span>
+          </div>
+        )}
+
         {/* Notification */}
         {notification && (
           <div
@@ -161,9 +213,11 @@ export default function AccountsSettingsPage() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     fontSize: '24px',
+                    color: 'white',
+                    fontWeight: 700,
                   }}
                 >
-                  <span style={{ filter: 'grayscale(100%) brightness(100)' }}>G</span>
+                  G
                 </div>
                 <div>
                   <div style={{ fontWeight: 600, fontSize: '16px' }}>Google Ads</div>
@@ -206,9 +260,11 @@ export default function AccountsSettingsPage() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     fontSize: '24px',
+                    color: 'white',
+                    fontWeight: 700,
                   }}
                 >
-                  <span style={{ filter: 'grayscale(100%) brightness(100)' }}>f</span>
+                  f
                 </div>
                 <div>
                   <div style={{ fontWeight: 600, fontSize: '16px' }}>Meta Ads</div>
@@ -261,7 +317,10 @@ export default function AccountsSettingsPage() {
               <tbody>
                 {accounts.map((account) => (
                   <tr key={account.id}>
-                    <td style={{ fontWeight: 500 }}>{account.name}</td>
+                    <td>
+                      <div style={{ fontWeight: 500 }}>{account.name}</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>{account.external_id}</div>
+                    </td>
                     <td>
                       <span
                         style={{
@@ -282,27 +341,36 @@ export default function AccountsSettingsPage() {
                     </td>
                     <td>
                       <span
-                        className={`badge ${account.status === 'active' ? 'badge-success' : account.status === 'error' ? 'badge-error' : 'badge-warning'}`}
+                        className={`badge ${
+                          account.status === 'active' ? 'badge-success' :
+                          account.status === 'error' ? 'badge-error' :
+                          account.status === 'disconnected' ? 'badge-neutral' :
+                          'badge-warning'
+                        }`}
                       >
-                        {account.status === 'active' ? '● Connected' : account.status === 'error' ? '● Error' : '● Paused'}
+                        {account.status === 'active' ? '● Connected' :
+                         account.status === 'error' ? '● Error' :
+                         account.status === 'disconnected' ? '○ Disconnected' :
+                         '● Paused'}
                       </span>
                     </td>
-                    <td className="right mono">${account.spend30d.toLocaleString()}</td>
+                    <td className="right mono">{formatSpend(account.spend_30d_micros)}</td>
                     <td style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                      {new Date(account.lastSync).toLocaleString()}
+                      {formatLastSync(account.last_sync)}
                     </td>
                     <td className="right">
                       <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                         <button
                           className="btn btn-ghost btn-sm"
-                          onClick={() => handleSync(account.id)}
+                          onClick={() => handleSync(account.id, account.name)}
+                          disabled={syncing === account.id}
                           title="Sync now"
                         >
-                          🔄
+                          {syncing === account.id ? '...' : '🔄'}
                         </button>
                         <button
                           className="btn btn-ghost btn-sm"
-                          onClick={() => handleDisconnect(account.id)}
+                          onClick={() => handleDisconnect(account.id, account.name)}
                           title="Disconnect"
                           style={{ color: 'var(--error)' }}
                         >

@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Header from '@/components/layout/Header';
+import { usePreferences, updatePreferences } from '@/lib/hooks/useApi';
 
 interface Preferences {
   timezone: string;
@@ -12,16 +13,6 @@ interface Preferences {
   showCents: boolean;
   defaultDateRange: string;
 }
-
-const defaultPreferences: Preferences = {
-  timezone: 'America/Los_Angeles',
-  currency: 'USD',
-  dateFormat: 'MM/DD/YYYY',
-  theme: 'system',
-  compactMode: false,
-  showCents: true,
-  defaultDateRange: '30d',
-};
 
 const timezones = [
   'America/Los_Angeles',
@@ -45,13 +36,73 @@ const dateRanges = [
 ];
 
 export default function PreferencesSettingsPage() {
-  const [prefs, setPrefs] = useState<Preferences>(defaultPreferences);
-  const [saved, setSaved] = useState(false);
+  // TODO: Get real user ID from auth context
+  const userId = 'demo_user';
+  const { data, loading, error, refetch } = usePreferences(userId);
 
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+  const [prefs, setPrefs] = useState<Preferences>({
+    timezone: 'America/Los_Angeles',
+    currency: 'USD',
+    dateFormat: 'MM/DD/YYYY',
+    theme: 'system',
+    compactMode: false,
+    showCents: true,
+    defaultDateRange: '30d',
+  });
+  const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  // Update local state when data is fetched
+  useEffect(() => {
+    if (data) {
+      setPrefs({
+        timezone: data.timezone,
+        currency: data.currency,
+        dateFormat: data.date_format,
+        theme: data.theme as 'light' | 'dark' | 'system',
+        compactMode: data.compact_mode,
+        showCents: data.show_cents,
+        defaultDateRange: data.default_date_range,
+      });
+    }
+  }, [data]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    setSaveError(null);
+    try {
+      await updatePreferences(userId, {
+        timezone: prefs.timezone,
+        currency: prefs.currency,
+        date_format: prefs.dateFormat,
+        theme: prefs.theme,
+        compact_mode: prefs.compactMode,
+        show_cents: prefs.showCents,
+        default_date_range: prefs.defaultDateRange,
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+      refetch();
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Failed to save preferences');
+    } finally {
+      setSaving(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <>
+        <Header title="Preferences" />
+        <div className="page-content">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '300px' }}>
+            <div style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>Loading preferences...</div>
+          </div>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
@@ -68,6 +119,19 @@ export default function PreferencesSettingsPage() {
               color: 'var(--success)',
             }}>
               Preferences saved successfully
+            </div>
+          )}
+
+          {saveError && (
+            <div style={{
+              padding: '12px 16px',
+              marginBottom: '24px',
+              borderRadius: '8px',
+              background: 'rgba(239, 68, 68, 0.1)',
+              border: '1px solid var(--error)',
+              color: 'var(--error)',
+            }}>
+              {saveError}
             </div>
           )}
 
@@ -203,7 +267,13 @@ export default function PreferencesSettingsPage() {
 
           {/* Save Button */}
           <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <button className="btn btn-primary" onClick={handleSave}>Save Preferences</button>
+            <button
+              className="btn btn-primary"
+              onClick={handleSave}
+              disabled={saving}
+            >
+              {saving ? 'Saving...' : 'Save Preferences'}
+            </button>
           </div>
         </div>
       </div>
