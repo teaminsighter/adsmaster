@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface AddKeywordsModalProps {
   isOpen: boolean;
@@ -18,22 +18,33 @@ interface KeywordFormData {
   maxCpc?: number;
 }
 
-// Mock ad groups for demo
-const DEMO_AD_GROUPS: Record<string, Array<{ id: string; name: string }>> = {
-  'demo_camp_1': [
-    { id: 'ag_1', name: 'Brand Terms' },
-    { id: 'ag_2', name: 'Product Terms' },
-  ],
-  'demo_camp_2': [
-    { id: 'ag_3', name: 'All Products' },
-  ],
-  'demo_camp_3': [
-    { id: 'ag_4', name: 'Remarketing List' },
-  ],
-  'demo_camp_6': [
-    { id: 'ag_5', name: 'Generic Terms' },
-    { id: 'ag_6', name: 'Competitor Terms' },
-  ],
+// Generate ad groups based on campaign name (for demo)
+const getAdGroupsForCampaign = (campaignId: string, campaignName: string): Array<{ id: string; name: string }> => {
+  if (campaignName.toLowerCase().includes('brand')) {
+    return [
+      { id: `${campaignId}_ag_1`, name: 'Brand Terms' },
+      { id: `${campaignId}_ag_2`, name: 'Brand + Product' },
+    ];
+  } else if (campaignName.toLowerCase().includes('pmax') || campaignName.toLowerCase().includes('performance')) {
+    return [
+      { id: `${campaignId}_ag_1`, name: 'All Products' },
+    ];
+  } else if (campaignName.toLowerCase().includes('display') || campaignName.toLowerCase().includes('remarketing')) {
+    return [
+      { id: `${campaignId}_ag_1`, name: 'Remarketing List' },
+      { id: `${campaignId}_ag_2`, name: 'Similar Audiences' },
+    ];
+  } else if (campaignName.toLowerCase().includes('non-brand') || campaignName.toLowerCase().includes('generic')) {
+    return [
+      { id: `${campaignId}_ag_1`, name: 'Generic Terms' },
+      { id: `${campaignId}_ag_2`, name: 'Competitor Terms' },
+      { id: `${campaignId}_ag_3`, name: 'Long Tail Keywords' },
+    ];
+  }
+  return [
+    { id: `${campaignId}_ag_1`, name: 'Ad Group 1' },
+    { id: `${campaignId}_ag_2`, name: 'Ad Group 2' },
+  ];
 };
 
 export default function AddKeywordsModal({
@@ -50,13 +61,22 @@ export default function AddKeywordsModal({
   const [maxCpc, setMaxCpc] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [adGroups, setAdGroups] = useState<Array<{ id: string; name: string }>>([]);
 
-  const adGroups = campaignId ? (DEMO_AD_GROUPS[campaignId] || []) : [];
-
-  const handleCampaignChange = (newCampaignId: string) => {
-    setCampaignId(newCampaignId);
-    setAdGroupId(''); // Reset ad group when campaign changes
-  };
+  // Update ad groups when campaign changes
+  useEffect(() => {
+    if (campaignId) {
+      const selectedCampaign = campaigns.find(c => c.id === campaignId);
+      if (selectedCampaign) {
+        const groups = getAdGroupsForCampaign(campaignId, selectedCampaign.name);
+        setAdGroups(groups);
+        setAdGroupId(''); // Reset ad group selection
+      }
+    } else {
+      setAdGroups([]);
+      setAdGroupId('');
+    }
+  }, [campaignId, campaigns]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,18 +127,35 @@ export default function AddKeywordsModal({
     }
   };
 
-  if (!isOpen) return null;
+  const handleClose = () => {
+    setCampaignId('');
+    setAdGroupId('');
+    setKeywordsText('');
+    setMatchType('PHRASE');
+    setMaxCpc('');
+    setError('');
+    onClose();
+  };
+
+  const keywordCount = keywordsText.split('\n').filter(k => k.trim()).length;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
+    <>
+      {/* Overlay */}
+      <div
+        className={`panel-overlay ${isOpen ? 'open' : ''}`}
+        onClick={handleClose}
+      />
+
+      {/* Slide-in Panel */}
+      <div className={`slide-panel ${isOpen ? 'open' : ''}`}>
+        <div className="panel-header">
           <h2>Add Keywords</h2>
-          <button className="modal-close" onClick={onClose}>×</button>
+          <button className="panel-close" onClick={handleClose}>×</button>
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div className="modal-body">
+          <div className="panel-body">
             {error && (
               <div className="error-message">
                 {error}
@@ -131,7 +168,7 @@ export default function AddKeywordsModal({
               <select
                 className="select"
                 value={campaignId}
-                onChange={e => handleCampaignChange(e.target.value)}
+                onChange={e => setCampaignId(e.target.value)}
                 required
               >
                 <option value="">Select a campaign...</option>
@@ -170,12 +207,12 @@ export default function AddKeywordsModal({
                 className="textarea"
                 value={keywordsText}
                 onChange={e => setKeywordsText(e.target.value)}
-                placeholder="Enter keywords, one per line...&#10;acme shoes&#10;buy acme online&#10;acme store near me"
-                rows={6}
+                placeholder={"Enter keywords, one per line...\nacme shoes\nbuy acme online\nacme store near me"}
+                rows={8}
                 required
               />
               <div className="form-hint">
-                {keywordsText.split('\n').filter(k => k.trim()).length} keywords entered
+                {keywordCount} keyword{keywordCount !== 1 ? 's' : ''} entered
               </div>
             </div>
 
@@ -192,12 +229,14 @@ export default function AddKeywordsModal({
                       checked={matchType === type}
                       onChange={() => setMatchType(type)}
                     />
-                    <span className="match-type-label">{type}</span>
-                    <span className="match-type-example">
-                      {type === 'BROAD' && 'shoes → running shoes, shoe store'}
-                      {type === 'PHRASE' && '"shoes" → red shoes, shoes online'}
-                      {type === 'EXACT' && '[shoes] → shoes only'}
-                    </span>
+                    <div className="match-type-content">
+                      <span className="match-type-label">{type}</span>
+                      <span className="match-type-example">
+                        {type === 'BROAD' && 'shoes → running shoes, shoe store'}
+                        {type === 'PHRASE' && '"shoes" → red shoes, shoes online'}
+                        {type === 'EXACT' && '[shoes] → shoes only'}
+                      </span>
+                    </div>
                   </label>
                 ))}
               </div>
@@ -224,80 +263,106 @@ export default function AddKeywordsModal({
             </div>
           </div>
 
-          <div className="modal-footer">
-            <button type="button" className="btn btn-secondary" onClick={onClose}>
+          <div className="panel-footer">
+            <button type="button" className="btn btn-secondary" onClick={handleClose}>
               Cancel
             </button>
             <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-              {isSubmitting ? 'Adding...' : `Add ${keywordsText.split('\n').filter(k => k.trim()).length || ''} Keywords`}
+              {isSubmitting ? 'Adding...' : `Add ${keywordCount > 0 ? keywordCount + ' ' : ''}Keyword${keywordCount !== 1 ? 's' : ''}`}
             </button>
           </div>
         </form>
       </div>
 
       <style jsx>{`
-        .modal-overlay {
+        .panel-overlay {
           position: fixed;
           top: 0;
           left: 0;
           right: 0;
           bottom: 0;
-          background: rgba(0, 0, 0, 0.5);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 1000;
+          background: rgba(0, 0, 0, 0.4);
+          z-index: 999;
+          opacity: 0;
+          visibility: hidden;
+          transition: opacity 0.3s, visibility 0.3s;
         }
 
-        .modal-content {
+        .panel-overlay.open {
+          opacity: 1;
+          visibility: visible;
+        }
+
+        .slide-panel {
+          position: fixed;
+          top: 0;
+          right: 0;
+          bottom: 0;
+          width: 480px;
+          max-width: 100vw;
           background: var(--bg-primary);
-          border-radius: 12px;
-          width: 100%;
-          max-width: 520px;
-          max-height: 90vh;
-          overflow-y: auto;
-          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+          z-index: 1000;
+          transform: translateX(100%);
+          transition: transform 0.3s ease-out;
+          display: flex;
+          flex-direction: column;
+          box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
         }
 
-        .modal-header {
+        .slide-panel.open {
+          transform: translateX(0);
+        }
+
+        .panel-header {
           display: flex;
           justify-content: space-between;
           align-items: center;
           padding: 20px 24px;
           border-bottom: 1px solid var(--border-default);
+          flex-shrink: 0;
         }
 
-        .modal-header h2 {
+        .panel-header h2 {
           margin: 0;
           font-size: 18px;
           font-weight: 600;
         }
 
-        .modal-close {
+        .panel-close {
           background: none;
           border: none;
-          font-size: 24px;
+          font-size: 28px;
           color: var(--text-secondary);
           cursor: pointer;
           padding: 0;
           line-height: 1;
+          width: 32px;
+          height: 32px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 6px;
         }
 
-        .modal-close:hover {
+        .panel-close:hover {
+          background: var(--surface-secondary);
           color: var(--text-primary);
         }
 
-        .modal-body {
+        .panel-body {
+          flex: 1;
+          overflow-y: auto;
           padding: 24px;
         }
 
-        .modal-footer {
+        .panel-footer {
           display: flex;
           justify-content: flex-end;
           gap: 12px;
           padding: 16px 24px;
           border-top: 1px solid var(--border-default);
           background: var(--surface-secondary);
+          flex-shrink: 0;
         }
 
         .form-group {
@@ -327,12 +392,17 @@ export default function AddKeywordsModal({
           resize: vertical;
           background: var(--bg-primary);
           color: var(--text-primary);
+          line-height: 1.5;
         }
 
         .textarea:focus {
           outline: none;
           border-color: var(--primary);
           box-shadow: 0 0 0 3px var(--primary-light);
+        }
+
+        .textarea::placeholder {
+          color: var(--text-tertiary);
         }
 
         .form-hint {
@@ -370,6 +440,7 @@ export default function AddKeywordsModal({
 
         .match-type-option:hover {
           border-color: var(--primary);
+          background: var(--surface-secondary);
         }
 
         .match-type-option.selected {
@@ -379,12 +450,18 @@ export default function AddKeywordsModal({
 
         .match-type-option input {
           margin-top: 2px;
+          flex-shrink: 0;
+        }
+
+        .match-type-content {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
         }
 
         .match-type-label {
           font-weight: 600;
-          font-size: 12px;
-          min-width: 60px;
+          font-size: 13px;
         }
 
         .match-type-example {
@@ -409,9 +486,9 @@ export default function AddKeywordsModal({
 
         .input-with-prefix .input {
           border-radius: 0 8px 8px 0;
-          width: 120px;
+          width: 140px;
         }
       `}</style>
-    </div>
+    </>
   );
 }
