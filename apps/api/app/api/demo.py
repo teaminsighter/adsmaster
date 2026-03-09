@@ -3,11 +3,17 @@ Demo API endpoints - Returns mock data for demo mode.
 Used when no real ad account is connected.
 """
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 from datetime import datetime, timedelta
 import random
 
+from ..services.recommendations.ai_engine import AIRecommendationEngine
+
 router = APIRouter(prefix="/api/v1/demo", tags=["demo"])
+
+# Cache for AI-generated recommendations
+_ai_recommendations_cache = None
+_ai_recommendations_timestamp = None
 
 
 # =============================================================================
@@ -442,10 +448,44 @@ async def demo_campaign_detail(campaign_id: str):
 async def demo_recommendations(
     severity: str = None,
     status: str = None,
-    limit: int = 20
+    limit: int = 20,
+    use_ai: bool = Query(default=True, description="Use AI to generate recommendation text")
 ):
-    """Get demo recommendations."""
-    recs = DEMO_RECOMMENDATIONS.copy()
+    """
+    Get demo recommendations.
+
+    When use_ai=True (default), generates recommendations with AI-powered text.
+    When use_ai=False, uses static demo recommendations.
+    """
+    global _ai_recommendations_cache, _ai_recommendations_timestamp
+
+    if use_ai:
+        # Check cache (valid for 5 minutes)
+        cache_valid = (
+            _ai_recommendations_cache is not None and
+            _ai_recommendations_timestamp is not None and
+            (datetime.now() - _ai_recommendations_timestamp).seconds < 300
+        )
+
+        if not cache_valid:
+            try:
+                # Generate AI-powered recommendations
+                engine = AIRecommendationEngine()
+                ai_recs = await engine.generate_recommendations(
+                    ad_account_id="demo_account",
+                    organization_id="demo_org",
+                    use_ai_text=True
+                )
+                _ai_recommendations_cache = ai_recs
+                _ai_recommendations_timestamp = datetime.now()
+            except Exception as e:
+                print(f"AI recommendation generation failed: {e}")
+                # Fallback to static recommendations
+                _ai_recommendations_cache = None
+
+        recs = _ai_recommendations_cache if _ai_recommendations_cache else DEMO_RECOMMENDATIONS.copy()
+    else:
+        recs = DEMO_RECOMMENDATIONS.copy()
 
     if severity:
         recs = [r for r in recs if r["severity"] == severity.lower()]
@@ -455,18 +495,20 @@ async def demo_recommendations(
     recs = recs[:limit]
 
     # Calculate summary
-    pending = [r for r in DEMO_RECOMMENDATIONS if r["status"] == "pending"]
+    all_recs = _ai_recommendations_cache if _ai_recommendations_cache and use_ai else DEMO_RECOMMENDATIONS
+    pending = [r for r in all_recs if r["status"] == "pending"]
     total_savings = sum(
-        r["impact_estimate"]["monthly_savings"] or 0
+        (r["impact_estimate"].get("monthly_savings") or 0)
         for r in pending
     )
     total_potential = sum(
-        r["impact_estimate"]["potential_gain"] or 0
+        (r["impact_estimate"].get("potential_gain") or 0)
         for r in pending
     )
 
     return {
         "demo_mode": True,
+        "ai_generated": use_ai and _ai_recommendations_cache is not None,
         "recommendations": recs,
         "total": len(recs),
         "summary": {
@@ -480,6 +522,61 @@ async def demo_recommendations(
             "total_potential_micros": total_potential,
         }
     }
+
+
+@router.get("/recommendations/ai")
+async def demo_ai_recommendations():
+    """
+    Generate fresh AI-powered recommendations.
+
+    Forces regeneration (bypasses cache) and returns AI-generated recommendations.
+    """
+    global _ai_recommendations_cache, _ai_recommendations_timestamp
+
+    try:
+        engine = AIRecommendationEngine()
+        ai_recs = await engine.generate_recommendations(
+            ad_account_id="demo_account",
+            organization_id="demo_org",
+            use_ai_text=True
+        )
+
+        # Update cache
+        _ai_recommendations_cache = ai_recs
+        _ai_recommendations_timestamp = datetime.now()
+
+        pending = [r for r in ai_recs if r["status"] == "pending"]
+        total_savings = sum((r["impact_estimate"].get("monthly_savings") or 0) for r in pending)
+        total_potential = sum((r["impact_estimate"].get("potential_gain") or 0) for r in pending)
+
+        return {
+            "demo_mode": True,
+            "ai_generated": True,
+            "ai_provider": engine.ai_provider.provider_name,
+            "ai_model": engine.ai_provider.model,
+            "recommendations": ai_recs,
+            "total": len(ai_recs),
+            "summary": {
+                "pending": len(pending),
+                "by_severity": {
+                    "critical": len([r for r in pending if r["severity"] == "critical"]),
+                    "warning": len([r for r in pending if r["severity"] == "warning"]),
+                    "opportunity": len([r for r in pending if r["severity"] == "opportunity"]),
+                },
+                "total_savings_micros": total_savings,
+                "total_potential_micros": total_potential,
+            },
+            "generated_at": datetime.now().isoformat()
+        }
+
+    except Exception as e:
+        return {
+            "demo_mode": True,
+            "ai_generated": False,
+            "error": str(e),
+            "fallback": "Using static recommendations",
+            "recommendations": DEMO_RECOMMENDATIONS,
+        }
 
 
 @router.post("/recommendations/{recommendation_id}/apply")
