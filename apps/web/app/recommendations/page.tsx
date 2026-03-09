@@ -322,9 +322,52 @@ export default function RecommendationsPage() {
                     rec.severity === 'warning' ? 'var(--warning)' : 'var(--success)'
                   }`,
                   opacity: rec.status !== 'pending' ? 0.6 : 1,
+                  position: 'relative',
                 }}
               >
-                <div style={{ display: 'flex', gap: '16px' }}>
+                {/* Ask AdsMaster Button - Bottom Right */}
+                <button
+                  onClick={() => {
+                    const recData = {
+                      id: rec.id,
+                      title: rec.title,
+                      description: rec.description,
+                      severity: rec.severity,
+                      type: rec.type,
+                      confidence: rec.confidence,
+                      entity: rec.affected_entity.name,
+                      campaign: rec.affected_entity.campaign_name,
+                      impact: rec.impact_estimate,
+                      rule_id: (rec as any).rule_id || 'unknown',
+                    };
+                    const params = new URLSearchParams({
+                      context: 'recommendations',
+                      rec: encodeURIComponent(JSON.stringify(recData)),
+                    });
+                    router.push(`/advisor?${params.toString()}`);
+                  }}
+                  style={{
+                    position: 'absolute',
+                    bottom: '16px',
+                    right: '16px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '8px 14px',
+                    fontSize: '12px',
+                    fontWeight: 500,
+                    color: 'white',
+                    background: 'linear-gradient(135deg, hsl(217 90% 50%), hsl(252 90% 65%))',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 8px hsla(252, 90%, 65%, 0.3)',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  🤖 Ask AdsMaster
+                </button>
+                <div style={{ display: 'flex', gap: '16px', paddingBottom: '40px' }}>
                   {/* Checkbox */}
                   {rec.status === 'pending' && (
                     <div style={{ paddingTop: '4px' }}>
@@ -552,7 +595,7 @@ export default function RecommendationsPage() {
                           </div>
                         </div>
 
-                        {/* Still confused? Ask AI */}
+                        {/* Still confused? Ask AdsMaster */}
                         <div style={{
                           paddingTop: '12px',
                           borderTop: '1px solid rgba(59, 130, 246, 0.15)',
@@ -564,11 +607,41 @@ export default function RecommendationsPage() {
                             Still have questions?
                           </span>
                           <button
-                            className="btn btn-sm btn-secondary"
-                            onClick={() => alert('AI Chat coming soon! You can ask questions like "Why is this keyword wasting money?" or "What happens if I choose Aggressive?"')}
-                            style={{ fontSize: '11px' }}
+                            onClick={() => {
+                              const recData = {
+                                id: rec.id,
+                                title: rec.title,
+                                description: rec.description,
+                                severity: rec.severity,
+                                type: rec.type,
+                                confidence: rec.confidence,
+                                entity: rec.affected_entity.name,
+                                campaign: rec.affected_entity.campaign_name,
+                                impact: rec.impact_estimate,
+                                rule_id: (rec as any).rule_id || 'unknown',
+                              };
+                              const params = new URLSearchParams({
+                                context: 'recommendations',
+                                rec: encodeURIComponent(JSON.stringify(recData)),
+                              });
+                              router.push(`/advisor?${params.toString()}`);
+                            }}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              padding: '6px 12px',
+                              fontSize: '12px',
+                              fontWeight: 500,
+                              color: 'white',
+                              background: 'linear-gradient(135deg, hsl(217 90% 50%), hsl(252 90% 65%))',
+                              border: 'none',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              boxShadow: '0 2px 8px hsla(252, 90%, 65%, 0.3)',
+                            }}
                           >
-                            💬 Ask AI Advisor
+                            🤖 Ask AdsMaster
                           </button>
                         </div>
                       </div>

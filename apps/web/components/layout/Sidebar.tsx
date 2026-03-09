@@ -97,6 +97,16 @@ export default function Sidebar() {
             </Link>
           );
         })}
+
+        {/* AdsMaster AI Link */}
+        <Link
+          href="/advisor"
+          className={`nav-item ${pathname === '/advisor' ? 'active' : ''}`}
+          style={{ marginTop: '8px' }}
+        >
+          <span className="nav-item-icon">🤖</span>
+          AdsMaster AI
+        </Link>
       </nav>
 
       {/* Bottom Navigation */}

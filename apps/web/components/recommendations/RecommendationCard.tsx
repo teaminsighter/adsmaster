@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Recommendation, RecommendationOption } from '@/lib/api';
 
 interface RecommendationCardProps {
@@ -88,6 +89,7 @@ export default function RecommendationCard({
   isSelected,
   onSelect,
 }: RecommendationCardProps) {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [showOptions, setShowOptions] = useState(false);
@@ -127,6 +129,30 @@ export default function RecommendationCard({
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleAskAdsMaster = () => {
+    // Build recommendation data to pass to advisor
+    const recData = {
+      id: recommendation.id,
+      title: recommendation.title,
+      description: recommendation.description,
+      severity: recommendation.severity,
+      type: recommendation.type,
+      confidence: recommendation.confidence,
+      entity: recommendation.affected_entity.name,
+      campaign: recommendation.affected_entity.campaign_name,
+      impact: recommendation.impact_estimate,
+      rule_id: recommendation.rule_id,
+    };
+
+    // Encode and navigate to advisor with recommendation context
+    const params = new URLSearchParams({
+      context: 'recommendations',
+      rec: encodeURIComponent(JSON.stringify(recData)),
+    });
+
+    router.push(`/advisor?${params.toString()}`);
   };
 
   const isApplied = recommendation.status === 'applied';
@@ -413,6 +439,27 @@ export default function RecommendationCard({
             style={{ color: 'var(--text-tertiary)' }}
           >
             Dismiss
+          </button>
+          <button
+            onClick={handleAskAdsMaster}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '6px 12px',
+              fontSize: '13px',
+              fontWeight: 500,
+              color: 'white',
+              background: 'linear-gradient(135deg, hsl(217 90% 50%), hsl(252 90% 65%))',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px hsla(252, 90%, 65%, 0.3)',
+              transition: 'all 0.2s',
+            }}
+          >
+            <span style={{ fontSize: '14px' }}>🤖</span>
+            Ask AdsMaster
           </button>
         </div>
       )}

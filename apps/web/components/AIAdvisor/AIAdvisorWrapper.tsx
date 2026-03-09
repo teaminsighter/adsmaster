@@ -6,6 +6,11 @@ import AIAdvisor from './AIAdvisor';
 export default function AIAdvisorWrapper() {
   const pathname = usePathname();
 
+  // Don't show floating chatbot on the full AI Advisor page
+  if (pathname === '/advisor') {
+    return null;
+  }
+
   // Determine context based on current page
   const getContext = () => {
     if (pathname.includes('/recommendations')) {
