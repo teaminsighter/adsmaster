@@ -9,8 +9,8 @@ Supports:
 Provider can be switched from admin settings without code changes.
 """
 
-from .base import AIProvider, AIResponse, AIMessage
-from .factory import get_ai_provider, AIProviderType
+from .base import AIProvider, AIResponse, AIMessage, MessageRole
+from .factory import get_ai_provider, get_available_providers, test_provider, AIProviderType
 from .gemini import GeminiProvider
 from .openai_provider import OpenAIProvider
 from .anthropic_provider import AnthropicProvider
@@ -19,7 +19,10 @@ __all__ = [
     "AIProvider",
     "AIResponse",
     "AIMessage",
+    "MessageRole",
     "get_ai_provider",
+    "get_available_providers",
+    "test_provider",
     "AIProviderType",
     "GeminiProvider",
     "OpenAIProvider",

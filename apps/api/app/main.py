@@ -1,7 +1,26 @@
+import os
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .api import auth, accounts, campaigns, sync, recommendations, meta_auth, meta_campaigns, demo, admin_settings
+# Load .env from project root
+try:
+    from dotenv import load_dotenv
+    # Find the project root (where .env file is)
+    current_dir = Path(__file__).resolve().parent
+    project_root = current_dir.parent.parent.parent  # apps/api/app -> apps/api -> apps -> root
+    env_file = project_root / ".env"
+    if env_file.exists():
+        load_dotenv(env_file)
+        print(f"Loaded environment from {env_file}")
+    else:
+        # Try current working directory
+        load_dotenv()
+except ImportError:
+    print("python-dotenv not installed, environment variables must be set manually")
+
+from .api import auth, accounts, campaigns, sync, recommendations, meta_auth, meta_campaigns, demo, admin_settings, ai_chat
 
 app = FastAPI(
     title="AdsMaster API",
@@ -30,6 +49,7 @@ app.include_router(meta_auth.router)
 app.include_router(meta_campaigns.router)
 app.include_router(demo.router)
 app.include_router(admin_settings.router)
+app.include_router(ai_chat.router)
 
 
 @app.get("/")

@@ -114,6 +114,9 @@ class AIRecommendationEngine:
             description = self._format_description(rule, entity, entity_type)
             impact_summary = rule.impact_template.format(impact=impact)
 
+        # Build AI reasoning with actual data
+        ai_reasoning = self._build_ai_reasoning(rule, entity, entity_type, impact)
+
         return {
             "id": str(uuid4()),
             "ad_account_id": ad_account_id,
@@ -139,6 +142,7 @@ class AIRecommendationEngine:
             "status": "pending",
             "confidence": self._calculate_confidence(rule, entity),
             "ai_generated": use_ai_text,
+            "ai_reasoning": ai_reasoning,  # NEW: Full AI reasoning with actual data
             "expires_at": (datetime.utcnow() + timedelta(days=7)).isoformat(),
             "created_at": datetime.utcnow().isoformat(),
         }
@@ -155,7 +159,8 @@ class AIRecommendationEngine:
             system_prompt = """You are an expert Google Ads and Meta Ads optimizer.
 Generate clear, actionable recommendation text for advertising managers.
 Be specific with numbers. Be concise but impactful.
-Output ONLY valid JSON with these exact keys: title, description, impact_summary"""
+Output ONLY valid JSON with these exact keys: title, description, impact_summary
+Do not include any text before or after the JSON object."""
 
             entity_name = entity.get("text") or entity.get("name", "Unknown")
             metrics_info = self._format_metrics_for_ai(entity, entity_type)
@@ -169,12 +174,15 @@ Entity Name: {entity_name}
 Metrics: {metrics_info}
 Estimated Impact: ${impact:.2f}/month
 
-Generate JSON with:
-- title: Action-oriented headline (max 8 words)
-- description: Specific problem explanation with numbers (max 40 words)
-- impact_summary: Brief benefit statement (max 10 words)
+Generate a JSON object with exactly these 3 keys:
+- "title": Action-oriented headline (max 8 words)
+- "description": Specific problem explanation with numbers (max 40 words)
+- "impact_summary": Brief benefit statement (max 10 words)
 
-Output valid JSON only, no markdown:"""
+Example format:
+{{"title": "Pause Low-Performing Keyword", "description": "This keyword spent $85 with zero conversions in 7 days.", "impact_summary": "Save $340/month"}}
+
+Your JSON response:"""
 
             response = await self.ai_provider.generate_text(
                 prompt=prompt,
@@ -183,8 +191,24 @@ Output valid JSON only, no markdown:"""
                 max_tokens=300
             )
 
+            # Check for error responses from the AI provider
+            if response.startswith("[Error]") or response.startswith("[Demo Mode]") or response.startswith("[Response blocked"):
+                raise ValueError(f"AI provider returned error: {response[:100]}")
+
             # Parse JSON response - be flexible with format
             clean = response.strip()
+
+            # Remove common prefixes Gemini adds
+            prefixes_to_remove = [
+                "Here is the JSON requested:",
+                "Here is the JSON:",
+                "Here's the JSON:",
+                "JSON output:",
+                "Output:",
+            ]
+            for prefix in prefixes_to_remove:
+                if clean.lower().startswith(prefix.lower()):
+                    clean = clean[len(prefix):].strip()
 
             # Remove markdown code blocks
             if "```json" in clean:
@@ -193,17 +217,27 @@ Output valid JSON only, no markdown:"""
                 parts = clean.split("```")
                 clean = parts[1] if len(parts) > 1 else parts[0]
 
-            # Try to find JSON object
+            # Try to find JSON object - look for first { and matching }
             start = clean.find("{")
-            end = clean.rfind("}") + 1
-            if start >= 0 and end > start:
-                clean = clean[start:end]
+            if start >= 0:
+                # Find matching closing brace
+                brace_count = 0
+                for i, char in enumerate(clean[start:], start):
+                    if char == "{":
+                        brace_count += 1
+                    elif char == "}":
+                        brace_count -= 1
+                        if brace_count == 0:
+                            clean = clean[start:i+1]
+                            break
+            else:
+                raise ValueError(f"No JSON object found in response: {response[:100]}")
 
             result = json.loads(clean)
 
             # Validate required keys
             if not all(k in result for k in ["title", "description", "impact_summary"]):
-                raise ValueError("Missing required keys")
+                raise ValueError("Missing required keys in JSON response")
 
             return result
 
@@ -254,6 +288,132 @@ Output valid JSON only, no markdown:"""
                 )
         except KeyError:
             return f"Review {entity.get('text') or entity.get('name', 'this entity')} for optimization opportunities."
+
+    def _build_ai_reasoning(
+        self,
+        rule: Rule,
+        entity: Dict[str, Any],
+        entity_type: str,
+        impact: float
+    ) -> Dict[str, Any]:
+        """Build structured AI reasoning with actual data for transparency."""
+
+        # Get actual metrics from entity
+        if entity_type == "keyword":
+            metrics = {
+                "spend_7d": entity.get("spend_7d", 0),
+                "conversions_7d": entity.get("conversions_7d", 0),
+                "clicks_7d": entity.get("clicks_7d", 0),
+                "impressions_7d": entity.get("impressions_7d", 0),
+                "quality_score": entity.get("quality_score"),
+                "cpc_vs_avg": entity.get("cpc_vs_avg", 0),
+            }
+
+            # Build trigger conditions with actual values
+            triggers = []
+            if metrics["spend_7d"] > 50 and metrics["conversions_7d"] == 0:
+                triggers.append({
+                    "condition": "High spend with no conversions",
+                    "your_value": f"${metrics['spend_7d']:.2f} spent, 0 conversions",
+                    "threshold": "Spend > $50 with 0 conversions",
+                    "status": "failed"
+                })
+            if metrics["quality_score"] and metrics["quality_score"] < 6:
+                triggers.append({
+                    "condition": "Low Quality Score",
+                    "your_value": f"{metrics['quality_score']}/10",
+                    "threshold": "Quality Score < 6",
+                    "status": "failed"
+                })
+            if metrics["cpc_vs_avg"] > 30:
+                triggers.append({
+                    "condition": "CPC above average",
+                    "your_value": f"+{metrics['cpc_vs_avg']}% higher",
+                    "threshold": "CPC > 30% above average",
+                    "status": "failed"
+                })
+        else:
+            # Campaign metrics
+            metrics = {
+                "roas": entity.get("roas", 0),
+                "conversions_7d": entity.get("conversions_7d", 0),
+                "conversions_prev_7d": entity.get("conversions_prev_7d", 0),
+                "impression_share_lost": entity.get("impression_share_lost_to_budget", 0),
+                "clicks_7d": entity.get("clicks_7d", 0),
+            }
+
+            triggers = []
+            if metrics["roas"] >= 2.0 and metrics["impression_share_lost"] > 20:
+                triggers.append({
+                    "condition": "Profitable but budget limited",
+                    "your_value": f"ROAS {metrics['roas']:.1f}x, losing {metrics['impression_share_lost']}% impressions",
+                    "threshold": "ROAS > 2.0x AND impression share lost > 20%",
+                    "status": "opportunity"
+                })
+
+        # Build calculation explanation
+        if "pause" in rule.type.value or "reduce" in rule.type.value:
+            calculation = {
+                "method": "Monthly projection",
+                "formula": f"${entity.get('spend_7d', 0):.2f} × 4 weeks",
+                "result": f"${impact:.2f}/month potential savings",
+                "assumption": "Based on last 7 days spend pattern"
+            }
+        else:
+            calculation = {
+                "method": "Opportunity estimation",
+                "formula": f"{metrics.get('impression_share_lost', 0)}% lost × current conversions",
+                "result": f"+{impact:.0f} additional conversions/month",
+                "assumption": "Assumes similar conversion rate at higher spend"
+            }
+
+        # Build recommendation explanation
+        recommendation_text = self._get_recommendation_explanation(rule, entity, entity_type, impact)
+
+        return {
+            "metrics_analyzed": metrics,
+            "triggers": triggers,
+            "calculation": calculation,
+            "recommendation": recommendation_text,
+            "data_period": "Last 7 days",
+            "analyzed_at": datetime.utcnow().isoformat(),
+        }
+
+    def _get_recommendation_explanation(
+        self,
+        rule: Rule,
+        entity: Dict[str, Any],
+        entity_type: str,
+        impact: float
+    ) -> str:
+        """Generate plain English recommendation explanation."""
+        name = entity.get("text") or entity.get("name", "this entity")
+
+        if rule.type.value == "pause_keyword":
+            spend = entity.get("spend_7d", 0)
+            return (
+                f"Pause '{name}' to stop wasting ${impact:.0f}/month. "
+                f"This keyword spent ${spend:.2f} in 7 days with zero conversions. "
+                f"Every dollar spent here is money that could go to better-performing keywords."
+            )
+        elif rule.type.value == "reduce_bid":
+            qs = entity.get("quality_score", 0)
+            cpc = entity.get("cpc_vs_avg", 0)
+            return (
+                f"Reduce bid or improve Quality Score for '{name}'. "
+                f"With a QS of {qs}/10, you're paying {cpc}% more per click than competitors. "
+                f"Improving ad relevance and landing page could save ${impact:.0f}/month."
+            )
+        elif rule.type.value == "increase_budget":
+            roas = entity.get("roas", 0)
+            lost = entity.get("impression_share_lost_to_budget", 0)
+            return (
+                f"Increase budget for '{name}' to capture more conversions. "
+                f"This campaign has {roas:.1f}x ROAS but is missing {lost}% of impressions due to budget. "
+                f"Additional budget could generate ~{impact:.0f} more conversions/month."
+            )
+        else:
+            return f"Review '{name}' for optimization opportunities based on recent performance data."
 
     def _calculate_confidence(self, rule: Rule, entity: Dict[str, Any]) -> int:
         """Calculate confidence score 0-100."""

@@ -106,7 +106,15 @@ class GeminiProvider(AIProvider):
             ]
 
             # Create model with system instruction if present
-            model_config = {"temperature": temperature, "max_output_tokens": max_tokens}
+            model_config = {
+                "temperature": temperature,
+                "max_output_tokens": max_tokens,
+            }
+
+            # Enable JSON mode if prompt asks for JSON
+            if system_instruction and "json" in system_instruction.lower():
+                model_config["response_mime_type"] = "application/json"
+
             if system_instruction:
                 model = genai.GenerativeModel(
                     self.model,

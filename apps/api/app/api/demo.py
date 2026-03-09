@@ -449,43 +449,39 @@ async def demo_recommendations(
     severity: str = None,
     status: str = None,
     limit: int = 20,
-    use_ai: bool = Query(default=True, description="Use AI to generate recommendation text")
+    use_ai: bool = Query(default=False, description="Use AI to generate recommendation text (slower)")
 ):
     """
     Get demo recommendations.
 
-    When use_ai=True (default), generates recommendations with AI-powered text.
-    When use_ai=False, uses static demo recommendations.
+    When use_ai=False (default), uses pre-generated recommendations with AI reasoning data (fast).
+    When use_ai=True, generates fresh recommendations with AI-powered text (slower, ~10s).
     """
     global _ai_recommendations_cache, _ai_recommendations_timestamp
 
-    if use_ai:
-        # Check cache (valid for 5 minutes)
-        cache_valid = (
-            _ai_recommendations_cache is not None and
-            _ai_recommendations_timestamp is not None and
-            (datetime.now() - _ai_recommendations_timestamp).seconds < 300
-        )
+    # Always generate recommendations with AI reasoning data (fast, no API calls)
+    # Only use_ai_text=True makes API calls (slow)
+    cache_valid = (
+        _ai_recommendations_cache is not None and
+        _ai_recommendations_timestamp is not None and
+        (datetime.now() - _ai_recommendations_timestamp).seconds < 300
+    )
 
-        if not cache_valid:
-            try:
-                # Generate AI-powered recommendations
-                engine = AIRecommendationEngine()
-                ai_recs = await engine.generate_recommendations(
-                    ad_account_id="demo_account",
-                    organization_id="demo_org",
-                    use_ai_text=True
-                )
-                _ai_recommendations_cache = ai_recs
-                _ai_recommendations_timestamp = datetime.now()
-            except Exception as e:
-                print(f"AI recommendation generation failed: {e}")
-                # Fallback to static recommendations
-                _ai_recommendations_cache = None
+    if not cache_valid or use_ai:
+        try:
+            engine = AIRecommendationEngine()
+            ai_recs = await engine.generate_recommendations(
+                ad_account_id="demo_account",
+                organization_id="demo_org",
+                use_ai_text=use_ai  # Only True makes slow API calls
+            )
+            _ai_recommendations_cache = ai_recs
+            _ai_recommendations_timestamp = datetime.now()
+        except Exception as e:
+            print(f"Recommendation generation failed: {e}")
+            _ai_recommendations_cache = None
 
-        recs = _ai_recommendations_cache if _ai_recommendations_cache else DEMO_RECOMMENDATIONS.copy()
-    else:
-        recs = DEMO_RECOMMENDATIONS.copy()
+    recs = _ai_recommendations_cache if _ai_recommendations_cache else DEMO_RECOMMENDATIONS.copy()
 
     if severity:
         recs = [r for r in recs if r["severity"] == severity.lower()]

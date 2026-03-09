@@ -82,7 +82,7 @@ export default function Header({ title = 'Dashboard', onDateRangeChange }: Heade
         <button
           className="btn btn-primary"
           style={{ gap: '6px' }}
-          onClick={() => alert('AI Advisor chat coming soon! This will open a chat panel to ask questions about your ad performance.')}
+          onClick={() => window.dispatchEvent(new CustomEvent('openAIAdvisor'))}
         >
           AI Advisor
         </button>

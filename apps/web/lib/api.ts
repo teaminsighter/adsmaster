@@ -2,7 +2,7 @@
  * API Client for AdsMaster Backend
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081';
 
 interface ApiResponse<T> {
   data: T | null;
