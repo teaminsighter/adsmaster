@@ -97,23 +97,46 @@ class GeminiProvider(AIProvider):
 
             gemini_messages, system_instruction = self._convert_messages(messages)
 
+            # Safety settings - allow all content for ad generation
+            safety_settings = [
+                {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+            ]
+
             # Create model with system instruction if present
             model_config = {"temperature": temperature, "max_output_tokens": max_tokens}
             if system_instruction:
                 model = genai.GenerativeModel(
                     self.model,
                     system_instruction=system_instruction,
-                    generation_config=model_config
+                    generation_config=model_config,
+                    safety_settings=safety_settings
                 )
             else:
-                model = genai.GenerativeModel(self.model, generation_config=model_config)
+                model = genai.GenerativeModel(
+                    self.model,
+                    generation_config=model_config,
+                    safety_settings=safety_settings
+                )
 
             # Start chat and send messages
             chat = model.start_chat(history=gemini_messages[:-1] if len(gemini_messages) > 1 else [])
             response = await chat.send_message_async(gemini_messages[-1]["parts"][0] if gemini_messages else "Hello")
 
+            # Handle potential blocked responses
+            try:
+                content = response.text
+            except ValueError:
+                # Response blocked or empty - check candidates
+                if response.candidates:
+                    content = response.candidates[0].content.parts[0].text if response.candidates[0].content.parts else "[Response blocked by safety filter]"
+                else:
+                    content = "[Response blocked by safety filter]"
+
             return AIResponse(
-                content=response.text,
+                content=content,
                 model=self.model,
                 provider=self.provider_name,
                 usage={
@@ -162,15 +185,28 @@ class GeminiProvider(AIProvider):
 
             gemini_messages, system_instruction = self._convert_messages(messages)
 
+            # Safety settings
+            safety_settings = [
+                {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+            ]
+
             model_config = {"temperature": temperature, "max_output_tokens": max_tokens}
             if system_instruction:
                 model = genai.GenerativeModel(
                     self.model,
                     system_instruction=system_instruction,
-                    generation_config=model_config
+                    generation_config=model_config,
+                    safety_settings=safety_settings
                 )
             else:
-                model = genai.GenerativeModel(self.model, generation_config=model_config)
+                model = genai.GenerativeModel(
+                    self.model,
+                    generation_config=model_config,
+                    safety_settings=safety_settings
+                )
 
             chat = model.start_chat(history=gemini_messages[:-1] if len(gemini_messages) > 1 else [])
             response = await chat.send_message_async(
