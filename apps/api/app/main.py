@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .api import auth, accounts, campaigns, sync, recommendations, meta_auth, meta_campaigns
+from .api import auth, accounts, campaigns, sync, recommendations, meta_auth, meta_campaigns, demo
 
 app = FastAPI(
     title="AdsMaster API",
@@ -14,7 +14,7 @@ app = FastAPI(
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Next.js dev server
+    allow_origins=["http://localhost:3000", "http://localhost:3001"],  # Next.js dev server
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -28,6 +28,7 @@ app.include_router(sync.router)
 app.include_router(recommendations.router)
 app.include_router(meta_auth.router)
 app.include_router(meta_campaigns.router)
+app.include_router(demo.router)
 
 
 @app.get("/")

@@ -1,177 +1,338 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import Header from '@/components/layout/Header';
+import DemoBanner from '@/components/ui/DemoBanner';
+import { useDashboard } from '@/lib/hooks/useApi';
 import { formatMicros, formatNumber } from '@/lib/api';
 
-const mockMetrics = {
-  spend: 45678_000000,
-  revenue: 187450_000000,
-  roas: 4.1,
-  conversions: 1234,
-  cpa: 37_020000,
-  impressions: 1245000,
-  clicks: 28456,
-  ctr: 2.28,
-};
-
-const mockCampaigns = [
-  { id: '1', name: 'Search - Brand', platform: 'google', status: 'ENABLED', spend: 12500_000000, conversions: 156, roas: 5.2 },
-  { id: '2', name: 'PMax - Products', platform: 'google', status: 'ENABLED', spend: 15600_000000, conversions: 234, roas: 4.8 },
-  { id: '3', name: 'Display - Remarketing', platform: 'google', status: 'ENABLED', spend: 4400_000000, conversions: 67, roas: 3.9 },
-  { id: '4', name: 'FB - Retargeting', platform: 'meta', status: 'ENABLED', spend: 8235_000000, conversions: 89, roas: 4.1 },
-  { id: '5', name: 'IG - Prospecting', platform: 'meta', status: 'PAUSED', spend: 4943_000000, conversions: 45, roas: 2.8 },
-];
-
-const mockRecommendations = [
-  { id: '1', severity: 'critical', title: 'Budget exhausted by 2pm daily', campaign: 'Search - Brand', impact: '+$2,340/mo potential' },
-  { id: '2', severity: 'warning', title: 'Low Quality Score keywords', campaign: 'Search - Non-Brand', impact: '3 keywords QS < 5' },
-  { id: '3', severity: 'opportunity', title: 'Add negative keywords', campaign: 'PMax - Products', impact: 'Save $450/mo' },
-];
-
 export default function DashboardPage() {
+  const router = useRouter();
+  const { data, loading, error, isDemo } = useDashboard();
+
+  if (loading) {
+    return (
+      <>
+        <Header title="Dashboard" />
+        <div className="page-content">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '400px' }}>
+            <div style={{ textAlign: 'center' }}>
+              <div className="loading-spinner" style={{ marginBottom: '16px' }} />
+              <div style={{ color: 'var(--text-secondary)' }}>Loading dashboard...</div>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <>
+        <Header title="Dashboard" />
+        <div className="page-content">
+          <div className="card" style={{ textAlign: 'center', padding: '48px' }}>
+            <div style={{ fontSize: '48px', marginBottom: '16px' }}>!</div>
+            <div style={{ fontSize: '18px', fontWeight: 500, marginBottom: '8px' }}>Unable to load dashboard</div>
+            <div style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>{error || 'Unknown error'}</div>
+            <button className="btn btn-primary" onClick={() => window.location.reload()}>
+              Retry
+            </button>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  const { metrics, metrics_change, health_score, platform_breakdown, chart_data, top_campaigns, pending_recommendations, ai_savings_this_month } = data;
+
   return (
     <>
+      {isDemo && <DemoBanner onConnect={() => router.push('/connect')} />}
       <Header title="Dashboard" />
       <div className="page-content">
+        {/* AI Savings Banner */}
+        {ai_savings_this_month > 0 && (
+          <div
+            style={{
+              background: 'linear-gradient(90deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%)',
+              border: '1px solid var(--success)',
+              borderRadius: '8px',
+              padding: '12px 16px',
+              marginBottom: '24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{ fontSize: '24px' }}>$</span>
+              <div>
+                <div style={{ fontWeight: 600, color: 'var(--success)' }}>
+                  {formatMicros(ai_savings_this_month)} saved this month by AI
+                </div>
+                <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                  From {pending_recommendations} applied recommendations
+                </div>
+              </div>
+            </div>
+            <button className="btn btn-ghost btn-sm" onClick={() => router.push('/recommendations')}>
+              View All Recommendations
+            </button>
+          </div>
+        )}
+
         {/* Metrics Grid */}
         <div className="metrics-grid" style={{ marginBottom: '24px' }}>
           <div className="metric-card">
             <div className="metric-label">Total Spend (30d)</div>
-            <div className="metric-value mono">{formatMicros(mockMetrics.spend)}</div>
-            <div className="metric-change up">+12.3% vs last period</div>
+            <div className="metric-value mono">{formatMicros(metrics.spend_micros)}</div>
+            <div className={`metric-change ${metrics_change.spend >= 0 ? 'up' : 'down'}`}>
+              {metrics_change.spend >= 0 ? '+' : ''}{metrics_change.spend}% vs last period
+            </div>
           </div>
           <div className="metric-card">
             <div className="metric-label">Revenue</div>
-            <div className="metric-value mono">{formatMicros(mockMetrics.revenue)}</div>
-            <div className="metric-change up">+18.5% vs last period</div>
+            <div className="metric-value mono">{formatMicros(metrics.revenue_micros)}</div>
+            <div className={`metric-change ${metrics_change.revenue >= 0 ? 'up' : 'down'}`}>
+              {metrics_change.revenue >= 0 ? '+' : ''}{metrics_change.revenue}% vs last period
+            </div>
           </div>
           <div className="metric-card">
             <div className="metric-label">ROAS</div>
-            <div className="metric-value mono">{mockMetrics.roas}x</div>
-            <div className="metric-change up">+0.3x vs last period</div>
+            <div className="metric-value mono">{metrics.roas}x</div>
+            <div className={`metric-change ${metrics_change.roas >= 0 ? 'up' : 'down'}`}>
+              {metrics_change.roas >= 0 ? '+' : ''}{metrics_change.roas}x vs last period
+            </div>
           </div>
           <div className="metric-card">
             <div className="metric-label">Conversions</div>
-            <div className="metric-value mono">{formatNumber(mockMetrics.conversions)}</div>
-            <div className="metric-change up">+22.1% vs last period</div>
+            <div className="metric-value mono">{formatNumber(metrics.conversions)}</div>
+            <div className={`metric-change ${metrics_change.conversions >= 0 ? 'up' : 'down'}`}>
+              {metrics_change.conversions >= 0 ? '+' : ''}{metrics_change.conversions}% vs last period
+            </div>
           </div>
           <div className="metric-card">
             <div className="metric-label">Avg CPA</div>
-            <div className="metric-value mono">{formatMicros(mockMetrics.cpa)}</div>
-            <div className="metric-change down">-8.2% (better)</div>
+            <div className="metric-value mono">{formatMicros(metrics.cpa_micros)}</div>
+            <div className={`metric-change ${metrics_change.cpa <= 0 ? 'down' : 'up'}`}>
+              {metrics_change.cpa}% (better)
+            </div>
           </div>
           <div className="metric-card">
             <div className="metric-label">CTR</div>
-            <div className="metric-value mono">{mockMetrics.ctr}%</div>
-            <div className="metric-change up">+0.15% vs last period</div>
+            <div className="metric-value mono">{metrics.ctr}%</div>
+            <div className={`metric-change ${metrics_change.ctr >= 0 ? 'up' : 'down'}`}>
+              {metrics_change.ctr >= 0 ? '+' : ''}{metrics_change.ctr}% vs last period
+            </div>
           </div>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px' }}>
-          {/* Campaigns Table */}
+          {/* Performance Chart */}
           <div className="card">
             <div className="card-header">
-              <span className="card-title">Top Campaigns</span>
-              <a href="/campaigns" className="btn btn-ghost btn-sm">View All</a>
+              <span className="card-title">Performance Trend (14 Days)</span>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button className="btn btn-ghost btn-sm" style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}>
+                  Spend
+                </button>
+                <button className="btn btn-ghost btn-sm">Conversions</button>
+              </div>
             </div>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Campaign</th>
-                  <th>Platform</th>
-                  <th className="right">Spend</th>
-                  <th className="right">Conv</th>
-                  <th className="right">ROAS</th>
-                </tr>
-              </thead>
-              <tbody>
-                {mockCampaigns.map((c) => (
-                  <tr key={c.id}>
-                    <td>
-                      <a href={`/campaigns/${c.id}`} style={{ fontWeight: 500 }}>{c.name}</a>
-                    </td>
-                    <td>
-                      <span style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        fontSize: '12px',
-                        color: 'var(--text-secondary)'
-                      }}>
-                        <span style={{
-                          width: '8px',
-                          height: '8px',
-                          borderRadius: '50%',
-                          background: c.platform === 'google' ? '#4285F4' : '#0668E1'
-                        }} />
-                        {c.platform === 'google' ? 'Google' : 'Meta'}
-                      </span>
-                    </td>
-                    <td className="right mono">{formatMicros(c.spend)}</td>
-                    <td className="right mono">{c.conversions}</td>
-                    <td className="right mono" style={{ color: c.roas >= 4 ? 'var(--success)' : c.roas >= 3 ? 'var(--warning)' : 'var(--error)' }}>
-                      {c.roas}x
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div style={{ height: '200px', display: 'flex', alignItems: 'flex-end', gap: '4px', padding: '16px 0' }}>
+              {chart_data.map((day, i) => {
+                const maxSpend = Math.max(...chart_data.map(d => d.spend));
+                const height = maxSpend > 0 ? (day.spend / maxSpend) * 100 : 0;
+                return (
+                  <div
+                    key={i}
+                    style={{
+                      flex: 1,
+                      height: `${height}%`,
+                      background: 'linear-gradient(180deg, var(--primary) 0%, rgba(16, 185, 129, 0.3) 100%)',
+                      borderRadius: '4px 4px 0 0',
+                      minHeight: '4px',
+                    }}
+                    title={`${day.date}: ${formatMicros(day.spend * 1000000)}`}
+                  />
+                );
+              })}
+            </div>
           </div>
 
-          {/* AI Recommendations */}
+          {/* Health Score */}
           <div className="card">
             <div className="card-header">
-              <span className="card-title">AI Recommendations</span>
-              <a href="/recommendations" className="btn btn-ghost btn-sm">View All</a>
+              <span className="card-title">Account Health</span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+              <div style={{ textAlign: 'center', padding: '12px' }}>
+                <div style={{ fontSize: '28px', fontWeight: 700, color: health_score.overall >= 80 ? 'var(--success)' : health_score.overall >= 60 ? 'var(--warning)' : 'var(--error)' }}>
+                  {health_score.overall}%
+                </div>
+                <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Overall</div>
+              </div>
+              <div style={{ textAlign: 'center', padding: '12px' }}>
+                <div style={{ fontSize: '28px', fontWeight: 700, color: health_score.budget_utilization >= 80 ? 'var(--success)' : 'var(--warning)' }}>
+                  {health_score.budget_utilization}%
+                </div>
+                <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Budget</div>
+              </div>
+              <div style={{ textAlign: 'center', padding: '12px' }}>
+                <div style={{ fontSize: '28px', fontWeight: 700, color: health_score.quality_score >= 70 ? 'var(--success)' : health_score.quality_score >= 50 ? 'var(--warning)' : 'var(--error)' }}>
+                  {health_score.quality_score}%
+                </div>
+                <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Quality</div>
+              </div>
+              <div style={{ textAlign: 'center', padding: '12px' }}>
+                <div style={{ fontSize: '28px', fontWeight: 700, color: health_score.conversion_rate >= 80 ? 'var(--success)' : 'var(--warning)' }}>
+                  {health_score.conversion_rate}%
+                </div>
+                <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Conv Rate</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Platform Breakdown + AI Recommendations */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginTop: '24px' }}>
+          {/* Platform Breakdown */}
+          <div className="card">
+            <div className="card-header">
+              <span className="card-title">Platform Breakdown</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {mockRecommendations.map((rec) => (
+              {platform_breakdown.map((platform) => (
                 <div
-                  key={rec.id}
+                  key={platform.platform}
                   style={{
                     padding: '12px',
-                    borderRadius: '8px',
-                    borderLeft: `3px solid ${
-                      rec.severity === 'critical' ? 'var(--error)' :
-                      rec.severity === 'warning' ? 'var(--warning)' : 'var(--info)'
-                    }`,
                     background: 'var(--surface-secondary)',
+                    borderRadius: '8px',
                   }}
                 >
-                  <div style={{ fontWeight: 500, fontSize: '13px', marginBottom: '4px' }}>{rec.title}</div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px' }}>{rec.campaign}</div>
-                  <div style={{ fontSize: '12px', color: 'var(--success)', fontWeight: 500 }}>{rec.impact}</div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span
+                        style={{
+                          width: '10px',
+                          height: '10px',
+                          borderRadius: '50%',
+                          background: platform.platform === 'google' ? '#4285F4' : '#0668E1',
+                        }}
+                      />
+                      <span style={{ fontWeight: 500, textTransform: 'capitalize' }}>{platform.platform}</span>
+                    </div>
+                    <span className="mono" style={{ fontWeight: 600 }}>{formatMicros(platform.spend_micros)}</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '16px', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                    <span>{platform.conversions} conversions</span>
+                    <span>{platform.roas}x ROAS</span>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
+
+          {/* Pending Recommendations */}
+          <div className="card">
+            <div className="card-header">
+              <span className="card-title">AI Recommendations</span>
+              <button className="btn btn-ghost btn-sm" onClick={() => router.push('/recommendations')}>
+                View All ({pending_recommendations})
+              </button>
+            </div>
+            <div style={{ textAlign: 'center', padding: '24px' }}>
+              <div style={{ fontSize: '48px', fontWeight: 700, color: 'var(--primary)', marginBottom: '8px' }}>
+                {pending_recommendations}
+              </div>
+              <div style={{ color: 'var(--text-secondary)', marginBottom: '16px' }}>
+                pending recommendations
+              </div>
+              <button className="btn btn-primary" onClick={() => router.push('/recommendations')}>
+                Review Now
+              </button>
+            </div>
+          </div>
         </div>
 
-        {/* Account Health */}
+        {/* Top Campaigns Table */}
         <div className="card" style={{ marginTop: '24px' }}>
           <div className="card-header">
-            <span className="card-title">Account Health</span>
+            <span className="card-title">Top Campaigns</span>
+            <button className="btn btn-ghost btn-sm" onClick={() => router.push('/campaigns')}>
+              View All
+            </button>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
-            <div style={{ textAlign: 'center', padding: '16px' }}>
-              <div style={{ fontSize: '32px', fontWeight: 700, color: 'var(--success)' }}>82%</div>
-              <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Overall Score</div>
-            </div>
-            <div style={{ textAlign: 'center', padding: '16px' }}>
-              <div style={{ fontSize: '32px', fontWeight: 700, color: 'var(--success)' }}>94%</div>
-              <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Budget Utilization</div>
-            </div>
-            <div style={{ textAlign: 'center', padding: '16px' }}>
-              <div style={{ fontSize: '32px', fontWeight: 700, color: 'var(--warning)' }}>61%</div>
-              <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Quality Score</div>
-            </div>
-            <div style={{ textAlign: 'center', padding: '16px' }}>
-              <div style={{ fontSize: '32px', fontWeight: 700, color: 'var(--success)' }}>88%</div>
-              <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Conversion Rate</div>
-            </div>
-          </div>
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Campaign</th>
+                <th>Platform</th>
+                <th>Status</th>
+                <th className="right">Spend</th>
+                <th className="right">Conv</th>
+                <th className="right">ROAS</th>
+              </tr>
+            </thead>
+            <tbody>
+              {top_campaigns.slice(0, 5).map((campaign) => (
+                <tr
+                  key={campaign.id}
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => router.push(`/campaigns/${campaign.id}`)}
+                >
+                  <td style={{ fontWeight: 500 }}>{campaign.name}</td>
+                  <td>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px' }}>
+                      <span
+                        style={{
+                          width: '8px',
+                          height: '8px',
+                          borderRadius: '50%',
+                          background: campaign.platform === 'google' ? '#4285F4' : '#0668E1',
+                        }}
+                      />
+                      {campaign.platform === 'google' ? 'Google' : 'Meta'}
+                    </span>
+                  </td>
+                  <td>
+                    <span style={{ color: campaign.status === 'ENABLED' ? 'var(--success)' : 'var(--text-tertiary)' }}>
+                      {campaign.status === 'ENABLED' ? '●' : '○'}
+                    </span>
+                  </td>
+                  <td className="right mono">{formatMicros(campaign.spend_micros)}</td>
+                  <td className="right mono">{campaign.conversions}</td>
+                  <td
+                    className="right mono"
+                    style={{
+                      color: campaign.roas >= 4 ? 'var(--success)' : campaign.roas >= 3 ? 'var(--warning)' : 'var(--error)',
+                    }}
+                  >
+                    {campaign.roas}x
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
+
+      <style jsx>{`
+        .loading-spinner {
+          width: 40px;
+          height: 40px;
+          border: 3px solid var(--border-default);
+          border-top-color: var(--primary);
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+          margin: 0 auto;
+        }
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </>
   );
 }
