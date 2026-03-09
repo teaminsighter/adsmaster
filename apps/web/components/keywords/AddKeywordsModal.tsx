@@ -367,6 +367,7 @@ export default function AddKeywordsModal({
           justify-content: flex-end;
           gap: 12px;
           padding: 16px 24px;
+          padding-right: 80px;
           border-top: 1px solid var(--border-default);
           background: var(--surface-secondary);
           flex-shrink: 0;

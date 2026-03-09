@@ -359,7 +359,7 @@ export default function KeywordsPage() {
             }}
           >
             <span>Showing {filteredKeywords.length} of {data.total} keywords</span>
-            <div style={{ display: 'flex', gap: '8px' }}>
+            <div style={{ display: 'flex', gap: '8px', paddingRight: '70px' }}>
               <button className="btn btn-ghost btn-sm" disabled>Previous</button>
               <button className="btn btn-ghost btn-sm" disabled>Next</button>
             </div>

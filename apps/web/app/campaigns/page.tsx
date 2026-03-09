@@ -282,7 +282,7 @@ export default function CampaignsPage() {
             }}
           >
             <span>Showing {campaigns.length} of {data.total} campaigns</span>
-            <div style={{ display: 'flex', gap: '8px' }}>
+            <div style={{ display: 'flex', gap: '8px', paddingRight: '70px' }}>
               <button className="btn btn-ghost btn-sm" disabled>Previous</button>
               <button className="btn btn-ghost btn-sm" disabled>Next</button>
             </div>
