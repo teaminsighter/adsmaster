@@ -162,7 +162,7 @@ export default function CampaignsPage() {
                   <div style={{ width: '1px', height: '20px', background: 'var(--border-default)' }} />
                 </>
               )}
-              <button className="btn btn-primary btn-sm" onClick={() => alert('Demo: Create Campaign wizard coming soon!')}>
+              <button className="btn btn-primary btn-sm" onClick={() => router.push('/campaigns/new')}>
                 + Create Campaign
               </button>
             </div>

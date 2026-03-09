@@ -165,13 +165,7 @@ export default function HomePage() {
                 <h2 style={{ fontSize: '16px', fontWeight: 600, margin: 0 }}>Campaigns</h2>
                 <button
                   className="btn btn-primary btn-sm"
-                  onClick={() => {
-                    if (isDemo) {
-                      alert('Demo: Create Campaign wizard coming soon!');
-                    } else {
-                      router.push('/campaigns/new');
-                    }
-                  }}
+                  onClick={() => router.push('/campaigns/new')}
                 >
                   + New Campaign
                 </button>
