@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/layout/Header';
 import DemoBanner from '@/components/ui/DemoBanner';
+import CreateAudienceModal from '@/components/audiences/CreateAudienceModal';
 import { useAudiences } from '@/lib/hooks/useApi';
 
 const audienceTypes: Record<string, { label: string; color: string }> = {
@@ -25,8 +26,10 @@ export default function AudiencesPage() {
   const [platformFilter, setPlatformFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
-  const { data, loading, error, isDemo } = useAudiences({
+  const { data, loading, error, isDemo, refetch } = useAudiences({
     platform: platformFilter || undefined,
     type: typeFilter || undefined,
   });
@@ -77,6 +80,29 @@ export default function AudiencesPage() {
 
   const { audiences, summary } = data;
 
+  const handleCreateAudience = async (formData: {
+    name: string;
+    platform: 'google' | 'meta';
+    type: string;
+    source: string;
+    lookbackDays?: number;
+    description?: string;
+  }) => {
+    // Simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 800));
+
+    // Show success message
+    setSuccessMessage(
+      `Successfully created audience "${formData.name}" on ${formData.platform === 'google' ? 'Google Ads' : 'Meta Ads'}`
+    );
+
+    // Clear success message after 5 seconds
+    setTimeout(() => setSuccessMessage(''), 5000);
+
+    // Refetch audiences
+    refetch();
+  };
+
   // Filter by search query (client-side)
   const filteredAudiences = audiences.filter((aud) => {
     if (searchQuery && !aud.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
@@ -88,6 +114,32 @@ export default function AudiencesPage() {
       {isDemo && <DemoBanner onConnect={() => router.push('/connect')} />}
       <Header title="Audiences" />
       <div className="page-content">
+        {/* Success Message */}
+        {successMessage && (
+          <div style={{
+            marginBottom: '24px',
+            padding: '16px',
+            background: 'rgba(16, 185, 129, 0.1)',
+            border: '1px solid rgba(16, 185, 129, 0.3)',
+            borderLeft: '4px solid var(--success)',
+            borderRadius: '8px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ color: 'var(--success)', fontSize: '18px' }}>✓</span>
+              <span style={{ fontWeight: 500 }}>{successMessage}</span>
+            </div>
+            <button
+              onClick={() => setSuccessMessage('')}
+              style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '18px' }}
+            >
+              ×
+            </button>
+          </div>
+        )}
+
         {/* Summary Stats */}
         <div className="metrics-grid" style={{ marginBottom: '24px' }}>
           <div className="metric-card">
@@ -144,7 +196,7 @@ export default function AudiencesPage() {
                 <option value="ENGAGEMENT">Engagement</option>
               </select>
             </div>
-            <button className="btn btn-primary btn-sm" onClick={() => alert('Demo: Would open Create Audience wizard')}>
+            <button className="btn btn-primary btn-sm" onClick={() => setShowCreateModal(true)}>
               + Create Audience
             </button>
           </div>
@@ -254,6 +306,14 @@ export default function AudiencesPage() {
           </div>
         </div>
       </div>
+
+      {/* Create Audience Modal */}
+      <CreateAudienceModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSubmit={handleCreateAudience}
+        isDemo={isDemo}
+      />
     </>
   );
 }
