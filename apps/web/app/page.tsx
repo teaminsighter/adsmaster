@@ -1,67 +1,117 @@
-import Header from "@/components/layout/Header";
-import MetricCard from "@/components/dashboard/MetricCard";
-import BudgetPacing from "@/components/dashboard/BudgetPacing";
-import HealthScore from "@/components/dashboard/HealthScore";
-import CampaignsTable from "@/components/dashboard/CampaignsTable";
+'use client';
 
-// Mock data - will be replaced with API calls
-const mockMetrics = {
-  spend: { value: "$45,678", change: "▲ 12.3%", direction: "up" as const },
-  conversions: { value: "1,234", change: "▲ 18.5%", direction: "up" as const },
-  cpa: { value: "$37.02", change: "▼ 8.2%", direction: "down" as const, benchmark: { label: "Industry avg", value: "$28.10", comparison: "above" as const } },
-  roas: { value: "4.2x", change: "▲ 5.1%", direction: "up" as const },
-  clicks: { value: "28,456", change: "▲ 9.8%", direction: "up" as const },
-  impressions: { value: "1.2M", change: "▲ 15.2%", direction: "up" as const },
-};
+import { useRouter } from 'next/navigation';
+import Header from '@/components/layout/Header';
+import DemoBanner from '@/components/ui/DemoBanner';
+import MetricCard from '@/components/dashboard/MetricCard';
+import BudgetPacing from '@/components/dashboard/BudgetPacing';
+import HealthScore from '@/components/dashboard/HealthScore';
+import { useDashboard } from '@/lib/hooks/useApi';
+import { formatMicros, formatNumber } from '@/lib/api';
 
-const mockCampaigns = [
-  { id: "1", name: "Search - Brand", type: "SEARCH", status: "ENABLED", spend: 12500_000000, budget: 15000_000000, impressions: 125000, clicks: 4500, conversions: 156, cpa: 80_128205, roas: 4.2 },
-  { id: "2", name: "Search - Non-Brand", type: "SEARCH", status: "ENABLED", spend: 8900_000000, budget: 10000_000000, impressions: 89000, clicks: 2800, conversions: 89, cpa: 100_000000, roas: 3.1 },
-  { id: "3", name: "PMax - Products", type: "PERFORMANCE_MAX", status: "ENABLED", spend: 15600_000000, budget: 20000_000000, impressions: 450000, clicks: 8900, conversions: 234, cpa: 66_666666, roas: 5.2 },
-  { id: "4", name: "Display - Remarketing", type: "DISPLAY", status: "PAUSED", spend: 2300_000000, budget: 5000_000000, impressions: 230000, clicks: 1200, conversions: 45, cpa: 51_111111, roas: 2.8 },
-  { id: "5", name: "YouTube - Brand Awareness", type: "VIDEO", status: "ENABLED", spend: 6378_000000, budget: 8000_000000, impressions: 320000, clicks: 2100, conversions: 67, cpa: 95_194029, roas: 1.9 },
-];
+export default function HomePage() {
+  const router = useRouter();
+  const { data, loading, error, isDemo } = useDashboard();
 
-const mockHealthItems = [
-  { label: "Waste Control", score: 82 },
-  { label: "Targeting", score: 61 },
-  { label: "Tracking", score: 90 },
-  { label: "ROI", score: 78 },
-];
+  if (loading) {
+    return (
+      <>
+        <Header title="Dashboard" />
+        <div className="page-content">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '400px' }}>
+            <div style={{ textAlign: 'center' }}>
+              <div className="loading-spinner" style={{ marginBottom: '16px' }} />
+              <div style={{ color: 'var(--text-secondary)' }}>Loading dashboard...</div>
+            </div>
+          </div>
+        </div>
+        <style jsx>{`
+          .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border-default);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+          }
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+        `}</style>
+      </>
+    );
+  }
 
-export default function Dashboard() {
+  if (error || !data) {
+    return (
+      <>
+        <Header title="Dashboard" />
+        <div className="page-content">
+          <div className="card" style={{ textAlign: 'center', padding: '48px' }}>
+            <div style={{ fontSize: '48px', marginBottom: '16px' }}>!</div>
+            <div style={{ fontSize: '18px', fontWeight: 500, marginBottom: '8px' }}>Unable to load dashboard</div>
+            <div style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>{error || 'Unknown error'}</div>
+            <button className="btn btn-primary" onClick={() => window.location.reload()}>
+              Retry
+            </button>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  const { metrics, metrics_change, health_score, top_campaigns, pending_recommendations, ai_savings_this_month } = data;
+
+  // Calculate budget pacing from metrics
+  const budgetSpent = metrics.spend_micros / 1_000_000;
+  const estimatedBudget = budgetSpent * 1.2; // Rough estimate
+
+  const mockHealthItems = [
+    { label: 'Waste Control', score: health_score.overall },
+    { label: 'Budget Util', score: health_score.budget_utilization },
+    { label: 'Quality', score: health_score.quality_score },
+    { label: 'Conv Rate', score: health_score.conversion_rate },
+  ];
+
   return (
     <>
+      {isDemo && <DemoBanner onConnect={() => router.push('/connect')} />}
       <Header title="Dashboard" />
       <div className="page-content">
         {/* AI Savings Banner */}
         <div style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "12px 16px",
-          background: "var(--primary-light)",
-          borderRadius: "var(--radius-lg)",
-          marginBottom: "24px",
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '12px 16px',
+          background: 'var(--primary-light)',
+          borderRadius: 'var(--radius-lg)',
+          marginBottom: '24px',
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <span style={{ fontSize: "24px" }}>🤖</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{ fontSize: '24px' }}>$</span>
             <div>
-              <div className="mono" style={{ fontSize: "20px", fontWeight: 700, color: "var(--primary)" }}>
-                $1,247
+              <div className="mono" style={{ fontSize: '20px', fontWeight: 700, color: 'var(--primary)' }}>
+                {formatMicros(ai_savings_this_month)}
               </div>
-              <div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
+              <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
                 saved by AI this month
               </div>
             </div>
           </div>
-          <button className="btn btn-ghost btn-sm">View details →</button>
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={() => router.push('/recommendations')}
+          >
+            View details
+          </button>
         </div>
 
         {/* Budget Pacing */}
         <BudgetPacing
-          spent={45678}
-          budget={80000}
+          spent={budgetSpent}
+          budget={estimatedBudget}
           daysElapsed={14}
           daysInMonth={31}
         />
@@ -70,100 +120,168 @@ export default function Dashboard() {
         <div className="metrics-grid">
           <MetricCard
             label="Total Spend"
-            value={mockMetrics.spend.value}
-            change={mockMetrics.spend.change}
-            changeDirection={mockMetrics.spend.direction}
+            value={formatMicros(metrics.spend_micros)}
+            change={`${metrics_change.spend >= 0 ? '▲' : '▼'} ${Math.abs(metrics_change.spend)}%`}
+            changeDirection={metrics_change.spend >= 0 ? 'up' : 'down'}
           />
           <MetricCard
             label="Conversions"
-            value={mockMetrics.conversions.value}
-            change={mockMetrics.conversions.change}
-            changeDirection={mockMetrics.conversions.direction}
+            value={formatNumber(metrics.conversions)}
+            change={`${metrics_change.conversions >= 0 ? '▲' : '▼'} ${Math.abs(metrics_change.conversions)}%`}
+            changeDirection={metrics_change.conversions >= 0 ? 'up' : 'down'}
           />
           <MetricCard
             label="Avg CPA"
-            value={mockMetrics.cpa.value}
-            change={mockMetrics.cpa.change}
-            changeDirection="up"
-            benchmark={mockMetrics.cpa.benchmark}
+            value={formatMicros(metrics.cpa_micros)}
+            change={`${metrics_change.cpa <= 0 ? '▼' : '▲'} ${Math.abs(metrics_change.cpa)}%`}
+            changeDirection={metrics_change.cpa <= 0 ? 'down' : 'up'}
           />
           <MetricCard
             label="ROAS"
-            value={mockMetrics.roas.value}
-            change={mockMetrics.roas.change}
-            changeDirection={mockMetrics.roas.direction}
+            value={`${metrics.roas}x`}
+            change={`${metrics_change.roas >= 0 ? '▲' : '▼'} ${Math.abs(metrics_change.roas)}x`}
+            changeDirection={metrics_change.roas >= 0 ? 'up' : 'down'}
           />
           <MetricCard
             label="Clicks"
-            value={mockMetrics.clicks.value}
-            change={mockMetrics.clicks.change}
-            changeDirection={mockMetrics.clicks.direction}
+            value={formatNumber(metrics.clicks)}
+            change={`${metrics_change.ctr >= 0 ? '▲' : '▼'} ${Math.abs(metrics_change.ctr)}%`}
+            changeDirection={metrics_change.ctr >= 0 ? 'up' : 'down'}
           />
           <MetricCard
             label="Impressions"
-            value={mockMetrics.impressions.value}
-            change={mockMetrics.impressions.change}
-            changeDirection={mockMetrics.impressions.direction}
+            value={formatNumber(metrics.impressions)}
+            change="▲ 15.2%"
+            changeDirection="up"
           />
         </div>
 
         {/* Main Content Grid */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: "24px" }}>
-          {/* Left Column */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '24px' }}>
+          {/* Left Column - Campaigns */}
           <div>
-            {/* Campaigns Table */}
-            <div style={{ marginBottom: "24px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-                <h2 style={{ fontSize: "16px", fontWeight: 600, margin: 0 }}>Campaigns</h2>
-                <button className="btn btn-primary btn-sm">+ New Campaign</button>
+            <div style={{ marginBottom: '24px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <h2 style={{ fontSize: '16px', fontWeight: 600, margin: 0 }}>Campaigns</h2>
+                <button
+                  className="btn btn-primary btn-sm"
+                  onClick={() => {
+                    if (isDemo) {
+                      alert('Demo: Create Campaign wizard coming soon!');
+                    } else {
+                      router.push('/campaigns/new');
+                    }
+                  }}
+                >
+                  + New Campaign
+                </button>
               </div>
-              <CampaignsTable campaigns={mockCampaigns} accountId="1" />
+
+              {/* Campaigns Table */}
+              <div className="card">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Campaign</th>
+                      <th>Status</th>
+                      <th className="right">Spend</th>
+                      <th className="right">Conv</th>
+                      <th className="right">ROAS</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {top_campaigns.slice(0, 5).map((campaign) => (
+                      <tr
+                        key={campaign.id}
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => router.push(`/campaigns/${campaign.id}`)}
+                      >
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{
+                              width: '8px',
+                              height: '8px',
+                              borderRadius: '50%',
+                              background: campaign.platform === 'google' ? '#4285F4' : '#0668E1',
+                            }} />
+                            <span style={{ fontWeight: 500 }}>{campaign.name}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <span style={{ color: campaign.status === 'ENABLED' ? 'var(--success)' : 'var(--text-tertiary)' }}>
+                            {campaign.status === 'ENABLED' ? '● Active' : '○ Paused'}
+                          </span>
+                        </td>
+                        <td className="right mono">{formatMicros(campaign.spend_micros)}</td>
+                        <td className="right mono">{campaign.conversions}</td>
+                        <td className="right mono" style={{
+                          color: campaign.roas >= 4 ? 'var(--success)' : campaign.roas >= 3 ? 'var(--warning)' : 'var(--error)'
+                        }}>
+                          {campaign.roas}x
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <div style={{ padding: '12px', borderTop: '1px solid var(--border-default)', textAlign: 'center' }}>
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => router.push('/campaigns')}
+                  >
+                    View all campaigns
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
           {/* Right Column */}
           <div>
             {/* Health Score */}
-            <div style={{ marginBottom: "24px" }}>
-              <HealthScore overallScore={78} items={mockHealthItems} />
+            <div style={{ marginBottom: '24px' }}>
+              <HealthScore overallScore={health_score.overall} items={mockHealthItems} />
             </div>
 
             {/* AI Recommendations Preview */}
-            <div className="card" style={{ borderLeft: "3px solid var(--error)" }}>
+            <div className="card" style={{ borderLeft: '3px solid var(--error)' }}>
               <div className="card-header">
-                <span className="card-title">🤖 AI Recommendations</span>
-                <span className="badge badge-error">3 Critical</span>
+                <span className="card-title">AI Recommendations</span>
+                <span className="badge badge-error">{pending_recommendations} Pending</span>
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div style={{
-                  padding: "12px",
-                  background: "rgba(239, 68, 68, 0.05)",
-                  borderRadius: "6px",
-                  fontSize: "13px",
+                  padding: '12px',
+                  background: 'rgba(239, 68, 68, 0.05)',
+                  borderRadius: '6px',
+                  fontSize: '13px',
                 }}>
-                  <div style={{ fontWeight: 500, marginBottom: "4px" }}>
-                    3 wasting keywords detected
+                  <div style={{ fontWeight: 500, marginBottom: '4px' }}>
+                    Budget exhausted by 2pm daily
                   </div>
-                  <div style={{ color: "var(--text-secondary)", fontSize: "12px" }}>
-                    $245 spent with 0 conversions
+                  <div style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>
+                    +$2,340/mo potential revenue
                   </div>
                 </div>
                 <div style={{
-                  padding: "12px",
-                  background: "rgba(245, 158, 11, 0.05)",
-                  borderRadius: "6px",
-                  fontSize: "13px",
+                  padding: '12px',
+                  background: 'rgba(245, 158, 11, 0.05)',
+                  borderRadius: '6px',
+                  fontSize: '13px',
                 }}>
-                  <div style={{ fontWeight: 500, marginBottom: "4px" }}>
-                    Budget limited campaign
+                  <div style={{ fontWeight: 500, marginBottom: '4px' }}>
+                    2 wasting keywords detected
                   </div>
-                  <div style={{ color: "var(--text-secondary)", fontSize: "12px" }}>
-                    Missing ~12 conversions/week
+                  <div style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>
+                    Save $632/mo by pausing
                   </div>
                 </div>
               </div>
-              <button className="btn btn-ghost btn-sm" style={{ marginTop: "12px", width: "100%" }}>
-                View all recommendations →
+              <button
+                className="btn btn-ghost btn-sm"
+                style={{ marginTop: '12px', width: '100%' }}
+                onClick={() => router.push('/recommendations')}
+              >
+                View all recommendations
               </button>
             </div>
           </div>

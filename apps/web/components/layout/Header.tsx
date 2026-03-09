@@ -61,8 +61,12 @@ export default function Header({ title = 'Dashboard' }: HeaderProps) {
         </div>
 
         {/* AI Chat Button */}
-        <button className="btn btn-primary" style={{ gap: '6px' }}>
-          💬 AI Advisor
+        <button
+          className="btn btn-primary"
+          style={{ gap: '6px' }}
+          onClick={() => alert('AI Advisor chat coming soon! This will open a chat panel to ask questions about your ad performance.')}
+        >
+          AI Advisor
         </button>
 
         {/* User Avatar */}
