@@ -154,7 +154,7 @@ export default function AddKeywordsModal({
           <button className="panel-close" onClick={handleClose}>×</button>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="panel-form">
           <div className="panel-body">
             {error && (
               <div className="error-message">
@@ -347,6 +347,13 @@ export default function AddKeywordsModal({
         .panel-close:hover {
           background: var(--surface-secondary);
           color: var(--text-primary);
+        }
+
+        .panel-form {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
         }
 
         .panel-body {
