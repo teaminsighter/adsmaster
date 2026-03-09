@@ -379,6 +379,44 @@ export function useAudiences(filters?: { platform?: string; type?: string; statu
 }
 
 /**
+ * Create audience
+ */
+export async function createAudience(
+  organizationId: string,
+  data: {
+    name: string;
+    platform: 'google' | 'meta';
+    type: string;
+    source: string;
+    lookbackDays?: number;
+    description?: string;
+  }
+) {
+  const response = await fetch(
+    `${API_BASE_URL}/api/v1/audiences?organization_id=${organizationId}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: data.name,
+        platform: data.platform,
+        type: data.type,
+        source: data.source,
+        lookback_days: data.lookbackDays || 30,
+        description: data.description,
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to create audience');
+  }
+
+  return response.json();
+}
+
+/**
  * API action functions
  */
 export async function applyRecommendation(id: string, optionId: number) {
