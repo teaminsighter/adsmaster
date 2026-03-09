@@ -390,6 +390,48 @@ export default function AddKeywordsModal({
           width: 100%;
         }
 
+        .select {
+          padding: 10px 12px;
+          border: 1px solid var(--border-default);
+          border-radius: 8px;
+          font-size: 13px;
+          background: var(--bg-primary);
+          color: var(--text-primary);
+          cursor: pointer;
+          appearance: none;
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+          background-repeat: no-repeat;
+          background-position: right 12px center;
+          padding-right: 36px;
+        }
+
+        .select:focus {
+          outline: none;
+          border-color: var(--primary);
+          box-shadow: 0 0 0 3px var(--primary-light);
+        }
+
+        .select:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+          background-color: var(--surface-secondary);
+        }
+
+        .input {
+          padding: 10px 12px;
+          border: 1px solid var(--border-default);
+          border-radius: 8px;
+          font-size: 13px;
+          background: var(--bg-primary);
+          color: var(--text-primary);
+        }
+
+        .input:focus {
+          outline: none;
+          border-color: var(--primary);
+          box-shadow: 0 0 0 3px var(--primary-light);
+        }
+
         .textarea {
           padding: 12px;
           border: 1px solid var(--border-default);
