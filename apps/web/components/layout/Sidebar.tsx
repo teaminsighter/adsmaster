@@ -82,30 +82,38 @@ export default function Sidebar() {
 
       {/* Main Navigation */}
       <nav style={{ flex: 1, padding: '12px 0' }}>
-        {navItems.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={`nav-item ${pathname === item.href ? 'active' : ''}`}
-          >
-            <span className="nav-item-icon">{item.icon}</span>
-            {item.label}
-          </Link>
-        ))}
+        {navItems.map((item) => {
+          const isActive = item.href === '/'
+            ? pathname === '/'
+            : pathname.startsWith(item.href);
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`nav-item ${isActive ? 'active' : ''}`}
+            >
+              <span className="nav-item-icon">{item.icon}</span>
+              {item.label}
+            </Link>
+          );
+        })}
       </nav>
 
       {/* Bottom Navigation */}
       <div style={{ borderTop: '1px solid var(--border-default)', padding: '12px 0' }}>
-        {bottomNavItems.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={`nav-item ${pathname === item.href ? 'active' : ''}`}
-          >
-            <span className="nav-item-icon">{item.icon}</span>
-            {item.label}
-          </Link>
-        ))}
+        {bottomNavItems.map((item) => {
+          const isActive = pathname.startsWith(item.href);
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`nav-item ${isActive ? 'active' : ''}`}
+            >
+              <span className="nav-item-icon">{item.icon}</span>
+              {item.label}
+            </Link>
+          );
+        })}
       </div>
     </aside>
   );
