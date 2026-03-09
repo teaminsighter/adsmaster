@@ -342,6 +342,43 @@ export function useKeywords(filters?: { status?: string; campaign?: string }) {
 }
 
 /**
+ * Hook for audiences
+ */
+export function useAudiences(filters?: { platform?: string; type?: string; status?: string }) {
+  const params = new URLSearchParams();
+  if (filters?.platform) params.set('platform', filters.platform);
+  if (filters?.type) params.set('type', filters.type);
+  if (filters?.status) params.set('status', filters.status);
+  const query = params.toString() ? `?${params}` : '';
+
+  return useApi<{
+    demo_mode: boolean;
+    audiences: Array<{
+      id: string;
+      name: string;
+      type: string;
+      platform: string;
+      size: number;
+      status: string;
+      campaigns: number;
+      conversions: number;
+      spend_micros: number;
+      created_at: string;
+    }>;
+    total: number;
+    summary: {
+      total_audiences: number;
+      active: number;
+      paused: number;
+      total_size: number;
+      total_conversions: number;
+      google_audiences: number;
+      meta_audiences: number;
+    };
+  }>(`/api/v1/demo/audiences${query}`);
+}
+
+/**
  * API action functions
  */
 export async function applyRecommendation(id: string, optionId: number) {

@@ -276,6 +276,81 @@ DEMO_RECOMMENDATIONS = [
     },
 ]
 
+DEMO_AUDIENCES = [
+    {
+        "id": "aud_1",
+        "name": "Website Visitors - 30 Days",
+        "type": "REMARKETING",
+        "platform": "google",
+        "size": 45000,
+        "status": "ACTIVE",
+        "campaigns": 3,
+        "conversions": 156,
+        "spend_micros": 42_500_000,
+        "created_at": "2025-01-15",
+    },
+    {
+        "id": "aud_2",
+        "name": "Cart Abandoners - 7 Days",
+        "type": "REMARKETING",
+        "platform": "google",
+        "size": 8500,
+        "status": "ACTIVE",
+        "campaigns": 2,
+        "conversions": 89,
+        "spend_micros": 21_000_000,
+        "created_at": "2025-02-01",
+    },
+    {
+        "id": "aud_3",
+        "name": "Purchasers - 180 Days",
+        "type": "CUSTOMER_LIST",
+        "platform": "google",
+        "size": 12300,
+        "status": "ACTIVE",
+        "campaigns": 1,
+        "conversions": 234,
+        "spend_micros": 38_500_000,
+        "created_at": "2024-12-10",
+    },
+    {
+        "id": "aud_4",
+        "name": "Lookalike - Top Customers 1%",
+        "type": "LOOKALIKE",
+        "platform": "meta",
+        "size": 2100000,
+        "status": "ACTIVE",
+        "campaigns": 2,
+        "conversions": 67,
+        "spend_micros": 28_000_000,
+        "created_at": "2025-01-20",
+    },
+    {
+        "id": "aud_5",
+        "name": "FB Page Engagers - 90 Days",
+        "type": "ENGAGEMENT",
+        "platform": "meta",
+        "size": 125000,
+        "status": "ACTIVE",
+        "campaigns": 1,
+        "conversions": 45,
+        "spend_micros": 15_000_000,
+        "created_at": "2025-02-15",
+    },
+    {
+        "id": "aud_6",
+        "name": "Email Subscribers",
+        "type": "CUSTOMER_LIST",
+        "platform": "meta",
+        "size": 28000,
+        "status": "PAUSED",
+        "campaigns": 0,
+        "conversions": 0,
+        "spend_micros": 0,
+        "created_at": "2025-01-05",
+    },
+]
+
 DEMO_KEYWORDS = [
     {"id": "kw_1", "text": "acme products", "match_type": "EXACT", "status": "ENABLED", "campaign": "Search - Brand Keywords", "impressions": 45000, "clicks": 1234, "conversions": 45, "spend_micros": 1234_000000, "cpa_micros": 27_420000, "quality_score": 10},
     {"id": "kw_2", "text": "buy acme online", "match_type": "PHRASE", "status": "ENABLED", "campaign": "Search - Brand Keywords", "impressions": 32000, "clicks": 987, "conversions": 38, "spend_micros": 1108_000000, "cpa_micros": 29_180000, "quality_score": 9},
@@ -699,6 +774,42 @@ async def demo_analytics(period: str = "30d"):
             {"type": "DISPLAY", "spend_micros": 21_000_000, "conversions": 67},
             {"type": "CONVERSIONS", "spend_micros": 66_500_000, "conversions": 134},
         ]
+    }
+
+
+@router.get("/audiences")
+async def demo_audiences(
+    platform: str = None,
+    type: str = None,
+    status: str = None,
+):
+    """Get demo audiences."""
+    audiences = DEMO_AUDIENCES.copy()
+
+    if platform:
+        audiences = [a for a in audiences if a["platform"] == platform.lower()]
+    if type:
+        audiences = [a for a in audiences if a["type"] == type.upper()]
+    if status:
+        audiences = [a for a in audiences if a["status"] == status.upper()]
+
+    # Summary stats
+    total_size = sum(a["size"] for a in DEMO_AUDIENCES)
+    total_conversions = sum(a["conversions"] for a in DEMO_AUDIENCES)
+
+    return {
+        "demo_mode": True,
+        "audiences": audiences,
+        "total": len(audiences),
+        "summary": {
+            "total_audiences": len(DEMO_AUDIENCES),
+            "active": len([a for a in DEMO_AUDIENCES if a["status"] == "ACTIVE"]),
+            "paused": len([a for a in DEMO_AUDIENCES if a["status"] == "PAUSED"]),
+            "total_size": total_size,
+            "total_conversions": total_conversions,
+            "google_audiences": len([a for a in DEMO_AUDIENCES if a["platform"] == "google"]),
+            "meta_audiences": len([a for a in DEMO_AUDIENCES if a["platform"] == "meta"]),
+        }
     }
 
 

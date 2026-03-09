@@ -1,69 +1,10 @@
 'use client';
 
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Header from '@/components/layout/Header';
-
-const mockAudiences = [
-  {
-    id: '1',
-    name: 'Website Visitors - 30 Days',
-    type: 'REMARKETING',
-    platform: 'google',
-    size: 45000,
-    status: 'ACTIVE',
-    campaigns: 3,
-    conversions: 156,
-  },
-  {
-    id: '2',
-    name: 'Cart Abandoners - 7 Days',
-    type: 'REMARKETING',
-    platform: 'google',
-    size: 8500,
-    status: 'ACTIVE',
-    campaigns: 2,
-    conversions: 89,
-  },
-  {
-    id: '3',
-    name: 'Purchasers - 180 Days',
-    type: 'CUSTOMER_LIST',
-    platform: 'google',
-    size: 12300,
-    status: 'ACTIVE',
-    campaigns: 1,
-    conversions: 234,
-  },
-  {
-    id: '4',
-    name: 'Lookalike - Top Customers 1%',
-    type: 'LOOKALIKE',
-    platform: 'meta',
-    size: 2100000,
-    status: 'ACTIVE',
-    campaigns: 2,
-    conversions: 67,
-  },
-  {
-    id: '5',
-    name: 'FB Page Engagers - 90 Days',
-    type: 'ENGAGEMENT',
-    platform: 'meta',
-    size: 125000,
-    status: 'ACTIVE',
-    campaigns: 1,
-    conversions: 45,
-  },
-  {
-    id: '6',
-    name: 'Email Subscribers',
-    type: 'CUSTOMER_LIST',
-    platform: 'meta',
-    size: 28000,
-    status: 'PAUSED',
-    campaigns: 0,
-    conversions: 0,
-  },
-];
+import DemoBanner from '@/components/ui/DemoBanner';
+import { useAudiences } from '@/lib/hooks/useApi';
 
 const audienceTypes: Record<string, { label: string; color: string }> = {
   REMARKETING: { label: 'Remarketing', color: 'var(--primary)' },
@@ -72,43 +13,101 @@ const audienceTypes: Record<string, { label: string; color: string }> = {
   ENGAGEMENT: { label: 'Engagement', color: 'var(--success)' },
 };
 
+// Format audience size
+const formatSize = (size: number) => {
+  if (size >= 1_000_000) return `${(size / 1_000_000).toFixed(1)}M`;
+  if (size >= 1_000) return `${(size / 1_000).toFixed(0)}K`;
+  return size.toString();
+};
+
 export default function AudiencesPage() {
-  const stats = {
-    total: mockAudiences.length,
-    active: mockAudiences.filter((a) => a.status === 'ACTIVE').length,
-    totalSize: mockAudiences.reduce((sum, a) => sum + a.size, 0),
-    googleAudiences: mockAudiences.filter((a) => a.platform === 'google').length,
-    metaAudiences: mockAudiences.filter((a) => a.platform === 'meta').length,
-  };
+  const router = useRouter();
+  const [platformFilter, setPlatformFilter] = useState('');
+  const [typeFilter, setTypeFilter] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const { data, loading, error, isDemo } = useAudiences({
+    platform: platformFilter || undefined,
+    type: typeFilter || undefined,
+  });
+
+  // Loading state
+  if (loading) {
+    return (
+      <>
+        <Header title="Audiences" />
+        <div className="page-content">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '400px' }}>
+            <div style={{ textAlign: 'center' }}>
+              <div className="loading-spinner" style={{ width: '40px', height: '40px', margin: '0 auto 16px' }} />
+              <div style={{ color: 'var(--text-secondary)' }}>Loading audiences...</div>
+            </div>
+          </div>
+        </div>
+        <style jsx>{`
+          .loading-spinner {
+            border: 3px solid var(--border-default);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+          }
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+        `}</style>
+      </>
+    );
+  }
+
+  // Error state
+  if (error || !data) {
+    return (
+      <>
+        <Header title="Audiences" />
+        <div className="page-content">
+          <div className="card" style={{ padding: '40px', textAlign: 'center' }}>
+            <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚠️</div>
+            <h3 style={{ marginBottom: '8px' }}>Unable to load audiences</h3>
+            <p style={{ color: 'var(--text-secondary)' }}>{error || 'Please try again later'}</p>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  const { audiences, summary } = data;
+
+  // Filter by search query (client-side)
+  const filteredAudiences = audiences.filter((aud) => {
+    if (searchQuery && !aud.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+    return true;
+  });
 
   return (
     <>
+      {isDemo && <DemoBanner onConnect={() => router.push('/connect')} />}
       <Header title="Audiences" />
       <div className="page-content">
         {/* Summary Stats */}
         <div className="metrics-grid" style={{ marginBottom: '24px' }}>
           <div className="metric-card">
             <div className="metric-label">Total Audiences</div>
-            <div className="metric-value">{stats.total}</div>
+            <div className="metric-value">{summary.total_audiences}</div>
             <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-              {stats.active} active
+              {summary.active} active, {summary.paused} paused
             </div>
           </div>
           <div className="metric-card">
             <div className="metric-label">Total Reach</div>
-            <div className="metric-value mono">
-              {stats.totalSize > 1000000
-                ? `${(stats.totalSize / 1000000).toFixed(1)}M`
-                : `${(stats.totalSize / 1000).toFixed(0)}K`}
-            </div>
+            <div className="metric-value mono">{formatSize(summary.total_size)}</div>
           </div>
           <div className="metric-card">
             <div className="metric-label">Google Audiences</div>
-            <div className="metric-value">{stats.googleAudiences}</div>
+            <div className="metric-value">{summary.google_audiences}</div>
           </div>
           <div className="metric-card">
             <div className="metric-label">Meta Audiences</div>
-            <div className="metric-value">{stats.metaAudiences}</div>
+            <div className="metric-value">{summary.meta_audiences}</div>
           </div>
         </div>
 
@@ -121,13 +120,23 @@ export default function AudiencesPage() {
                 className="input"
                 placeholder="Search audiences..."
                 style={{ width: '250px' }}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
               />
-              <select className="select">
+              <select
+                className="select"
+                value={platformFilter}
+                onChange={(e) => setPlatformFilter(e.target.value)}
+              >
                 <option value="">All Platforms</option>
                 <option value="google">Google Ads</option>
                 <option value="meta">Meta Ads</option>
               </select>
-              <select className="select">
+              <select
+                className="select"
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value)}
+              >
                 <option value="">All Types</option>
                 <option value="REMARKETING">Remarketing</option>
                 <option value="CUSTOMER_LIST">Customer List</option>
@@ -135,12 +144,14 @@ export default function AudiencesPage() {
                 <option value="ENGAGEMENT">Engagement</option>
               </select>
             </div>
-            <button className="btn btn-primary btn-sm">+ Create Audience</button>
+            <button className="btn btn-primary btn-sm" onClick={() => alert('Demo: Would open Create Audience wizard')}>
+              + Create Audience
+            </button>
           </div>
 
           {/* Audiences Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
-            {mockAudiences.map((audience) => (
+            {filteredAudiences.map((audience) => (
               <div
                 key={audience.id}
                 style={{
@@ -169,11 +180,11 @@ export default function AudiencesPage() {
                         style={{
                           padding: '2px 6px',
                           borderRadius: '4px',
-                          background: `${audienceTypes[audience.type].color}20`,
-                          color: audienceTypes[audience.type].color,
+                          background: `${audienceTypes[audience.type]?.color || 'var(--text-tertiary)'}20`,
+                          color: audienceTypes[audience.type]?.color || 'var(--text-tertiary)',
                         }}
                       >
-                        {audienceTypes[audience.type].label}
+                        {audienceTypes[audience.type]?.label || audience.type}
                       </span>
                       <span style={{ color: 'var(--text-secondary)' }}>
                         {audience.platform === 'google' ? 'Google' : 'Meta'}
@@ -187,23 +198,19 @@ export default function AudiencesPage() {
                   </span>
                 </div>
 
-                <div style={{ display: 'flex', gap: '24px', fontSize: '13px' }}>
+                <div style={{ display: 'flex', gap: '32px', fontSize: '13px' }}>
                   <div>
-                    <div style={{ color: 'var(--text-tertiary)', fontSize: '11px' }}>Size</div>
+                    <div style={{ color: 'var(--text-primary)', fontSize: '11px', fontWeight: 500, opacity: 0.7, marginBottom: '2px' }}>Size</div>
                     <div className="mono" style={{ fontWeight: 500 }}>
-                      {audience.size > 1000000
-                        ? `${(audience.size / 1000000).toFixed(1)}M`
-                        : audience.size > 1000
-                        ? `${(audience.size / 1000).toFixed(0)}K`
-                        : audience.size}
+                      {formatSize(audience.size)}
                     </div>
                   </div>
                   <div>
-                    <div style={{ color: 'var(--text-tertiary)', fontSize: '11px' }}>Campaigns</div>
+                    <div style={{ color: 'var(--text-primary)', fontSize: '11px', fontWeight: 500, opacity: 0.7, marginBottom: '2px' }}>Campaigns</div>
                     <div className="mono" style={{ fontWeight: 500 }}>{audience.campaigns}</div>
                   </div>
                   <div>
-                    <div style={{ color: 'var(--text-tertiary)', fontSize: '11px' }}>Conversions</div>
+                    <div style={{ color: 'var(--text-primary)', fontSize: '11px', fontWeight: 500, opacity: 0.7, marginBottom: '2px' }}>Conversions</div>
                     <div className="mono" style={{ fontWeight: 500, color: audience.conversions > 0 ? 'var(--success)' : 'var(--text-tertiary)' }}>
                       {audience.conversions || '—'}
                     </div>
@@ -211,12 +218,39 @@ export default function AudiencesPage() {
                 </div>
 
                 <div style={{ display: 'flex', gap: '8px', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid var(--border-default)' }}>
-                  <button className="btn btn-ghost btn-sm" style={{ flex: 1 }}>View</button>
-                  <button className="btn btn-ghost btn-sm" style={{ flex: 1 }}>Edit</button>
-                  <button className="btn btn-ghost btn-sm">...</button>
+                  <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={() => alert(`Demo: Would view ${audience.name}`)}>View</button>
+                  <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={() => alert(`Demo: Would edit ${audience.name}`)}>Edit</button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => alert('Demo: More options')}>...</button>
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* Empty State */}
+          {filteredAudiences.length === 0 && (
+            <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+              {searchQuery ? `No audiences matching "${searchQuery}"` : 'No audiences found'}
+            </div>
+          )}
+
+          {/* Footer */}
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginTop: '16px',
+              paddingTop: '16px',
+              borderTop: '1px solid var(--border-default)',
+              fontSize: '13px',
+              color: 'var(--text-secondary)',
+            }}
+          >
+            <span>Showing {filteredAudiences.length} of {data.total} audiences</span>
+            <div style={{ display: 'flex', gap: '8px', paddingRight: '70px' }}>
+              <button className="btn btn-ghost btn-sm" disabled>Previous</button>
+              <button className="btn btn-ghost btn-sm" disabled>Next</button>
+            </div>
           </div>
         </div>
       </div>
