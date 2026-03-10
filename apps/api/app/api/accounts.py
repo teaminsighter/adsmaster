@@ -4,14 +4,22 @@ Ad Accounts API Endpoints
 CRUD operations for ad accounts (Google Ads, Meta Ads).
 """
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
 
 from ..services.supabase_client import get_supabase_client
+from .user_auth import get_current_user
 
 router = APIRouter(prefix="/accounts", tags=["Ad Accounts"])
+
+
+def _to_str(val):
+    """Convert UUID/datetime to string, handle None."""
+    if val is None:
+        return None
+    return str(val)
 
 
 # =============================================================================
@@ -51,9 +59,9 @@ class AdAccountStatsResponse(BaseModel):
 
 @router.get("", response_model=AdAccountListResponse)
 async def list_accounts(
-    organization_id: str = Query(..., description="Filter by organization"),
     platform: Optional[str] = Query(None, description="Filter by platform (google_ads, meta_ads)"),
     status: Optional[str] = Query(None, description="Filter by status"),
+    current_user: dict = Depends(get_current_user),
 ):
     """
     List all ad accounts for an organization.
@@ -61,6 +69,10 @@ async def list_accounts(
     Returns accounts with their connection status and last sync time.
     """
     supabase = get_supabase_client()
+    organization_id = current_user.get("organization_id")
+
+    if not organization_id:
+        return AdAccountListResponse(accounts=[], total=0)
 
     # Build query
     query = supabase.table("ad_accounts").select(
@@ -76,8 +88,8 @@ async def list_accounts(
     for row in result.data:
         platform_info = row.get("ad_platforms", {})
         accounts.append(AdAccountResponse(
-            id=row["id"],
-            organization_id=row["organization_id"],
+            id=_to_str(row["id"]),
+            organization_id=_to_str(row["organization_id"]),
             platform=platform_info.get("name", "unknown"),
             external_account_id=row["external_account_id"],
             name=row["name"],
@@ -85,8 +97,8 @@ async def list_accounts(
             timezone=row["timezone"],
             status=row["status"],
             token_status=row["token_status"],
-            last_sync_at=row.get("last_sync_at"),
-            created_at=row["created_at"],
+            last_sync_at=_to_str(row.get("last_sync_at")),
+            created_at=_to_str(row["created_at"]),
         ))
 
     # Filter by platform if specified
@@ -97,15 +109,25 @@ async def list_accounts(
 
 
 @router.get("/{account_id}", response_model=AdAccountResponse)
-async def get_account(account_id: str):
+async def get_account(
+    account_id: str,
+    current_user: dict = Depends(get_current_user),
+):
     """
     Get a single ad account by ID.
     """
     supabase = get_supabase_client()
+    organization_id = current_user.get("organization_id")
 
-    result = supabase.table("ad_accounts").select(
+    query = supabase.table("ad_accounts").select(
         "*, ad_platforms(name, display_name)"
-    ).eq("id", account_id).execute()
+    ).eq("id", account_id)
+
+    # Filter by organization for security
+    if organization_id:
+        query = query.eq("organization_id", organization_id)
+
+    result = query.execute()
 
     if not result.data:
         raise HTTPException(status_code=404, detail="Account not found")
@@ -129,13 +151,25 @@ async def get_account(account_id: str):
 
 
 @router.get("/{account_id}/stats", response_model=AdAccountStatsResponse)
-async def get_account_stats(account_id: str):
+async def get_account_stats(
+    account_id: str,
+    current_user: dict = Depends(get_current_user),
+):
     """
     Get statistics for an ad account.
 
     Returns campaign counts and 30-day spend/conversions.
     """
     supabase = get_supabase_client()
+    organization_id = current_user.get("organization_id")
+
+    # Verify account belongs to user's organization
+    if organization_id:
+        account_check = supabase.table("ad_accounts").select("id").eq(
+            "id", account_id
+        ).eq("organization_id", organization_id).execute()
+        if not account_check.data:
+            raise HTTPException(status_code=404, detail="Ad account not found")
 
     # Get campaign counts
     campaigns_result = supabase.table("campaigns").select(
@@ -166,16 +200,23 @@ async def get_account_stats(account_id: str):
 
 
 @router.delete("/{account_id}")
-async def disconnect_account(account_id: str):
+async def disconnect_account(
+    account_id: str,
+    current_user: dict = Depends(get_current_user),
+):
     """
     Disconnect an ad account.
 
     This marks the account as disconnected but preserves historical data.
     """
     supabase = get_supabase_client()
+    organization_id = current_user.get("organization_id")
 
-    # Check if account exists
-    result = supabase.table("ad_accounts").select("id").eq("id", account_id).execute()
+    # Check if account exists and belongs to user's organization
+    query = supabase.table("ad_accounts").select("id").eq("id", account_id)
+    if organization_id:
+        query = query.eq("organization_id", organization_id)
+    result = query.execute()
     if not result.data:
         raise HTTPException(status_code=404, detail="Account not found")
 
@@ -190,17 +231,24 @@ async def disconnect_account(account_id: str):
 
 
 @router.post("/{account_id}/reconnect")
-async def reconnect_account(account_id: str):
+async def reconnect_account(
+    account_id: str,
+    current_user: dict = Depends(get_current_user),
+):
     """
     Get URL to reconnect a disconnected account.
 
     Returns the OAuth URL to restart the connection flow.
     """
     supabase = get_supabase_client()
+    organization_id = current_user.get("organization_id")
 
-    result = supabase.table("ad_accounts").select(
+    query = supabase.table("ad_accounts").select(
         "*, ad_platforms(name)"
-    ).eq("id", account_id).execute()
+    ).eq("id", account_id)
+    if organization_id:
+        query = query.eq("organization_id", organization_id)
+    result = query.execute()
 
     if not result.data:
         raise HTTPException(status_code=404, detail="Account not found")
@@ -218,3 +266,141 @@ async def reconnect_account(account_id: str):
         }
     else:
         raise HTTPException(status_code=400, detail=f"Unknown platform: {platform}")
+
+
+# =============================================================================
+# Token Health Endpoints
+# =============================================================================
+
+class TokenHealthResponse(BaseModel):
+    account_id: str
+    account_name: Optional[str]
+    platform: Optional[str]
+    status: str  # healthy, expiring_soon, refresh_failed, expired
+    badge_color: str  # green, amber, red
+    badge_text: str
+    days_remaining: Optional[int]
+    expires_at: Optional[str]
+    refresh_attempts: int
+    last_error: Optional[str]
+    needs_action: bool
+
+
+@router.get("/{account_id}/token-health", response_model=TokenHealthResponse)
+async def get_account_token_health(
+    account_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Get token health status for an account.
+
+    Returns:
+    - status: healthy, expiring_soon, refresh_failed, or expired
+    - badge_color: green, amber, or red
+    - badge_text: Display text for UI badge
+    - days_remaining: Days until token expires
+    - needs_action: Whether user action is required
+    """
+    from ..workers.token_refresh_worker import TokenHealthService
+
+    supabase = get_supabase_client()
+    organization_id = current_user.get("organization_id")
+
+    # Verify account belongs to user's organization
+    if organization_id:
+        account_check = supabase.table("ad_accounts").select("id").eq(
+            "id", account_id
+        ).eq("organization_id", organization_id).execute()
+        if not account_check.data:
+            raise HTTPException(status_code=404, detail="Account not found")
+
+    service = TokenHealthService()
+    health = await service.get_account_token_health(account_id)
+
+    if health.get("error"):
+        raise HTTPException(status_code=404, detail=health["error"])
+
+    return TokenHealthResponse(**health)
+
+
+@router.get("/token-health/all", response_model=list[TokenHealthResponse])
+async def get_all_token_health(
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Get token health status for all accounts in the organization.
+
+    Useful for displaying a token health dashboard.
+    """
+    from ..workers.token_refresh_worker import TokenHealthService
+
+    organization_id = current_user.get("organization_id")
+
+    if not organization_id:
+        return []
+
+    service = TokenHealthService()
+    health_list = await service.get_organization_token_health(organization_id)
+
+    return [TokenHealthResponse(**h) for h in health_list]
+
+
+@router.post("/{account_id}/refresh-token")
+async def refresh_account_token(
+    account_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Manually trigger token refresh for an account.
+
+    Use this when a token is expiring soon or refresh has failed.
+    """
+    from ..workers.token_refresh_worker import TokenRefreshWorker
+
+    supabase = get_supabase_client()
+    organization_id = current_user.get("organization_id")
+
+    # Get account with platform info
+    query = supabase.table("ad_accounts").select(
+        "*, ad_platforms(name)"
+    ).eq("id", account_id)
+
+    if organization_id:
+        query = query.eq("organization_id", organization_id)
+
+    result = query.execute()
+
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Account not found")
+
+    account = result.data[0]
+    platform = account.get("ad_platforms", {}).get("name")
+
+    if platform != "meta_ads":
+        # Google tokens use standard OAuth refresh, not manual
+        return {
+            "success": False,
+            "message": "Manual token refresh only supported for Meta accounts",
+        }
+
+    worker = TokenRefreshWorker()
+    success = await worker.refresh_meta_token(account)
+
+    if success:
+        return {
+            "success": True,
+            "message": "Token refreshed successfully. New token valid for 60 days.",
+        }
+    else:
+        # Get updated status
+        updated = supabase.table("ad_accounts").select(
+            "token_status, token_refresh_attempts, token_last_refresh_error"
+        ).eq("id", account_id).execute()
+
+        error = updated.data[0].get("token_last_refresh_error") if updated.data else "Unknown error"
+
+        return {
+            "success": False,
+            "message": f"Token refresh failed: {error}",
+            "reconnect_required": True,
+        }

@@ -209,3 +209,114 @@ async def cancel_sync(sync_id: str):
     }).eq("id", sync_id).execute()
 
     return {"success": True, "message": "Sync cancelled"}
+
+
+# =============================================================================
+# API Quota Endpoints
+# =============================================================================
+
+class QuotaStatusResponse(BaseModel):
+    platform: str
+    daily_quota: Optional[int] = None
+    used: Optional[int] = None
+    remaining: Optional[int] = None
+    usage_percent: Optional[float] = None
+    status: str  # healthy, warning, critical
+    resets_at: Optional[str] = None
+    note: Optional[str] = None
+
+
+class AllQuotaStatusResponse(BaseModel):
+    google_ads: QuotaStatusResponse
+    meta_ads: QuotaStatusResponse
+    timestamp: str
+
+
+@router.get("/quota/status", response_model=AllQuotaStatusResponse)
+async def get_quota_status():
+    """
+    Get current API quota status for all platforms.
+
+    Returns:
+    - google_ads: Daily quota usage (15,000 operations/day basic tier)
+    - meta_ads: Usage-based quotas from API response headers
+
+    Status levels:
+    - healthy: < 80% usage
+    - warning: 80-95% usage
+    - critical: > 95% usage
+    """
+    import os
+    from ..integrations.rate_limiter import QuotaTracker
+
+    redis_url = os.getenv("REDIS_URL", "redis://localhost:6379")
+    tracker = QuotaTracker(redis_url)
+
+    status = await tracker.get_all_quota_status()
+
+    return AllQuotaStatusResponse(
+        google_ads=QuotaStatusResponse(**status["google_ads"]),
+        meta_ads=QuotaStatusResponse(**status["meta_ads"]),
+        timestamp=status["timestamp"],
+    )
+
+
+@router.get("/quota/google-ads", response_model=QuotaStatusResponse)
+async def get_google_ads_quota():
+    """
+    Get detailed Google Ads API quota status.
+
+    Google Ads API limits:
+    - Basic tier: 15,000 operations/day
+    - Standard tier: 1,000,000 operations/day
+
+    Quotas reset at midnight UTC.
+    """
+    import os
+    from ..integrations.rate_limiter import GoogleAdsRateLimiter
+
+    redis_url = os.getenv("REDIS_URL", "redis://localhost:6379")
+    limiter = GoogleAdsRateLimiter(redis_url)
+
+    status = await limiter.get_quota_status()
+    return QuotaStatusResponse(**status)
+
+
+@router.post("/quota/test-backoff")
+async def test_rate_limit_backoff(
+    fail_count: int = 3,
+):
+    """
+    Test endpoint for rate limit backoff behavior.
+
+    Simulates API failures to demonstrate exponential backoff.
+    For debugging/testing only.
+    """
+    import random
+    from ..integrations.rate_limiter import call_with_backoff, RateLimitExceededError
+
+    attempt_count = [0]
+
+    async def flaky_operation():
+        attempt_count[0] += 1
+        if attempt_count[0] <= fail_count:
+            raise RateLimitExceededError("test", retry_after=1)
+        return {"success": True, "attempts": attempt_count[0]}
+
+    try:
+        result = await call_with_backoff(
+            flaky_operation,
+            max_retries=fail_count + 2,
+            base_delay=0.5,
+        )
+        return {
+            "success": True,
+            "result": result,
+            "message": f"Succeeded after {attempt_count[0]} attempts",
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "attempts": attempt_count[0],
+        }
