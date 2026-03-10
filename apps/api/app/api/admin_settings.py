@@ -2,26 +2,26 @@
 Admin Settings API - Manage platform configuration.
 
 Includes AI provider switching, API key management, and feature flags.
+
+Connected to Supabase database (stored in organization.settings JSONB).
 """
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 from typing import Dict, Any, Optional, List
 import os
 
+from ..services.supabase_client import get_supabase_client
 from ..services.ai import get_ai_provider, get_available_providers, test_provider, AIProviderType
 
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
 
 
-# In-memory settings for demo (production would use database)
-_settings = {
+# Default settings template
+DEFAULT_ADMIN_SETTINGS = {
     "ai_provider": "gemini",
-    "ai_model": None,  # Use default
-    "gemini_api_key": os.getenv("GEMINI_API_KEY", ""),
-    "openai_api_key": os.getenv("OPENAI_API_KEY", ""),
-    "anthropic_api_key": os.getenv("ANTHROPIC_API_KEY", ""),
-    "ml_backend": "local",  # bigquery_ml, vertex_ai, prophet, local
+    "ai_model": None,
+    "ml_backend": "local",
     "features": {
         "ai_recommendations": True,
         "ai_chat": True,
@@ -29,6 +29,11 @@ _settings = {
         "anomaly_detection": True,
         "auto_apply_recommendations": False,
     },
+    "api_keys_configured": {
+        "gemini": False,
+        "openai": False,
+        "anthropic": False,
+    }
 }
 
 
@@ -55,63 +60,118 @@ class MLBackendUpdate(BaseModel):
     backend: str  # bigquery_ml, vertex_ai, prophet, local
 
 
-# --- AI Provider Settings ---
+# ============================================================================
+# Helper Functions
+# ============================================================================
+
+def get_org_settings(organization_id: str) -> Dict[str, Any]:
+    """Get admin settings for an organization from database."""
+    supabase = get_supabase_client()
+
+    result = supabase.table("organizations").select("settings").eq(
+        "id", organization_id
+    ).execute()
+
+    if not result.data:
+        return DEFAULT_ADMIN_SETTINGS.copy()
+
+    settings = result.data[0].get("settings") or {}
+
+    # Merge with defaults
+    merged = DEFAULT_ADMIN_SETTINGS.copy()
+    merged.update(settings)
+
+    # Ensure nested dicts are merged too
+    if "features" in settings:
+        merged["features"] = {**DEFAULT_ADMIN_SETTINGS["features"], **settings["features"]}
+    if "api_keys_configured" in settings:
+        merged["api_keys_configured"] = {**DEFAULT_ADMIN_SETTINGS["api_keys_configured"], **settings["api_keys_configured"]}
+
+    return merged
+
+
+def save_org_settings(organization_id: str, settings: Dict[str, Any]) -> bool:
+    """Save admin settings for an organization to database."""
+    supabase = get_supabase_client()
+
+    result = supabase.table("organizations").update({
+        "settings": settings
+    }).eq("id", organization_id).execute()
+
+    return bool(result.data)
+
+
+# ============================================================================
+# AI Provider Settings
+# ============================================================================
 
 @router.get("/ai/providers")
-async def list_ai_providers():
+async def list_ai_providers(
+    organization_id: str = Query(..., description="Organization ID")
+):
     """
     List available AI providers and their models.
 
     Returns provider info for admin UI dropdown.
     """
+    settings = get_org_settings(organization_id)
+
     return {
         "providers": get_available_providers(),
         "current": {
-            "provider": _settings["ai_provider"],
-            "model": _settings["ai_model"],
+            "provider": settings.get("ai_provider", "gemini"),
+            "model": settings.get("ai_model"),
         },
     }
 
 
 @router.put("/ai/settings")
-async def update_ai_settings(settings: AISettingsUpdate):
+async def update_ai_settings(
+    data: AISettingsUpdate,
+    organization_id: str = Query(..., description="Organization ID")
+):
     """
     Update AI provider settings.
 
     Allows switching between Gemini, OpenAI, Claude.
     """
-    if settings.ai_provider:
-        if settings.ai_provider not in ["gemini", "openai", "anthropic"]:
-            raise HTTPException(400, "Invalid provider. Must be: gemini, openai, anthropic")
-        _settings["ai_provider"] = settings.ai_provider
+    settings = get_org_settings(organization_id)
 
-    if settings.ai_model:
-        _settings["ai_model"] = settings.ai_model
+    if data.ai_provider:
+        if data.ai_provider not in ["gemini", "openai", "anthropic"]:
+            raise HTTPException(400, "Invalid provider. Must be: gemini, openai, anthropic")
+        settings["ai_provider"] = data.ai_provider
+
+    if data.ai_model:
+        settings["ai_model"] = data.ai_model
+
+    save_org_settings(organization_id, settings)
 
     return {
         "success": True,
-        "message": f"AI provider updated to {_settings['ai_provider']}",
+        "message": f"AI provider updated to {settings['ai_provider']}",
         "settings": {
-            "provider": _settings["ai_provider"],
-            "model": _settings["ai_model"],
+            "provider": settings["ai_provider"],
+            "model": settings.get("ai_model"),
         },
     }
 
 
 @router.post("/ai/api-key")
-async def update_api_key(data: APIKeyUpdate):
+async def update_api_key(
+    data: APIKeyUpdate,
+    organization_id: str = Query(..., description="Organization ID")
+):
     """
     Update API key for an AI provider.
 
     Validates the key by making a test request.
+    Note: API keys are stored in environment variables, not database.
+    This endpoint validates and marks the provider as configured.
     """
-    provider_map = {
-        "gemini": "gemini_api_key",
-        "openai": "openai_api_key",
-        "anthropic": "anthropic_api_key",
-    }
+    valid_providers = ["gemini", "openai", "anthropic"]
 
-    if data.provider not in provider_map:
+    if data.provider not in valid_providers:
         raise HTTPException(400, "Invalid provider")
 
     # Test the key
@@ -122,27 +182,46 @@ async def update_api_key(data: APIKeyUpdate):
         if not result["success"]:
             raise HTTPException(400, f"API key validation failed: {result.get('error', 'Unknown error')}")
 
-        # Save the key
-        _settings[provider_map[data.provider]] = data.api_key
+        # Mark as configured in settings
+        settings = get_org_settings(organization_id)
+        if "api_keys_configured" not in settings:
+            settings["api_keys_configured"] = {}
+        settings["api_keys_configured"][data.provider] = True
+        save_org_settings(organization_id, settings)
 
         return {
             "success": True,
             "message": f"{data.provider.title()} API key validated and saved",
             "test_response": result.get("response", ""),
         }
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(400, f"API key validation failed: {str(e)}")
 
 
 @router.post("/ai/test")
-async def test_ai_connection():
+async def test_ai_connection(
+    organization_id: str = Query(..., description="Organization ID")
+):
     """
     Test current AI provider connection.
 
     Makes a simple request to verify API key and model work.
     """
+    settings = get_org_settings(organization_id)
+
     try:
-        provider = get_ai_provider(settings=_settings)
+        # Build settings dict for AI provider
+        ai_settings = {
+            "ai_provider": settings.get("ai_provider", "gemini"),
+            "ai_model": settings.get("ai_model"),
+            "gemini_api_key": os.getenv("GEMINI_API_KEY", ""),
+            "openai_api_key": os.getenv("OPENAI_API_KEY", ""),
+            "anthropic_api_key": os.getenv("ANTHROPIC_API_KEY", ""),
+        }
+
+        provider = get_ai_provider(settings=ai_settings)
         response = await provider.generate_text(
             prompt="Say 'Connection successful' in exactly 2 words.",
             temperature=0,
@@ -162,13 +241,19 @@ async def test_ai_connection():
         }
 
 
-# --- ML Backend Settings ---
+# ============================================================================
+# ML Backend Settings
+# ============================================================================
 
 @router.get("/ml/settings")
-async def get_ml_settings():
+async def get_ml_settings(
+    organization_id: str = Query(..., description="Organization ID")
+):
     """Get ML backend settings."""
+    settings = get_org_settings(organization_id)
+
     return {
-        "current_backend": _settings["ml_backend"],
+        "current_backend": settings.get("ml_backend", "local"),
         "available_backends": [
             {
                 "id": "bigquery_ml",
@@ -199,38 +284,58 @@ async def get_ml_settings():
 
 
 @router.put("/ml/settings")
-async def update_ml_settings(settings: MLBackendUpdate):
+async def update_ml_settings(
+    data: MLBackendUpdate,
+    organization_id: str = Query(..., description="Organization ID")
+):
     """Update ML backend settings."""
     valid_backends = ["bigquery_ml", "vertex_ai", "prophet", "local"]
-    if settings.backend not in valid_backends:
+    if data.backend not in valid_backends:
         raise HTTPException(400, f"Invalid backend. Must be one of: {valid_backends}")
 
-    _settings["ml_backend"] = settings.backend
+    settings = get_org_settings(organization_id)
+    settings["ml_backend"] = data.backend
+    save_org_settings(organization_id, settings)
 
     return {
         "success": True,
-        "message": f"ML backend updated to {settings.backend}",
-        "backend": settings.backend,
+        "message": f"ML backend updated to {data.backend}",
+        "backend": data.backend,
     }
 
 
-# --- Feature Flags ---
+# ============================================================================
+# Feature Flags
+# ============================================================================
 
 @router.get("/features")
-async def get_feature_flags():
+async def get_feature_flags(
+    organization_id: str = Query(..., description="Organization ID")
+):
     """Get all feature flags."""
+    settings = get_org_settings(organization_id)
+
     return {
-        "features": _settings["features"],
+        "features": settings.get("features", DEFAULT_ADMIN_SETTINGS["features"]),
     }
 
 
 @router.put("/features")
-async def toggle_feature(toggle: FeatureToggle):
+async def toggle_feature(
+    toggle: FeatureToggle,
+    organization_id: str = Query(..., description="Organization ID")
+):
     """Toggle a feature flag."""
-    if toggle.feature not in _settings["features"]:
+    settings = get_org_settings(organization_id)
+
+    if "features" not in settings:
+        settings["features"] = DEFAULT_ADMIN_SETTINGS["features"].copy()
+
+    if toggle.feature not in settings["features"]:
         raise HTTPException(400, f"Unknown feature: {toggle.feature}")
 
-    _settings["features"][toggle.feature] = toggle.enabled
+    settings["features"][toggle.feature] = toggle.enabled
+    save_org_settings(organization_id, settings)
 
     return {
         "success": True,
@@ -239,34 +344,51 @@ async def toggle_feature(toggle: FeatureToggle):
     }
 
 
-# --- Full Settings ---
+# ============================================================================
+# Full Settings
+# ============================================================================
 
 @router.get("/settings")
-async def get_all_settings():
+async def get_all_settings(
+    organization_id: str = Query(..., description="Organization ID")
+):
     """
     Get all admin settings.
 
     Returns sanitized settings (no API keys).
     """
+    settings = get_org_settings(organization_id)
+    api_keys_configured = settings.get("api_keys_configured", {})
+
     return {
         "ai": {
-            "provider": _settings["ai_provider"],
-            "model": _settings["ai_model"],
-            "gemini_configured": bool(_settings["gemini_api_key"]),
-            "openai_configured": bool(_settings["openai_api_key"]),
-            "anthropic_configured": bool(_settings["anthropic_api_key"]),
+            "provider": settings.get("ai_provider", "gemini"),
+            "model": settings.get("ai_model"),
+            "gemini_configured": api_keys_configured.get("gemini", bool(os.getenv("GEMINI_API_KEY"))),
+            "openai_configured": api_keys_configured.get("openai", bool(os.getenv("OPENAI_API_KEY"))),
+            "anthropic_configured": api_keys_configured.get("anthropic", bool(os.getenv("ANTHROPIC_API_KEY"))),
         },
         "ml": {
-            "backend": _settings["ml_backend"],
+            "backend": settings.get("ml_backend", "local"),
         },
-        "features": _settings["features"],
+        "features": settings.get("features", DEFAULT_ADMIN_SETTINGS["features"]),
     }
 
 
-def get_current_settings() -> Dict[str, Any]:
+def get_current_settings(organization_id: str = None) -> Dict[str, Any]:
     """
     Get current settings dict for use by other services.
 
     Called by AI/ML services to get configuration.
     """
-    return _settings.copy()
+    if organization_id:
+        settings = get_org_settings(organization_id)
+    else:
+        settings = DEFAULT_ADMIN_SETTINGS.copy()
+
+    # Add env var API keys
+    settings["gemini_api_key"] = os.getenv("GEMINI_API_KEY", "")
+    settings["openai_api_key"] = os.getenv("OPENAI_API_KEY", "")
+    settings["anthropic_api_key"] = os.getenv("ANTHROPIC_API_KEY", "")
+
+    return settings

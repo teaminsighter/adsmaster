@@ -2,15 +2,17 @@
 Audiences API Endpoints
 
 CRUD operations for custom audiences (remarketing, lookalikes, customer lists).
+Connected to PostgreSQL database with JWT authentication.
 """
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends
 from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime
 import uuid
 
 from ..services.supabase_client import get_supabase_client
+from .user_auth import get_current_user
 
 router = APIRouter(prefix="/api/v1/audiences", tags=["Audiences"])
 
@@ -72,25 +74,53 @@ class AudienceListResponse(BaseModel):
 
 
 # =============================================================================
+# Helper Functions
+# =============================================================================
+
+def audience_row_to_response(row: dict) -> AudienceResponse:
+    """Convert a database row to AudienceResponse."""
+    return AudienceResponse(
+        id=row["id"],
+        name=row.get("name", ""),
+        platform=row.get("platform", "google"),
+        type=row.get("type", "REMARKETING"),
+        source=row.get("source", "all_visitors"),
+        status=row.get("status", "ACTIVE"),
+        lookback_days=row.get("lookback_days", 30) or 30,
+        description=row.get("description"),
+        estimated_size=row.get("estimated_size", 0) or 0,
+        campaigns_using=row.get("campaigns_using", 0) or 0,
+        total_conversions=row.get("total_conversions", 0) or 0,
+        total_spend_micros=row.get("total_spend_micros", 0) or 0,
+        platform_audience_id=row.get("platform_audience_id"),
+        platform_sync_status=row.get("platform_sync_status", "pending") or "pending",
+        created_at=row.get("created_at", datetime.utcnow().isoformat()),
+        updated_at=row.get("updated_at", datetime.utcnow().isoformat()),
+    )
+
+
+# =============================================================================
 # Endpoints
 # =============================================================================
 
 @router.get("", response_model=AudienceListResponse)
 async def list_audiences(
-    organization_id: str = Query(..., description="Organization ID"),
     platform: Optional[str] = Query(None, description="Filter by platform (google, meta)"),
     type: Optional[str] = Query(None, description="Filter by type"),
     status: Optional[str] = Query(None, description="Filter by status"),
+    current_user: dict = Depends(get_current_user),
 ):
     """
-    List all audiences for an organization.
+    List all audiences for the user's organization.
     """
-    supabase = get_supabase_client()
+    db = get_supabase_client()
+    organization_id = current_user.get("organization_id")
 
-    # Build query
-    query = supabase.table("audiences").select("*").eq(
-        "organization_id", organization_id
-    ).is_("deleted_at", "null")
+    if not organization_id:
+        raise HTTPException(status_code=400, detail="User not part of an organization")
+
+    # Build query - filter out deleted audiences
+    query = db.table("audiences").select("*").eq("organization_id", organization_id)
 
     if platform:
         query = query.eq("platform", platform.lower())
@@ -99,40 +129,22 @@ async def list_audiences(
     if status:
         query = query.eq("status", status.upper())
 
-    result = query.order("created_at", desc=True).execute()
+    result = query.execute()
 
-    audiences = [
-        AudienceResponse(
-            id=row["id"],
-            name=row["name"],
-            platform=row["platform"],
-            type=row["type"],
-            source=row["source"],
-            status=row["status"],
-            lookback_days=row.get("lookback_days", 30),
-            description=row.get("description"),
-            estimated_size=row.get("estimated_size", 0),
-            campaigns_using=row.get("campaigns_using", 0),
-            total_conversions=row.get("total_conversions", 0),
-            total_spend_micros=row.get("total_spend_micros", 0),
-            platform_audience_id=row.get("platform_audience_id"),
-            platform_sync_status=row.get("platform_sync_status", "pending"),
-            created_at=row["created_at"],
-            updated_at=row["updated_at"],
-        )
-        for row in result.data
-    ]
+    # Filter out soft-deleted audiences
+    all_data = [row for row in (result.data or []) if not row.get("deleted_at")]
+
+    audiences = [audience_row_to_response(row) for row in all_data]
 
     # Calculate summary
-    all_data = result.data
     summary = AudienceSummary(
         total_audiences=len(all_data),
-        active=len([a for a in all_data if a["status"] == "ACTIVE"]),
-        paused=len([a for a in all_data if a["status"] == "PAUSED"]),
-        total_size=sum(a.get("estimated_size", 0) for a in all_data),
-        total_conversions=sum(a.get("total_conversions", 0) for a in all_data),
-        google_audiences=len([a for a in all_data if a["platform"] == "google"]),
-        meta_audiences=len([a for a in all_data if a["platform"] == "meta"]),
+        active=len([a for a in all_data if a.get("status") == "ACTIVE"]),
+        paused=len([a for a in all_data if a.get("status") == "PAUSED"]),
+        total_size=sum(a.get("estimated_size", 0) or 0 for a in all_data),
+        total_conversions=sum(a.get("total_conversions", 0) or 0 for a in all_data),
+        google_audiences=len([a for a in all_data if a.get("platform") == "google"]),
+        meta_audiences=len([a for a in all_data if a.get("platform") == "meta"]),
     )
 
     return AudienceListResponse(
@@ -143,49 +155,46 @@ async def list_audiences(
 
 
 @router.get("/{audience_id}", response_model=AudienceResponse)
-async def get_audience(audience_id: str):
+async def get_audience(
+    audience_id: str,
+    current_user: dict = Depends(get_current_user),
+):
     """
     Get a single audience by ID.
     """
-    supabase = get_supabase_client()
+    db = get_supabase_client()
+    organization_id = current_user.get("organization_id")
 
-    result = supabase.table("audiences").select("*").eq(
-        "id", audience_id
-    ).is_("deleted_at", "null").execute()
+    if not organization_id:
+        raise HTTPException(status_code=400, detail="User not part of an organization")
+
+    result = db.table("audiences").select("*").eq("id", audience_id).eq(
+        "organization_id", organization_id
+    ).execute()
 
     if not result.data:
         raise HTTPException(status_code=404, detail="Audience not found")
 
     row = result.data[0]
-    return AudienceResponse(
-        id=row["id"],
-        name=row["name"],
-        platform=row["platform"],
-        type=row["type"],
-        source=row["source"],
-        status=row["status"],
-        lookback_days=row.get("lookback_days", 30),
-        description=row.get("description"),
-        estimated_size=row.get("estimated_size", 0),
-        campaigns_using=row.get("campaigns_using", 0),
-        total_conversions=row.get("total_conversions", 0),
-        total_spend_micros=row.get("total_spend_micros", 0),
-        platform_audience_id=row.get("platform_audience_id"),
-        platform_sync_status=row.get("platform_sync_status", "pending"),
-        created_at=row["created_at"],
-        updated_at=row["updated_at"],
-    )
+    if row.get("deleted_at"):
+        raise HTTPException(status_code=404, detail="Audience not found")
+
+    return audience_row_to_response(row)
 
 
 @router.post("", response_model=AudienceResponse)
 async def create_audience(
     audience: AudienceCreate,
-    organization_id: str = Query(..., description="Organization ID"),
+    current_user: dict = Depends(get_current_user),
 ):
     """
     Create a new audience.
     """
-    supabase = get_supabase_client()
+    db = get_supabase_client()
+    organization_id = current_user.get("organization_id")
+
+    if not organization_id:
+        raise HTTPException(status_code=400, detail="User not part of an organization")
 
     # Generate estimated size based on type/source (demo values)
     estimated_sizes = {
@@ -223,53 +232,41 @@ async def create_audience(
         "total_conversions": 0,
         "total_spend_micros": 0,
         "platform_sync_status": "pending",
-        "created_at": datetime.utcnow().isoformat(),
-        "updated_at": datetime.utcnow().isoformat(),
     }
 
-    result = supabase.table("audiences").insert(new_audience).execute()
+    result = db.table("audiences").insert(new_audience).execute()
 
     if not result.data:
         raise HTTPException(status_code=500, detail="Failed to create audience")
 
-    row = result.data[0]
-    return AudienceResponse(
-        id=row["id"],
-        name=row["name"],
-        platform=row["platform"],
-        type=row["type"],
-        source=row["source"],
-        status=row["status"],
-        lookback_days=row.get("lookback_days", 30),
-        description=row.get("description"),
-        estimated_size=row.get("estimated_size", 0),
-        campaigns_using=row.get("campaigns_using", 0),
-        total_conversions=row.get("total_conversions", 0),
-        total_spend_micros=row.get("total_spend_micros", 0),
-        platform_audience_id=row.get("platform_audience_id"),
-        platform_sync_status=row.get("platform_sync_status", "pending"),
-        created_at=row["created_at"],
-        updated_at=row["updated_at"],
-    )
+    return audience_row_to_response(result.data[0])
 
 
 @router.patch("/{audience_id}", response_model=AudienceResponse)
-async def update_audience(audience_id: str, updates: AudienceUpdate):
+async def update_audience(
+    audience_id: str,
+    updates: AudienceUpdate,
+    current_user: dict = Depends(get_current_user),
+):
     """
     Update an audience.
     """
-    supabase = get_supabase_client()
+    db = get_supabase_client()
+    organization_id = current_user.get("organization_id")
 
-    # Check if audience exists
-    existing = supabase.table("audiences").select("id").eq(
+    if not organization_id:
+        raise HTTPException(status_code=400, detail="User not part of an organization")
+
+    # Check if audience exists and belongs to org
+    existing = db.table("audiences").select("id, deleted_at").eq(
         "id", audience_id
-    ).is_("deleted_at", "null").execute()
+    ).eq("organization_id", organization_id).execute()
 
-    if not existing.data:
+    if not existing.data or existing.data[0].get("deleted_at"):
         raise HTTPException(status_code=404, detail="Audience not found")
 
     # Build update dict
-    update_data = {"updated_at": datetime.utcnow().isoformat()}
+    update_data = {}
     if updates.name is not None:
         update_data["name"] = updates.name
     if updates.description is not None:
@@ -279,48 +276,43 @@ async def update_audience(audience_id: str, updates: AudienceUpdate):
     if updates.lookback_days is not None:
         update_data["lookback_days"] = updates.lookback_days
 
-    result = supabase.table("audiences").update(update_data).eq(
-        "id", audience_id
-    ).execute()
+    if not update_data:
+        # No updates, return existing
+        full_result = db.table("audiences").select("*").eq("id", audience_id).execute()
+        return audience_row_to_response(full_result.data[0])
 
-    row = result.data[0]
-    return AudienceResponse(
-        id=row["id"],
-        name=row["name"],
-        platform=row["platform"],
-        type=row["type"],
-        source=row["source"],
-        status=row["status"],
-        lookback_days=row.get("lookback_days", 30),
-        description=row.get("description"),
-        estimated_size=row.get("estimated_size", 0),
-        campaigns_using=row.get("campaigns_using", 0),
-        total_conversions=row.get("total_conversions", 0),
-        total_spend_micros=row.get("total_spend_micros", 0),
-        platform_audience_id=row.get("platform_audience_id"),
-        platform_sync_status=row.get("platform_sync_status", "pending"),
-        created_at=row["created_at"],
-        updated_at=row["updated_at"],
-    )
+    result = db.table("audiences").update(update_data).eq("id", audience_id).execute()
+
+    if not result.data:
+        raise HTTPException(status_code=500, detail="Failed to update audience")
+
+    return audience_row_to_response(result.data[0])
 
 
 @router.delete("/{audience_id}")
-async def delete_audience(audience_id: str):
+async def delete_audience(
+    audience_id: str,
+    current_user: dict = Depends(get_current_user),
+):
     """
     Soft delete an audience.
     """
-    supabase = get_supabase_client()
+    db = get_supabase_client()
+    organization_id = current_user.get("organization_id")
 
-    # Check if audience exists
-    existing = supabase.table("audiences").select("id").eq(
+    if not organization_id:
+        raise HTTPException(status_code=400, detail="User not part of an organization")
+
+    # Check if audience exists and belongs to org
+    existing = db.table("audiences").select("id, deleted_at").eq(
         "id", audience_id
-    ).is_("deleted_at", "null").execute()
+    ).eq("organization_id", organization_id).execute()
 
-    if not existing.data:
+    if not existing.data or existing.data[0].get("deleted_at"):
         raise HTTPException(status_code=404, detail="Audience not found")
 
     # Soft delete
-    supabase.table("audiences").update({
+    db.table("audiences").update({
         "deleted_at": datetime.utcnow().isoformat(),
         "status": "DELETED",
     }).eq("id", audience_id).execute()
@@ -329,15 +321,29 @@ async def delete_audience(audience_id: str):
 
 
 @router.post("/{audience_id}/pause")
-async def pause_audience(audience_id: str):
+async def pause_audience(
+    audience_id: str,
+    current_user: dict = Depends(get_current_user),
+):
     """
     Pause an audience.
     """
-    supabase = get_supabase_client()
+    db = get_supabase_client()
+    organization_id = current_user.get("organization_id")
 
-    result = supabase.table("audiences").update({
+    if not organization_id:
+        raise HTTPException(status_code=400, detail="User not part of an organization")
+
+    # Check ownership
+    existing = db.table("audiences").select("id").eq(
+        "id", audience_id
+    ).eq("organization_id", organization_id).execute()
+
+    if not existing.data:
+        raise HTTPException(status_code=404, detail="Audience not found")
+
+    result = db.table("audiences").update({
         "status": "PAUSED",
-        "updated_at": datetime.utcnow().isoformat(),
     }).eq("id", audience_id).execute()
 
     if not result.data:
@@ -347,18 +353,69 @@ async def pause_audience(audience_id: str):
 
 
 @router.post("/{audience_id}/activate")
-async def activate_audience(audience_id: str):
+async def activate_audience(
+    audience_id: str,
+    current_user: dict = Depends(get_current_user),
+):
     """
     Activate a paused audience.
     """
-    supabase = get_supabase_client()
+    db = get_supabase_client()
+    organization_id = current_user.get("organization_id")
 
-    result = supabase.table("audiences").update({
+    if not organization_id:
+        raise HTTPException(status_code=400, detail="User not part of an organization")
+
+    # Check ownership
+    existing = db.table("audiences").select("id").eq(
+        "id", audience_id
+    ).eq("organization_id", organization_id).execute()
+
+    if not existing.data:
+        raise HTTPException(status_code=404, detail="Audience not found")
+
+    result = db.table("audiences").update({
         "status": "ACTIVE",
-        "updated_at": datetime.utcnow().isoformat(),
     }).eq("id", audience_id).execute()
 
     if not result.data:
         raise HTTPException(status_code=404, detail="Audience not found")
 
     return {"success": True, "message": "Audience activated"}
+
+
+@router.post("/{audience_id}/sync")
+async def sync_audience_to_platform(
+    audience_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Sync an audience to its target ad platform (Google/Meta).
+    """
+    db = get_supabase_client()
+    organization_id = current_user.get("organization_id")
+
+    if not organization_id:
+        raise HTTPException(status_code=400, detail="User not part of an organization")
+
+    # Get audience
+    result = db.table("audiences").select("*").eq(
+        "id", audience_id
+    ).eq("organization_id", organization_id).execute()
+
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Audience not found")
+
+    audience = result.data[0]
+
+    # TODO: Implement actual sync to Google/Meta APIs
+    # For now, just mark as synced
+    db.table("audiences").update({
+        "platform_sync_status": "synced",
+    }).eq("id", audience_id).execute()
+
+    return {
+        "success": True,
+        "message": f"Audience synced to {audience.get('platform', 'platform')}",
+        "audience_id": audience_id,
+    }

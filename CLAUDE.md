@@ -19,8 +19,8 @@ npm run dev:web
 # Backend only (FastAPI on port 8000)
 npm run dev:api
 
-# Or directly:
-cd apps/api && poetry run uvicorn app.main:app --reload --port 8000
+# Or directly (use port 8081 for frontend compatibility):
+cd apps/api && poetry run uvicorn app.main:app --reload --port 8081
 ```
 
 ### Build & Lint
@@ -80,9 +80,9 @@ app/integrations/meta_ads/adapters/v21.py      # Meta Marketing API v21
 Services call adapters, never SDKs directly. When a new API version releases, add a new adapter file implementing the base interface.
 
 ### AI/ML Services
-- `app/services/ai/` - LLM providers (Gemini, OpenAI, Anthropic)
-- `app/services/ml/` - ML models (forecasting, anomaly, classification)
-- `app/services/recommendations/` - AI recommendation engine with rules
+- `app/services/ai/` - LLM providers (Gemini, OpenAI, Anthropic) with factory pattern
+- `app/services/ml/` - ML models (forecasting, anomaly detection, classification)
+- `app/services/recommendations/` - Rule-based engine + AI-powered recommendation engine
 
 ### Data Flow
 1. Frontend calls `lib/api.ts` functions
@@ -99,7 +99,7 @@ Required in `.env` at project root:
 - `META_APP_ID`, `META_APP_SECRET`
 - `REDIS_URL` (optional, defaults to localhost:6379)
 
-Frontend uses `NEXT_PUBLIC_API_URL` (defaults to http://localhost:8081).
+Frontend uses `NEXT_PUBLIC_API_URL` (defaults to http://localhost:8081). Run the API on port 8081 for frontend compatibility.
 
 ## Key Conventions
 

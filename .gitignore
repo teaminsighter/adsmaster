@@ -64,3 +64,14 @@ yarn-error.log*
 # Misc
 *.pem
 .vercel
+
+# Temporary/backup files
+*.bak
+*.tmp
+*.temp
+*~
+.claude/
+
+# Reference docs (optional, can remove this if you want to track)
+docs/reference/*.docx
+docs/reference/*.html

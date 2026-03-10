@@ -4,13 +4,14 @@ Campaigns API Endpoints
 CRUD operations for campaigns and campaign metrics.
 """
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends
 from pydantic import BaseModel
 from typing import Optional
 from datetime import date, timedelta
 
 from ..services.supabase_client import get_supabase_client
 from ..integrations.google_ads.adapter_factory import get_adapter_for_account
+from .user_auth import get_current_user
 
 router = APIRouter(prefix="/accounts/{account_id}/campaigns", tags=["Campaigns"])
 
@@ -66,11 +67,21 @@ async def list_campaigns(
     account_id: str,
     status: Optional[str] = Query(None, description="Filter by status (ENABLED, PAUSED)"),
     campaign_type: Optional[str] = Query(None, description="Filter by type (SEARCH, PMAX, etc)"),
+    current_user: dict = Depends(get_current_user),
 ):
     """
     List all campaigns for an ad account.
     """
     supabase = get_supabase_client()
+    organization_id = current_user.get("organization_id")
+
+    # First verify the account belongs to user's organization
+    if organization_id:
+        account_check = supabase.table("ad_accounts").select("id").eq(
+            "id", account_id
+        ).eq("organization_id", organization_id).execute()
+        if not account_check.data:
+            raise HTTPException(status_code=404, detail="Ad account not found")
 
     query = supabase.table("campaigns").select("*").eq("ad_account_id", account_id)
 
@@ -102,11 +113,24 @@ async def list_campaigns(
 
 
 @router.get("/{campaign_id}", response_model=CampaignResponse)
-async def get_campaign(account_id: str, campaign_id: str):
+async def get_campaign(
+    account_id: str,
+    campaign_id: str,
+    current_user: dict = Depends(get_current_user),
+):
     """
     Get a single campaign by ID.
     """
     supabase = get_supabase_client()
+    organization_id = current_user.get("organization_id")
+
+    # Verify account belongs to user's organization
+    if organization_id:
+        account_check = supabase.table("ad_accounts").select("id").eq(
+            "id", account_id
+        ).eq("organization_id", organization_id).execute()
+        if not account_check.data:
+            raise HTTPException(status_code=404, detail="Ad account not found")
 
     result = supabase.table("campaigns").select("*").eq(
         "id", campaign_id
@@ -137,6 +161,7 @@ async def get_campaign_metrics(
     campaign_id: str,
     date_from: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
     date_to: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
+    current_user: dict = Depends(get_current_user),
 ):
     """
     Get aggregated metrics for a campaign.
@@ -144,6 +169,15 @@ async def get_campaign_metrics(
     Defaults to last 30 days if no dates specified.
     """
     supabase = get_supabase_client()
+    organization_id = current_user.get("organization_id")
+
+    # Verify account belongs to user's organization
+    if organization_id:
+        account_check = supabase.table("ad_accounts").select("id").eq(
+            "id", account_id
+        ).eq("organization_id", organization_id).execute()
+        if not account_check.data:
+            raise HTTPException(status_code=404, detail="Ad account not found")
 
     # Default to last 30 days
     if not date_to:
@@ -191,6 +225,7 @@ async def get_pmax_network_breakdown(
     campaign_id: str,
     date_from: Optional[str] = Query(None),
     date_to: Optional[str] = Query(None),
+    current_user: dict = Depends(get_current_user),
 ):
     """
     Get Performance Max network breakdown.
@@ -199,6 +234,15 @@ async def get_pmax_network_breakdown(
     This is a v23+ feature.
     """
     supabase = get_supabase_client()
+    organization_id = current_user.get("organization_id")
+
+    # Verify account belongs to user's organization
+    if organization_id:
+        account_check = supabase.table("ad_accounts").select("id").eq(
+            "id", account_id
+        ).eq("organization_id", organization_id).execute()
+        if not account_check.data:
+            raise HTTPException(status_code=404, detail="Ad account not found")
 
     # Verify campaign is PMax
     campaign = supabase.table("campaigns").select(
@@ -253,13 +297,26 @@ async def get_pmax_network_breakdown(
 
 
 @router.post("/{campaign_id}/pause")
-async def pause_campaign(account_id: str, campaign_id: str):
+async def pause_campaign(
+    account_id: str,
+    campaign_id: str,
+    current_user: dict = Depends(get_current_user),
+):
     """
     Pause a campaign.
 
     Calls Google Ads API to pause, then updates local database.
     """
     supabase = get_supabase_client()
+    organization_id = current_user.get("organization_id")
+
+    # Verify account belongs to user's organization
+    if organization_id:
+        account_check = supabase.table("ad_accounts").select("id").eq(
+            "id", account_id
+        ).eq("organization_id", organization_id).execute()
+        if not account_check.data:
+            raise HTTPException(status_code=404, detail="Ad account not found")
 
     # Get campaign
     result = supabase.table("campaigns").select("*").eq("id", campaign_id).execute()
@@ -295,11 +352,24 @@ async def pause_campaign(account_id: str, campaign_id: str):
 
 
 @router.post("/{campaign_id}/enable")
-async def enable_campaign(account_id: str, campaign_id: str):
+async def enable_campaign(
+    account_id: str,
+    campaign_id: str,
+    current_user: dict = Depends(get_current_user),
+):
     """
     Enable a paused campaign.
     """
     supabase = get_supabase_client()
+    organization_id = current_user.get("organization_id")
+
+    # Verify account belongs to user's organization
+    if organization_id:
+        account_check = supabase.table("ad_accounts").select("id").eq(
+            "id", account_id
+        ).eq("organization_id", organization_id).execute()
+        if not account_check.data:
+            raise HTTPException(status_code=404, detail="Ad account not found")
 
     result = supabase.table("campaigns").select("*").eq("id", campaign_id).execute()
     if not result.data:

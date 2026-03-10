@@ -1,15 +1,70 @@
 """
 Demo API endpoints - Returns mock data for demo mode.
 Used when no real ad account is connected.
+
+Demo Mode Logic:
+- If organization has NO connected ad accounts → return demo data
+- If organization HAS connected accounts → return real data from database
 """
 
 from fastapi import APIRouter, Query
+from typing import Optional
 from datetime import datetime, timedelta
 import random
 
+from ..services.supabase_client import get_supabase_client
 from ..services.recommendations.ai_engine import AIRecommendationEngine
 
 router = APIRouter(prefix="/api/v1/demo", tags=["demo"])
+
+
+# =============================================================================
+# Demo Mode Helper
+# =============================================================================
+
+def check_demo_mode(organization_id: Optional[str] = None) -> dict:
+    """
+    Check if demo mode should be active.
+
+    Returns:
+        {
+            "demo_mode": bool,
+            "has_accounts": bool,
+            "account_ids": list,
+            "message": str
+        }
+    """
+    if not organization_id:
+        return {
+            "demo_mode": True,
+            "has_accounts": False,
+            "account_ids": [],
+            "message": "No organization specified. Showing demo data."
+        }
+
+    supabase = get_supabase_client()
+
+    # Check for connected ad accounts
+    result = supabase.table("ad_accounts").select("id, platform, status").eq(
+        "organization_id", organization_id
+    ).neq("status", "disconnected").execute()
+
+    accounts = result.data or []
+
+    if not accounts:
+        return {
+            "demo_mode": True,
+            "has_accounts": False,
+            "account_ids": [],
+            "message": "No ad accounts connected. Showing demo data."
+        }
+
+    return {
+        "demo_mode": False,
+        "has_accounts": True,
+        "account_ids": [a["id"] for a in accounts],
+        "message": f"Connected to {len(accounts)} ad account(s). Showing real data."
+    }
 
 # Cache for AI-generated recommendations
 _ai_recommendations_cache = None
@@ -367,11 +422,14 @@ DEMO_KEYWORDS = [
 # =============================================================================
 
 @router.get("/status")
-async def demo_status():
-    """Check if demo mode is active."""
+async def demo_status(
+    organization_id: Optional[str] = Query(None, description="Organization ID")
+):
+    """Check if demo mode is active for an organization."""
+    status = check_demo_mode(organization_id)
+
     return {
-        "demo_mode": True,
-        "message": "No ad accounts connected. Showing demo data.",
+        **status,
         "features_available": [
             "dashboard",
             "campaigns",
@@ -383,8 +441,70 @@ async def demo_status():
 
 
 @router.get("/dashboard")
-async def demo_dashboard():
-    """Get demo dashboard data."""
+async def demo_dashboard(
+    organization_id: Optional[str] = Query(None, description="Organization ID")
+):
+    """
+    Get dashboard data.
+
+    Returns real data if ad accounts are connected, otherwise demo data.
+    """
+    status = check_demo_mode(organization_id)
+
+    # If real accounts exist, fetch real data
+    if not status["demo_mode"] and status["account_ids"]:
+        supabase = get_supabase_client()
+
+        # Get real campaigns
+        campaigns_result = supabase.table("campaigns").select("*").in_(
+            "ad_account_id", status["account_ids"]
+        ).execute()
+
+        campaigns = campaigns_result.data or []
+
+        if campaigns:
+            # Get metrics for last 30 days
+            from datetime import date
+            thirty_days_ago = (date.today() - timedelta(days=30)).isoformat()
+
+            metrics_result = supabase.table("metrics_daily").select("*").in_(
+                "ad_account_id", status["account_ids"]
+            ).gte("metric_date", thirty_days_ago).execute()
+
+            metrics = metrics_result.data or []
+
+            # Aggregate metrics
+            total_spend = sum(m.get("cost_micros", 0) for m in metrics)
+            total_impressions = sum(m.get("impressions", 0) for m in metrics)
+            total_clicks = sum(m.get("clicks", 0) for m in metrics)
+            total_conversions = sum(m.get("conversions", 0) for m in metrics)
+            total_revenue = sum(m.get("conversion_value_micros", 0) for m in metrics)
+
+            # Get recommendations count
+            recs_result = supabase.table("recommendations").select("id", count="exact").in_(
+                "ad_account_id", status["account_ids"]
+            ).eq("status", "pending").execute()
+
+            pending_recs = recs_result.count or 0
+
+            return {
+                "demo_mode": False,
+                "period": "last_30_days",
+                "metrics": {
+                    "spend_micros": total_spend,
+                    "revenue_micros": total_revenue,
+                    "roas": round(total_revenue / total_spend, 2) if total_spend > 0 else 0,
+                    "conversions": total_conversions,
+                    "impressions": total_impressions,
+                    "clicks": total_clicks,
+                    "ctr": round((total_clicks / total_impressions) * 100, 2) if total_impressions > 0 else 0,
+                    "cpa_micros": int(total_spend / total_conversions) if total_conversions > 0 else 0,
+                },
+                "top_campaigns": campaigns[:5],
+                "pending_recommendations": pending_recs,
+            }
+
+    # Fall back to demo data
     # Calculate totals from campaigns
     total_spend = sum(c["spend_micros"] for c in DEMO_CAMPAIGNS)
     total_impressions = sum(c["impressions"] for c in DEMO_CAMPAIGNS)
@@ -454,12 +574,45 @@ async def demo_dashboard():
 
 @router.get("/campaigns")
 async def demo_campaigns(
+    organization_id: Optional[str] = Query(None, description="Organization ID"),
     status: str = None,
     platform: str = None,
     sort_by: str = "spend_micros",
     sort_order: str = "desc"
 ):
-    """Get demo campaigns list."""
+    """
+    Get campaigns list.
+
+    Returns real data if ad accounts are connected, otherwise demo data.
+    """
+    mode = check_demo_mode(organization_id)
+
+    # If real accounts exist, fetch real campaigns
+    if not mode["demo_mode"] and mode["account_ids"]:
+        supabase = get_supabase_client()
+
+        query = supabase.table("campaigns").select("*").in_(
+            "ad_account_id", mode["account_ids"]
+        )
+
+        if status:
+            query = query.eq("status", status.upper())
+
+        result = query.order(sort_by, desc=(sort_order.lower() == "desc")).execute()
+        real_campaigns = result.data or []
+
+        if real_campaigns:
+            return {
+                "demo_mode": False,
+                "campaigns": real_campaigns,
+                "total": len(real_campaigns),
+                "filters": {
+                    "status": status,
+                    "platform": platform,
+                }
+            }
+
+    # Fall back to demo data
     campaigns = DEMO_CAMPAIGNS.copy()
 
     # Filter
@@ -521,17 +674,67 @@ async def demo_campaign_detail(campaign_id: str):
 
 @router.get("/recommendations")
 async def demo_recommendations(
+    organization_id: Optional[str] = Query(None, description="Organization ID"),
     severity: str = None,
     status: str = None,
     limit: int = 20,
     use_ai: bool = Query(default=False, description="Use AI to generate recommendation text (slower)")
 ):
     """
-    Get demo recommendations.
+    Get recommendations.
 
-    When use_ai=False (default), uses pre-generated recommendations with AI reasoning data (fast).
-    When use_ai=True, generates fresh recommendations with AI-powered text (slower, ~10s).
+    Returns real data if ad accounts are connected, otherwise demo data.
     """
+    mode = check_demo_mode(organization_id)
+
+    # If real accounts exist, fetch real recommendations
+    if not mode["demo_mode"] and mode["account_ids"]:
+        supabase = get_supabase_client()
+
+        query = supabase.table("recommendations").select("*").in_(
+            "ad_account_id", mode["account_ids"]
+        )
+
+        if severity:
+            query = query.eq("severity", severity.lower())
+        if status:
+            query = query.eq("status", status.lower())
+
+        result = query.order("created_at", desc=True).limit(limit).execute()
+        real_recs = result.data or []
+
+        if real_recs:
+            # Convert to API format
+            from .recommendations import db_row_to_recommendation
+            formatted_recs = [db_row_to_recommendation(r).model_dump() for r in real_recs]
+
+            # Get summary stats
+            all_pending = supabase.table("recommendations").select("*").in_(
+                "ad_account_id", mode["account_ids"]
+            ).eq("status", "pending").execute()
+
+            pending_recs = all_pending.data or []
+            total_savings = sum((r.get("estimated_savings_micros") or 0) for r in pending_recs)
+            total_potential = sum((r.get("estimated_conversions_gain") or 0) for r in pending_recs)
+
+            return {
+                "demo_mode": False,
+                "ai_generated": False,
+                "recommendations": formatted_recs,
+                "total": len(formatted_recs),
+                "summary": {
+                    "pending": len(pending_recs),
+                    "by_severity": {
+                        "critical": len([r for r in pending_recs if r.get("severity") == "critical"]),
+                        "warning": len([r for r in pending_recs if r.get("severity") == "warning"]),
+                        "opportunity": len([r for r in pending_recs if r.get("severity") == "opportunity"]),
+                    },
+                    "total_savings_micros": total_savings,
+                    "total_potential_micros": total_potential,
+                }
+            }
+
+    # Fall back to demo data
     global _ai_recommendations_cache, _ai_recommendations_timestamp
 
     # Always generate recommendations with AI reasoning data (fast, no API calls)
