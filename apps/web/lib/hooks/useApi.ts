@@ -196,6 +196,12 @@ export function useCampaignDetail(campaignId: string) {
       spend_micros: number;
       quality_score: number;
     }>;
+    ad_groups?: Array<{
+      id: string;
+      name: string;
+      status: string;
+      keywords: number;
+    }>;
   }>(`/api/v1/demo/campaigns/${campaignId}`, { enabled: !!campaignId });
 }
 

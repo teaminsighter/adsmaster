@@ -230,7 +230,7 @@ export default function ApiSettingsPage() {
                 <button
                   className="btn btn-primary"
                   onClick={() => setShowCreate(true)}
-                  disabled={data && data.total >= data.max_keys}
+                  disabled={!!(data && data.total >= data.max_keys)}
                 >
                   + Create API Key
                 </button>

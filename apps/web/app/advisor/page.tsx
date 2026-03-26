@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import ChatPanel from '@/components/advisor/ChatPanel';
 import ContextSidebar from '@/components/advisor/ContextSidebar';
@@ -56,7 +56,7 @@ const mockRecommendations = [
   { id: 'rec_5', title: 'Add negative keywords', severity: 'opportunity' },
 ];
 
-export default function AdvisorPage() {
+function AdvisorContent() {
   const searchParams = useSearchParams();
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
@@ -305,5 +305,17 @@ export default function AdvisorPage() {
         }
       `}</style>
     </div>
+  );
+}
+
+export default function AdvisorPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 'calc(100vh - 60px)' }}>
+        <div style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>Loading advisor...</div>
+      </div>
+    }>
+      <AdvisorContent />
+    </Suspense>
   );
 }

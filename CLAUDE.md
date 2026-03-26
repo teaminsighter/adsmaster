@@ -19,7 +19,7 @@ npm run dev:web
 # Backend only (FastAPI on port 8000)
 npm run dev:api
 
-# Or directly (use port 8081 for frontend compatibility):
+# Run API on port 8081 for frontend compatibility:
 cd apps/api && poetry run uvicorn app.main:app --reload --port 8081
 ```
 
@@ -53,7 +53,7 @@ poetry run ruff check .                     # Lint
 - `packages/shared/` - Shared types/utilities
 - `supabase/migrations/` - Database migrations
 - `database/schema/` - Reference SQL schemas
-- `docs/planning/` - 14 planning phase documents
+- `docs/planning/` - Planning phase documents (phases 1-14+)
 
 ### Frontend Architecture (apps/web/)
 - **App Router**: `app/` directory with page.tsx files
@@ -114,6 +114,10 @@ Backend returns `{ data: T, error: string | null }` pattern. Check error before 
 - Meta Ads: `/api/v1/meta/accounts/{id}/campaigns/`
 - Recommendations: `/api/v1/recommendations/`
 - AI Chat: `/api/v1/ai-chat/`
+- Demo (no auth): `/api/v1/demo/*` - Returns mock data for UI development
+
+### Demo Mode
+The `/api/v1/demo/*` endpoints return mock data without requiring ad account connections. The frontend `useApi` hook automatically detects `demo_mode: true` in responses. Use demo endpoints during development before real ad accounts are connected.
 
 ### Database
 - Uses Row-Level Security (RLS) for multi-tenant isolation

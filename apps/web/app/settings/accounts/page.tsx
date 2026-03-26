@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Header from '@/components/layout/Header';
 import { getGoogleAdsConnectUrl, getMetaAdsConnectUrl } from '@/lib/api';
@@ -45,7 +45,7 @@ const formatLastSync = (dateStr: string) => {
   return date.toLocaleString();
 };
 
-export default function AccountsSettingsPage() {
+function AccountsSettingsContent() {
   const searchParams = useSearchParams();
   const { data, loading, error, refetch, isDemo } = useConnectedAccounts();
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -404,5 +404,22 @@ export default function AccountsSettingsPage() {
         </div>
       </div>
     </>
+  );
+}
+
+export default function AccountsSettingsPage() {
+  return (
+    <Suspense fallback={
+      <>
+        <Header title="Connected Accounts" showDateFilter={false} />
+        <div className="page-content">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '300px' }}>
+            <div style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>Loading accounts...</div>
+          </div>
+        </div>
+      </>
+    }>
+      <AccountsSettingsContent />
+    </Suspense>
   );
 }

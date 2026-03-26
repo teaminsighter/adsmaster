@@ -196,7 +196,7 @@ export default function TeamSettingsPage() {
               <button
                 className="btn btn-primary"
                 onClick={() => setShowInvite(true)}
-                disabled={data && data.total >= data.max_members}
+                disabled={!!(data && data.total >= data.max_members)}
               >
                 + Invite Team Member
               </button>
