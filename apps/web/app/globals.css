@@ -26,6 +26,8 @@
 
   --surface-card: #FFFFFF;
   --surface-hover: #F9FAFB;
+  --surface-secondary: #F3F4F6;
+  --surface-tertiary: #E5E7EB;
 
   --text-primary: #111827;
   --text-secondary: #6B7280;
@@ -34,6 +36,7 @@
 
   --border-default: #E5E7EB;
   --border-strong: #D1D5DB;
+  --border-subtle: #F3F4F6;
 
   /* Shadows */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
@@ -63,6 +66,8 @@
 
   --surface-card: #1E293B;
   --surface-hover: #334155;
+  --surface-secondary: #273549;
+  --surface-tertiary: #334155;
 
   --text-primary: #F1F5F9;
   --text-secondary: #94A3B8;
@@ -71,6 +76,7 @@
 
   --border-default: #334155;
   --border-strong: #475569;
+  --border-subtle: #273549;
 
   --primary-light: rgba(16, 185, 129, 0.15);
 }
