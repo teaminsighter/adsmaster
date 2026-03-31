@@ -93,6 +93,11 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+html {
+  overflow-x: hidden;
 }
 
 /* Monospace numbers for data */
@@ -170,6 +175,53 @@ body {
   color: var(--text-primary);
 }
 
+/* Section Title */
+.section-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 12px 0;
+}
+
+/* =============================================================================
+   AI Savings Banner
+   ============================================================================= */
+
+.ai-savings-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--primary-light);
+  border-radius: var(--radius-lg);
+  margin-bottom: 24px;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.ai-savings-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.ai-savings-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.ai-savings-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.ai-savings-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
 /* =============================================================================
    Metric Cards
    ============================================================================= */
@@ -221,6 +273,166 @@ body {
   margin-top: 8px;
   padding-top: 8px;
   border-top: 1px solid var(--border-default);
+}
+
+/* =============================================================================
+   Campaigns Page Toolbar & Table
+   ============================================================================= */
+
+.campaigns-card {
+  padding: 16px;
+}
+
+.campaigns-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.campaigns-filters {
+  display: flex;
+  gap: 12px;
+}
+
+.campaigns-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.campaigns-table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 0 -16px;
+  padding: 0 16px;
+  position: relative;
+}
+
+.campaigns-table {
+  min-width: 900px;
+}
+
+/* =============================================================================
+   Campaign Cards (Mobile Dashboard)
+   ============================================================================= */
+
+.campaigns-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.campaign-card {
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.campaign-card:active {
+  transform: scale(0.98);
+  background: var(--surface-hover);
+}
+
+.campaign-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.campaign-card-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.campaign-platform-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.campaign-status {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.campaign-status.active {
+  color: var(--success);
+}
+
+.campaign-card-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.campaign-metric {
+  text-align: center;
+  padding: 8px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+}
+
+.campaign-metric-label {
+  display: block;
+  font-size: 10px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.campaign-metric-value {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* =============================================================================
+   AI Recommendations (Compact)
+   ============================================================================= */
+
+.recommendations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.recommendation-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.recommendation-item.critical {
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.recommendation-item.warning {
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.recommendation-title {
+  font-weight: 500;
+  flex: 1;
+}
+
+.recommendation-impact {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--success);
+  white-space: nowrap;
+  margin-left: 8px;
 }
 
 /* =============================================================================
@@ -617,29 +829,764 @@ body {
 }
 
 /* =============================================================================
-   Responsive
+   Mobile Variables
    ============================================================================= */
 
-@media (max-width: 768px) {
-  .sidebar {
-    transform: translateX(-100%);
+:root {
+  --mobile-header-height: 56px;
+  --mobile-bottom-nav-height: 64px;
+  --mobile-safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --touch-target-min: 44px;
+}
+
+/* =============================================================================
+   Mobile Utility Classes
+   ============================================================================= */
+
+/* Hide on mobile */
+@media (max-width: 767px) {
+  .hide-mobile {
+    display: none !important;
+  }
+}
+
+/* Hide on desktop */
+@media (min-width: 768px) {
+  .hide-desktop {
+    display: none !important;
+  }
+}
+
+/* Touch-friendly target */
+.touch-target {
+  min-height: var(--touch-target-min);
+  min-width: var(--touch-target-min);
+}
+
+/* =============================================================================
+   Mobile Header
+   ============================================================================= */
+
+.mobile-header {
+  display: none !important;
+  height: var(--mobile-header-height);
+  background: var(--surface-card);
+  border-bottom: 1px solid var(--border-default);
+  padding: 0 16px;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.mobile-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mobile-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hamburger-btn {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: 20px;
+}
+
+.hamburger-btn:hover {
+  background: var(--surface-hover);
+}
+
+/* =============================================================================
+   Bottom Navigation
+   ============================================================================= */
+
+.bottom-nav {
+  display: none !important;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: var(--mobile-bottom-nav-height);
+  padding-bottom: var(--mobile-safe-area-bottom);
+  background: var(--surface-card);
+  border-top: 1px solid var(--border-default);
+  z-index: 100;
+}
+
+.bottom-nav-items {
+  display: flex;
+  height: 100%;
+}
+
+.bottom-nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  text-decoration: none;
+  color: var(--text-secondary);
+  font-size: 10px;
+  font-weight: 500;
+  padding: 8px 4px;
+  transition: color 0.15s ease;
+}
+
+.bottom-nav-item:hover {
+  color: var(--text-primary);
+}
+
+.bottom-nav-item.active {
+  color: var(--primary);
+}
+
+.bottom-nav-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.bottom-nav-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* =============================================================================
+   Sidebar Overlay (Mobile)
+   ============================================================================= */
+
+.sidebar-overlay {
+  display: none !important;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 150;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.sidebar-overlay.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.sidebar-mobile {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 280px;
+  background: var(--surface-card);
+  z-index: 200;
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+  display: none !important;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.sidebar-mobile.open {
+  transform: translateX(0);
+}
+
+.sidebar-mobile-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  border-bottom: 1px solid var(--border-default);
+}
+
+.sidebar-close-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: 18px;
+  color: var(--text-secondary);
+}
+
+.sidebar-close-btn:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+/* =============================================================================
+   Grid Layouts - Responsive
+   ============================================================================= */
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 24px;
+}
+
+.grid-2-1 {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+}
+
+/* =============================================================================
+   Responsive Breakpoints
+   ============================================================================= */
+
+/* Tablet (768px - 1023px) */
+@media (max-width: 1023px) {
+  .grid-3 {
+    grid-template-columns: 1fr 1fr;
   }
 
-  .sidebar.open {
-    transform: translateX(0);
-  }
-
-  .main-content {
-    margin-left: 0;
-  }
-
-  .metrics-grid {
+  .grid-2-1 {
     grid-template-columns: 1fr 1fr;
   }
 }
 
-@media (max-width: 480px) {
+/* Mobile (< 768px) */
+@media (max-width: 767px) {
+  /* Show mobile header, hide desktop header */
+  .mobile-header {
+    display: flex !important;
+  }
+
+  .header {
+    display: none !important;
+  }
+
+  /* Show bottom nav */
+  .bottom-nav {
+    display: block !important;
+  }
+
+  /* Show sidebar overlay */
+  .sidebar-overlay {
+    display: block !important;
+  }
+
+  /* Show sidebar mobile */
+  .sidebar-mobile {
+    display: flex !important;
+  }
+
+  /* Hide desktop sidebar */
+  .sidebar {
+    display: none !important;
+  }
+
+  /* Adjust main content */
+  .main-content {
+    margin-left: 0;
+    padding-top: var(--mobile-header-height);
+    padding-bottom: calc(var(--mobile-bottom-nav-height) + var(--mobile-safe-area-bottom));
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+
+  /* Page content padding and overflow */
+  .page-content {
+    padding: 16px;
+    overflow-x: hidden;
+    max-width: 100%;
+  }
+
+  /* Cards - prevent overflow */
+  .card {
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  /* Grid layouts - single column */
+  .grid-2,
+  .grid-3,
+  .grid-2-1 {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  /* Metrics grid - 2 columns on mobile, more compact */
+  .metrics-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  /* Smaller metric values on mobile */
+  .metric-value {
+    font-size: 18px;
+    margin-bottom: 2px;
+  }
+
+  .metric-change {
+    font-size: 11px;
+  }
+
+  /* Budget pacing - stack layout */
+  .budget-pacing-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .budget-pacing {
+    padding: 10px 12px;
+    margin-bottom: 12px;
+  }
+
+  .budget-pacing-title {
+    font-size: 13px;
+  }
+
+  .budget-pacing-bar {
+    height: 6px;
+  }
+
+  /* AI Savings Banner - mobile */
+  .ai-savings-banner {
+    padding: 8px 12px;
+    margin-bottom: 12px;
+  }
+
+  .ai-savings-icon {
+    font-size: 18px;
+  }
+
+  .ai-savings-value {
+    font-size: 15px;
+  }
+
+  .ai-savings-label {
+    font-size: 10px;
+  }
+
+  /* Compact margins on mobile */
+  .grid-2-1 {
+    gap: 16px;
+  }
+
+  /* Section spacing */
+  .section-title {
+    font-size: 14px;
+    margin-bottom: 8px;
+    margin-top: 4px;
+  }
+
+  /* Card headers - compact on mobile */
+  .card-header {
+    margin-bottom: 10px;
+  }
+
+  .card-title {
+    font-size: 14px;
+  }
+
+  /* Health Score - compact on mobile */
+  .health-score {
+    gap: 10px;
+  }
+
+  .health-score-value {
+    font-size: 28px;
+  }
+
+  .health-breakdown {
+    gap: 2px;
+  }
+
+  .health-item {
+    font-size: 11px;
+  }
+
+  /* AI Recommendations - compact on mobile */
+  .ai-recommendations-card {
+    padding: 12px;
+  }
+
+  .ai-recommendations-card .card-header {
+    margin-bottom: 10px;
+  }
+
+  .recommendation-item {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+
+  .recommendation-impact {
+    font-size: 11px;
+  }
+
+  /* Campaign cards - more compact */
+  .campaign-card {
+    padding: 10px;
+  }
+
+  .campaign-card-name {
+    font-size: 13px;
+  }
+
+  .campaign-metric {
+    padding: 6px;
+  }
+
+  .campaign-metric-label {
+    font-size: 9px;
+  }
+
+  .campaign-metric-value {
+    font-size: 12px;
+  }
+
+  /* Campaigns Page - Mobile Layout */
+  .campaigns-card {
+    padding: 12px;
+  }
+
+  .campaigns-toolbar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .campaigns-filters {
+    display: flex;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .campaigns-filters .select {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 6px;
+    font-size: 12px;
+  }
+
+  .campaigns-actions {
+    flex-shrink: 0;
+  }
+
+  .campaigns-actions .btn-sm {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  /* Hide bulk actions on mobile when selected */
+  .campaigns-actions span,
+  .campaigns-actions .btn-secondary {
+    display: none;
+  }
+
+  /* Campaigns Table - Scrollable */
+  .campaigns-table-wrapper {
+    margin: 0 -12px;
+    padding: 0;
+    position: relative;
+  }
+
+  .campaigns-table-wrapper::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 24px;
+    background: linear-gradient(to left, var(--surface-card), transparent);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .campaigns-table {
+    min-width: 800px;
+    font-size: 12px;
+  }
+
+  .campaigns-table th,
+  .campaigns-table td {
+    padding: 10px 8px;
+    white-space: nowrap;
+  }
+
+  .campaigns-table th:first-child,
+  .campaigns-table td:first-child {
+    padding-left: 12px;
+    position: sticky;
+    left: 0;
+    background: var(--surface-card);
+    z-index: 2;
+  }
+
+  /* Cards - less padding */
+  .card {
+    padding: 12px;
+  }
+
+  /* Metric cards - more compact on mobile */
+  .metric-card {
+    padding: 10px;
+  }
+
+  .metric-label {
+    font-size: 10px;
+    margin-bottom: 2px;
+  }
+
+  /* Table - horizontal scroll */
+  .table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .data-table {
+    min-width: 600px;
+  }
+
+  /* Form inputs and selects - larger on mobile */
+  .input,
+  .select {
+    font-size: 16px; /* Prevents iOS zoom on focus */
+    padding: 12px 14px;
+    min-height: 48px;
+  }
+
+  .select {
+    -webkit-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 40px;
+  }
+
+  /* Buttons - larger touch targets */
+  .btn {
+    min-height: var(--touch-target-min);
+    padding: 10px 16px;
+  }
+
+  .btn-sm {
+    min-height: 36px;
+    padding: 8px 12px;
+  }
+}
+
+/* Small mobile (< 360px) - only very small screens get 1 column */
+@media (max-width: 359px) {
+  /* Metrics grid - single column only for tiny screens */
   .metrics-grid {
     grid-template-columns: 1fr;
   }
+
+  /* Even smaller metric values */
+  .metric-value {
+    font-size: 18px;
+  }
+
+  /* Page content - tighter padding */
+  .page-content {
+    padding: 12px;
+  }
+}
+
+/* =============================================================================
+   CAMPAIGN CARDS (Mobile)
+   ============================================================================= */
+
+.campaign-cards-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.campaign-card {
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.campaign-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.campaign-card-checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  margin: -8px -4px -8px -8px;
+}
+
+.campaign-card-checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+}
+
+.campaign-card-title {
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.campaign-card-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.campaign-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.campaign-card-platform-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.campaign-card-status {
+  font-size: 16px;
+  min-width: 24px;
+  text-align: center;
+}
+
+.campaign-card-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--border-subtle);
+  cursor: pointer;
+}
+
+.campaign-card-metrics-secondary {
+  grid-template-columns: 1fr 1fr 1fr;
+  background: var(--surface-secondary);
+}
+
+.campaign-card-metric {
+  background: var(--surface-card);
+  padding: 12px;
+  text-align: center;
+}
+
+.campaign-card-metrics-secondary .campaign-card-metric {
+  background: var(--surface-secondary);
+}
+
+.campaign-card-metric-label {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.campaign-card-metric-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* ROAS Pill Styles */
+.roas-pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.roas-pill-good {
+  background: var(--success);
+  color: white;
+}
+
+.roas-pill-ok {
+  background: var(--warning);
+  color: #1a1a1a;
+}
+
+.roas-pill-bad {
+  background: var(--error);
+  color: white;
+}
+
+.campaign-card-actions {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.campaign-card-menu {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  margin-bottom: 4px;
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  z-index: 50;
+  min-width: 140px;
+}
+
+.campaign-card-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  font-size: 14px;
+  color: var(--text-primary);
+  cursor: pointer;
+  text-align: left;
+}
+
+.campaign-card-menu-item:hover {
+  background: var(--surface-secondary);
+}
+
+.campaign-card-menu-item:active {
+  background: var(--surface-tertiary);
 }
