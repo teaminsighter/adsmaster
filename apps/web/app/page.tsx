@@ -80,28 +80,20 @@ export default function HomePage() {
       <Header title="Dashboard" />
       <div className="page-content">
         {/* AI Savings Banner */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '12px 16px',
-          background: 'var(--primary-light)',
-          borderRadius: 'var(--radius-lg)',
-          marginBottom: '24px',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ fontSize: '24px' }}>$</span>
+        <div className="ai-savings-banner">
+          <div className="ai-savings-content">
+            <span className="ai-savings-icon">$</span>
             <div>
-              <div className="mono" style={{ fontSize: '20px', fontWeight: 700, color: 'var(--primary)' }}>
+              <div className="mono ai-savings-value">
                 {formatMicros(ai_savings_this_month)}
               </div>
-              <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+              <div className="ai-savings-label">
                 saved by AI this month
               </div>
             </div>
           </div>
           <button
-            className="btn btn-ghost btn-sm"
+            className="btn btn-ghost btn-sm hide-mobile"
             onClick={() => router.push('/recommendations')}
           >
             View details
@@ -116,22 +108,23 @@ export default function HomePage() {
           daysInMonth={31}
         />
 
-        {/* Metrics Grid */}
+        {/* Key Metrics Section */}
+        <h2 className="section-title hide-desktop">Key Metrics</h2>
         <div className="metrics-grid">
           <MetricCard
-            label="Total Spend"
+            label="Spend"
             value={formatMicros(metrics.spend_micros)}
             change={`${metrics_change.spend >= 0 ? '▲' : '▼'} ${Math.abs(metrics_change.spend)}%`}
             changeDirection={metrics_change.spend >= 0 ? 'up' : 'down'}
           />
           <MetricCard
-            label="Conversions"
+            label="Conv"
             value={formatNumber(metrics.conversions)}
             change={`${metrics_change.conversions >= 0 ? '▲' : '▼'} ${Math.abs(metrics_change.conversions)}%`}
             changeDirection={metrics_change.conversions >= 0 ? 'up' : 'down'}
           />
           <MetricCard
-            label="Avg CPA"
+            label="CPA"
             value={formatMicros(metrics.cpa_micros)}
             change={`${metrics_change.cpa <= 0 ? '▼' : '▲'} ${Math.abs(metrics_change.cpa)}%`}
             changeDirection={metrics_change.cpa <= 0 ? 'down' : 'up'}
@@ -149,7 +142,7 @@ export default function HomePage() {
             changeDirection={metrics_change.ctr >= 0 ? 'up' : 'down'}
           />
           <MetricCard
-            label="Impressions"
+            label="Impr"
             value={formatNumber(metrics.impressions)}
             change="▲ 15.2%"
             changeDirection="up"
@@ -157,74 +150,131 @@ export default function HomePage() {
         </div>
 
         {/* Main Content Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '24px' }}>
+        <div className="grid-2-1">
           {/* Left Column - Campaigns */}
           <div>
-            <div style={{ marginBottom: '24px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <h2 style={{ fontSize: '16px', fontWeight: 600, margin: 0 }}>Campaigns</h2>
+            <div style={{ marginBottom: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <h2 className="section-title" style={{ margin: 0 }}>Campaigns</h2>
                 <button
-                  className="btn btn-primary btn-sm"
+                  className="btn btn-primary btn-sm hide-mobile"
                   onClick={() => router.push('/campaigns/new')}
                 >
-                  + New Campaign
+                  + New
                 </button>
               </div>
 
-              {/* Campaigns Table */}
-              <div className="card">
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>Campaign</th>
-                      <th>Status</th>
-                      <th className="right">Spend</th>
-                      <th className="right">Conv</th>
-                      <th className="right">ROAS</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {top_campaigns.slice(0, 5).map((campaign) => (
-                      <tr
-                        key={campaign.id}
-                        style={{ cursor: 'pointer' }}
-                        onClick={() => router.push(`/campaigns/${campaign.id}`)}
-                      >
-                        <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{
-                              width: '8px',
-                              height: '8px',
-                              borderRadius: '50%',
-                              background: campaign.platform === 'google' ? '#4285F4' : '#0668E1',
-                            }} />
-                            <span style={{ fontWeight: 500 }}>{campaign.name}</span>
-                          </div>
-                        </td>
-                        <td>
-                          <span style={{ color: campaign.status === 'ENABLED' ? 'var(--success)' : 'var(--text-tertiary)' }}>
-                            {campaign.status === 'ENABLED' ? '● Active' : '○ Paused'}
+              {/* Campaigns - Card view on mobile, table on desktop */}
+              <div className="campaigns-section">
+                {/* Mobile: Card View */}
+                <div className="campaigns-cards hide-desktop">
+                  {top_campaigns.slice(0, 3).map((campaign) => (
+                    <div
+                      key={campaign.id}
+                      className="campaign-card"
+                      onClick={() => router.push(`/campaigns/${campaign.id}`)}
+                    >
+                      <div className="campaign-card-header">
+                        <div className="campaign-card-name">
+                          <span
+                            className="campaign-platform-dot"
+                            style={{ background: campaign.platform === 'google' ? '#4285F4' : '#0668E1' }}
+                          />
+                          <span>{campaign.name}</span>
+                        </div>
+                        <span className={`campaign-status ${campaign.status === 'ENABLED' ? 'active' : ''}`}>
+                          {campaign.status === 'ENABLED' ? '● Active' : '○ Paused'}
+                        </span>
+                      </div>
+                      <div className="campaign-card-metrics">
+                        <div className="campaign-metric">
+                          <span className="campaign-metric-label">Spend</span>
+                          <span className="campaign-metric-value mono">{formatMicros(campaign.spend_micros)}</span>
+                        </div>
+                        <div className="campaign-metric">
+                          <span className="campaign-metric-label">Conv</span>
+                          <span className="campaign-metric-value mono">{campaign.conversions}</span>
+                        </div>
+                        <div className="campaign-metric">
+                          <span className="campaign-metric-label">ROAS</span>
+                          <span
+                            className="campaign-metric-value mono"
+                            style={{ color: campaign.roas >= 4 ? 'var(--success)' : campaign.roas >= 3 ? 'var(--warning)' : 'var(--error)' }}
+                          >
+                            {campaign.roas}x
                           </span>
-                        </td>
-                        <td className="right mono">{formatMicros(campaign.spend_micros)}</td>
-                        <td className="right mono">{campaign.conversions}</td>
-                        <td className="right mono" style={{
-                          color: campaign.roas >= 4 ? 'var(--success)' : campaign.roas >= 3 ? 'var(--warning)' : 'var(--error)'
-                        }}>
-                          {campaign.roas}x
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                <div style={{ padding: '12px', borderTop: '1px solid var(--border-default)', textAlign: 'center' }}>
-                  <button
-                    className="btn btn-ghost btn-sm"
-                    onClick={() => router.push('/campaigns')}
-                  >
-                    View all campaigns
-                  </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
+
+                {/* Desktop: Table View */}
+                <div className="card hide-mobile" style={{ padding: 0, overflow: 'hidden' }}>
+                  <div className="table-wrapper">
+                    <table className="data-table">
+                      <thead>
+                        <tr>
+                          <th>Campaign</th>
+                          <th>Status</th>
+                          <th className="right">Spend</th>
+                          <th className="right">Conv</th>
+                          <th className="right">ROAS</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {top_campaigns.slice(0, 5).map((campaign) => (
+                          <tr
+                            key={campaign.id}
+                            style={{ cursor: 'pointer' }}
+                            onClick={() => router.push(`/campaigns/${campaign.id}`)}
+                          >
+                            <td>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{
+                                  width: '8px',
+                                  height: '8px',
+                                  borderRadius: '50%',
+                                  background: campaign.platform === 'google' ? '#4285F4' : '#0668E1',
+                                }} />
+                                <span style={{ fontWeight: 500 }}>{campaign.name}</span>
+                              </div>
+                            </td>
+                            <td>
+                              <span style={{ color: campaign.status === 'ENABLED' ? 'var(--success)' : 'var(--text-tertiary)' }}>
+                                {campaign.status === 'ENABLED' ? '● Active' : '○ Paused'}
+                              </span>
+                            </td>
+                            <td className="right mono">{formatMicros(campaign.spend_micros)}</td>
+                            <td className="right mono">{campaign.conversions}</td>
+                            <td className="right mono" style={{
+                              color: campaign.roas >= 4 ? 'var(--success)' : campaign.roas >= 3 ? 'var(--warning)' : 'var(--error)'
+                            }}>
+                              {campaign.roas}x
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div style={{ padding: '12px', borderTop: '1px solid var(--border-default)', textAlign: 'center' }}>
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      onClick={() => router.push('/campaigns')}
+                    >
+                      View all campaigns
+                    </button>
+                  </div>
+                </div>
+
+                {/* Mobile: View All button */}
+                <button
+                  className="btn btn-ghost btn-sm hide-desktop"
+                  style={{ width: '100%', marginTop: '12px' }}
+                  onClick={() => router.push('/campaigns')}
+                >
+                  View all campaigns
+                </button>
               </div>
             </div>
           </div>
@@ -232,50 +282,40 @@ export default function HomePage() {
           {/* Right Column */}
           <div>
             {/* Health Score */}
-            <div style={{ marginBottom: '24px' }}>
+            <div style={{ marginBottom: '16px' }}>
               <HealthScore overallScore={health_score.overall} items={mockHealthItems} />
             </div>
 
             {/* AI Recommendations Preview */}
-            <div className="card" style={{ borderLeft: '3px solid var(--error)' }}>
+            <div className="card ai-recommendations-card" style={{ borderLeft: '3px solid var(--error)' }}>
               <div className="card-header">
-                <span className="card-title">AI Recommendations</span>
-                <span className="badge badge-error">{pending_recommendations} Pending</span>
+                <span className="card-title">AI Alerts</span>
+                <span className="badge badge-error">{pending_recommendations}</span>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{
-                  padding: '12px',
-                  background: 'rgba(239, 68, 68, 0.05)',
-                  borderRadius: '6px',
-                  fontSize: '13px',
-                }}>
-                  <div style={{ fontWeight: 500, marginBottom: '4px' }}>
-                    Budget exhausted by 2pm daily
+              <div className="recommendations-list">
+                <div className="recommendation-item critical">
+                  <div className="recommendation-title">
+                    Budget exhausted by 2pm
                   </div>
-                  <div style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>
-                    +$2,340/mo potential revenue
+                  <div className="recommendation-impact">
+                    +$2,340/mo
                   </div>
                 </div>
-                <div style={{
-                  padding: '12px',
-                  background: 'rgba(245, 158, 11, 0.05)',
-                  borderRadius: '6px',
-                  fontSize: '13px',
-                }}>
-                  <div style={{ fontWeight: 500, marginBottom: '4px' }}>
-                    2 wasting keywords detected
+                <div className="recommendation-item warning">
+                  <div className="recommendation-title">
+                    2 wasting keywords
                   </div>
-                  <div style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>
-                    Save $632/mo by pausing
+                  <div className="recommendation-impact">
+                    Save $632/mo
                   </div>
                 </div>
               </div>
               <button
                 className="btn btn-ghost btn-sm"
-                style={{ marginTop: '12px', width: '100%' }}
+                style={{ marginTop: '8px', width: '100%' }}
                 onClick={() => router.push('/recommendations')}
               >
-                View all recommendations
+                View all
               </button>
             </div>
           </div>

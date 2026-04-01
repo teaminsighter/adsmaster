@@ -53,20 +53,9 @@ export default function DashboardPage() {
       <div className="page-content">
         {/* AI Savings Banner */}
         {ai_savings_this_month > 0 && (
-          <div
-            style={{
-              background: 'linear-gradient(90deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%)',
-              border: '1px solid var(--success)',
-              borderRadius: '8px',
-              padding: '12px 16px',
-              marginBottom: '24px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <span style={{ fontSize: '24px' }}>$</span>
+          <div className="ai-savings-banner">
+            <div className="ai-savings-content">
+              <span className="ai-savings-icon hide-mobile">💰</span>
               <div>
                 <div style={{ fontWeight: 600, color: 'var(--success)' }}>
                   {formatMicros(ai_savings_this_month)} saved this month by AI
@@ -76,8 +65,8 @@ export default function DashboardPage() {
                 </div>
               </div>
             </div>
-            <button className="btn btn-ghost btn-sm" onClick={() => router.push('/recommendations')}>
-              View All Recommendations
+            <button className="btn btn-ghost btn-sm hide-mobile" onClick={() => router.push('/recommendations')}>
+              View All
             </button>
           </div>
         )}
@@ -128,7 +117,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px' }}>
+        <div className="grid-2-1">
           {/* Performance Chart */}
           <div className="card">
             <div className="card-header">
@@ -196,7 +185,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Platform Breakdown + AI Recommendations */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginTop: '24px' }}>
+        <div className="grid-2" style={{ marginTop: '24px' }}>
           {/* Platform Breakdown */}
           <div className="card">
             <div className="card-header">
@@ -258,14 +247,15 @@ export default function DashboardPage() {
         </div>
 
         {/* Top Campaigns Table */}
-        <div className="card" style={{ marginTop: '24px' }}>
-          <div className="card-header">
+        <div className="card" style={{ marginTop: '24px', padding: 0, overflow: 'hidden' }}>
+          <div className="card-header" style={{ padding: '16px' }}>
             <span className="card-title">Top Campaigns</span>
             <button className="btn btn-ghost btn-sm" onClick={() => router.push('/campaigns')}>
               View All
             </button>
           </div>
-          <table className="data-table">
+          <div className="table-wrapper">
+            <table className="data-table">
             <thead>
               <tr>
                 <th>Campaign</th>
@@ -316,6 +306,7 @@ export default function DashboardPage() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       </div>
 
@@ -331,6 +322,31 @@ export default function DashboardPage() {
         }
         @keyframes spin {
           to { transform: rotate(360deg); }
+        }
+        .ai-savings-banner {
+          background: linear-gradient(90deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
+          border: 1px solid var(--success);
+          border-radius: 8px;
+          padding: 12px 16px;
+          margin-bottom: 24px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+        }
+        .ai-savings-content {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+        .ai-savings-icon {
+          font-size: 24px;
+        }
+        @media (max-width: 767px) {
+          .ai-savings-banner {
+            padding: 10px 12px;
+            margin-bottom: 16px;
+          }
         }
       `}</style>
     </>

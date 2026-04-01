@@ -123,7 +123,7 @@ export default function SettingsPage() {
                 Loading profile...
               </div>
             ) : (
-              <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
+              <div className="profile-content">
                 <div
                   style={{
                     width: '80px',
@@ -155,7 +155,7 @@ export default function SettingsPage() {
                   <div style={{ color: 'var(--text-secondary)', marginBottom: '8px' }}>
                     {profile?.email || ''}
                   </div>
-                  <div style={{ display: 'flex', gap: '8px' }}>
+                  <div className="profile-badges">
                     {profile?.subscription && (
                       <span className={`badge ${profile.subscription.status === 'active' ? 'badge-success' : 'badge-warning'}`}>
                         {formatPlan(profile.subscription.plan_name)}
@@ -173,7 +173,7 @@ export default function SettingsPage() {
           </div>
 
           {/* Settings Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+          <div className="settings-grid">
             {settingsSections.map((section) => (
               <Link
                 key={section.href}
@@ -200,11 +200,11 @@ export default function SettingsPage() {
           </div>
 
           {/* Danger Zone */}
-          <div className="card" style={{ marginTop: '24px', borderColor: 'var(--error)' }}>
+          <div className="card danger-zone-card" style={{ marginTop: '24px', borderColor: 'var(--error)' }}>
             <div className="card-header">
               <span className="card-title" style={{ color: 'var(--error)' }}>Danger Zone</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="danger-zone-content">
               <div>
                 <div style={{ fontWeight: 500 }}>Delete Account</div>
                 <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
@@ -212,8 +212,7 @@ export default function SettingsPage() {
                 </div>
               </div>
               <button
-                className="btn"
-                style={{ background: 'var(--error)', color: 'white' }}
+                className="btn danger-btn"
                 onClick={() => {
                   if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
                     alert('Account deletion is not available in demo mode.');
@@ -236,9 +235,72 @@ export default function SettingsPage() {
       />
 
       <style jsx>{`
+        .profile-content {
+          display: flex;
+          gap: 24px;
+          align-items: center;
+        }
+
+        .profile-badges {
+          display: flex;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+
+        .settings-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 16px;
+        }
+
         .settings-card:hover {
           border-color: var(--primary);
           background: var(--surface-secondary);
+        }
+
+        .danger-zone-content {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 16px;
+        }
+
+        .danger-btn {
+          background: var(--error);
+          color: white;
+          white-space: nowrap;
+        }
+
+        @media (max-width: 767px) {
+          .profile-content {
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 16px;
+          }
+
+          .profile-badges {
+            justify-content: center;
+          }
+
+          .settings-grid {
+            grid-template-columns: 1fr;
+            gap: 12px;
+          }
+
+          .danger-zone-card {
+            margin-top: 16px !important;
+          }
+
+          .danger-zone-content {
+            flex-direction: column;
+            align-items: stretch;
+          }
+
+          .danger-btn {
+            width: 100%;
+            margin-top: 12px;
+          }
         }
       `}</style>
     </>

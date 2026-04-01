@@ -31,61 +31,89 @@ export default function BudgetPacing({
   };
 
   return (
-    <div className={`budget-pacing ${pacingStatus === 'fast' ? 'warning' : ''}`}>
-      <div className="budget-pacing-header">
-        <div className="budget-pacing-title">Monthly Budget Pacing</div>
+    <>
+      <div className={`budget-pacing ${pacingStatus === 'fast' ? 'warning' : ''}`}>
+        <div className="budget-pacing-header">
+          <div className="budget-pacing-title">Monthly Budget</div>
+          {pacingStatus === 'fast' && (
+            <div className="budget-pacing-alert">
+              ⚠️ PACING FAST
+            </div>
+          )}
+          {pacingStatus === 'slow' && (
+            <div style={{ color: 'var(--info)', fontSize: '12px', fontWeight: 500 }}>
+              ℹ️ Pacing slow
+            </div>
+          )}
+        </div>
+
+        <div className="budget-pacing-stats">
+          <div>
+            <div className="budget-pacing-stat-label">Spent</div>
+            <div className="mono budget-pacing-stat-value">
+              {formatCurrency(spent)} <span className="budget-pacing-stat-percent">({spentPercent.toFixed(0)}%)</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="budget-pacing-bar">
+          <div
+            className={`budget-pacing-fill ${pacingStatus === 'fast' ? 'fast' : ''}`}
+            style={{ width: `${Math.min(spentPercent, 100)}%` }}
+          />
+          {/* Expected pace marker */}
+          <div
+            className="budget-pacing-marker"
+            style={{ left: `${expectedPercent}%` }}
+            title={`Expected pace: ${expectedPercent.toFixed(0)}%`}
+          />
+        </div>
+
         {pacingStatus === 'fast' && (
-          <div className="budget-pacing-alert">
-            ⚠️ PACING FAST — on track to overspend by {formatCurrency(projectedOverspend)}
-          </div>
-        )}
-        {pacingStatus === 'slow' && (
-          <div style={{ color: 'var(--info)', fontSize: '12px', fontWeight: 500 }}>
-            ℹ️ Pacing slow — budget underutilized
+          <div className="budget-pacing-overspend">
+            On track to overspend by {formatCurrency(projectedOverspend)}
           </div>
         )}
       </div>
-
-      <div style={{ display: 'flex', gap: '48px', marginBottom: '16px' }}>
-        <div>
-          <div style={{ fontSize: '12px', color: 'var(--text-primary)', fontWeight: 500, marginBottom: '4px', opacity: 0.7 }}>Spent</div>
-          <div className="mono" style={{ fontSize: '18px', fontWeight: 600 }}>
-            {formatCurrency(spent)} <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 400 }}>({spentPercent.toFixed(0)}%)</span>
-          </div>
-        </div>
-        <div>
-          <div style={{ fontSize: '12px', color: 'var(--text-primary)', fontWeight: 500, marginBottom: '4px', opacity: 0.7 }}>Budget</div>
-          <div className="mono" style={{ fontSize: '18px', fontWeight: 600 }}>
-            {formatCurrency(budget)}
-          </div>
-        </div>
-        <div>
-          <div style={{ fontSize: '12px', color: 'var(--text-primary)', fontWeight: 500, marginBottom: '4px', opacity: 0.7 }}>Time Elapsed</div>
-          <div className="mono" style={{ fontSize: '18px', fontWeight: 600 }}>
-            Day {daysElapsed} of {daysInMonth} <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 400 }}>({expectedPercent.toFixed(0)}%)</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="budget-pacing-bar">
-        <div
-          className={`budget-pacing-fill ${pacingStatus === 'fast' ? 'fast' : ''}`}
-          style={{ width: `${Math.min(spentPercent, 100)}%` }}
-        />
-        {/* Expected pace marker */}
-        <div
-          style={{
-            position: 'absolute',
-            left: `${expectedPercent}%`,
-            top: '-4px',
-            bottom: '-4px',
-            width: '2px',
-            background: 'var(--text-secondary)',
-            borderRadius: '1px',
-          }}
-          title={`Expected pace: ${expectedPercent.toFixed(0)}%`}
-        />
-      </div>
-    </div>
+      <style jsx>{`
+        .budget-pacing-stats {
+          margin-bottom: 12px;
+        }
+        .budget-pacing-stat-label {
+          font-size: 12px;
+          color: var(--text-primary);
+          font-weight: 500;
+          margin-bottom: 4px;
+          opacity: 0.7;
+        }
+        .budget-pacing-stat-value {
+          font-size: 18px;
+          font-weight: 600;
+        }
+        .budget-pacing-stat-percent {
+          font-size: 12px;
+          color: var(--text-secondary);
+          font-weight: 400;
+        }
+        .budget-pacing-marker {
+          position: absolute;
+          top: -4px;
+          bottom: -4px;
+          width: 2px;
+          background: var(--text-secondary);
+          border-radius: 1px;
+        }
+        .budget-pacing-overspend {
+          font-size: 12px;
+          color: var(--warning);
+          margin-top: 8px;
+        }
+        @media (max-width: 767px) {
+          .budget-pacing-stat-value {
+            font-size: 16px;
+          }
+        }
+      `}</style>
+    </>
   );
 }

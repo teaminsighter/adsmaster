@@ -90,7 +90,7 @@ export default function NewCampaignPage() {
       <Header title="Create Campaign" />
       <div className="page-content">
         {/* Progress Steps */}
-        <div style={{
+        <div className="new-campaign-stepper" style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -100,6 +100,7 @@ export default function NewCampaignPage() {
           {[1, 2, 3, 4].map((s) => (
             <div key={s} style={{ display: 'flex', alignItems: 'center' }}>
               <div
+                className="step-circle"
                 style={{
                   width: '32px',
                   height: '32px',
@@ -119,6 +120,7 @@ export default function NewCampaignPage() {
               </div>
               {s < 4 && (
                 <div
+                  className="step-line"
                   style={{
                     width: '60px',
                     height: '2px',
@@ -134,17 +136,18 @@ export default function NewCampaignPage() {
         <div style={{ maxWidth: '800px', margin: '0 auto' }}>
           {/* Step 1: Select Platform */}
           {step === 1 && (
-            <div className="card" style={{ padding: '32px' }}>
+            <div className="card new-campaign-card" style={{ padding: '32px' }}>
               <h2 style={{ fontSize: '24px', fontWeight: 600, marginBottom: '8px', textAlign: 'center' }}>
-                Select Advertising Platform
+                Select Platform
               </h2>
               <p style={{ color: 'var(--text-secondary)', textAlign: 'center', marginBottom: '32px' }}>
-                Choose where you want to run your ads
+                Choose where to run your ads
               </p>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+              <div className="platform-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
                 {/* Google Ads */}
                 <button
+                  className="platform-btn"
                   onClick={() => handlePlatformSelect('google')}
                   style={{
                     padding: '32px',
@@ -164,7 +167,7 @@ export default function NewCampaignPage() {
                     e.currentTarget.style.background = 'var(--bg-primary)';
                   }}
                 >
-                  <div style={{
+                  <div className="platform-icon" style={{
                     width: '64px',
                     height: '64px',
                     borderRadius: '16px',
@@ -179,14 +182,15 @@ export default function NewCampaignPage() {
                   }}>
                     G
                   </div>
-                  <div style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px' }}>Google Ads</div>
-                  <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-                    Search, Display, Shopping, YouTube, Performance Max
+                  <div className="platform-name" style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px' }}>Google Ads</div>
+                  <div className="platform-desc" style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                    Search, Display, Shopping, YouTube, PMax
                   </div>
                 </button>
 
                 {/* Meta Ads */}
                 <button
+                  className="platform-btn"
                   onClick={() => handlePlatformSelect('meta')}
                   style={{
                     padding: '32px',
@@ -206,7 +210,7 @@ export default function NewCampaignPage() {
                     e.currentTarget.style.background = 'var(--bg-primary)';
                   }}
                 >
-                  <div style={{
+                  <div className="platform-icon" style={{
                     width: '64px',
                     height: '64px',
                     borderRadius: '16px',
@@ -221,9 +225,9 @@ export default function NewCampaignPage() {
                   }}>
                     M
                   </div>
-                  <div style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px' }}>Meta Ads</div>
-                  <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-                    Facebook, Instagram, Messenger, Audience Network
+                  <div className="platform-name" style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px' }}>Meta Ads</div>
+                  <div className="platform-desc" style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                    Facebook, Instagram, Messenger
                   </div>
                 </button>
               </div>
@@ -232,7 +236,7 @@ export default function NewCampaignPage() {
 
           {/* Step 2: Select Campaign Type */}
           {step === 2 && (
-            <div className="card" style={{ padding: '32px' }}>
+            <div className="card new-campaign-card" style={{ padding: '32px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                 <button
                   className="btn btn-ghost btn-sm"
@@ -243,16 +247,17 @@ export default function NewCampaignPage() {
                 </button>
               </div>
               <h2 style={{ fontSize: '24px', fontWeight: 600, marginBottom: '8px', textAlign: 'center' }}>
-                Select Campaign Type
+                Campaign Type
               </h2>
               <p style={{ color: 'var(--text-secondary)', textAlign: 'center', marginBottom: '32px' }}>
-                Choose the type of campaign that fits your goals
+                Choose the type that fits your goals
               </p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {campaignTypes.map((type) => (
                   <button
                     key={type.id}
+                    className="type-btn"
                     onClick={() => handleTypeSelect(type.id)}
                     style={{
                       padding: '20px 24px',
@@ -275,7 +280,7 @@ export default function NewCampaignPage() {
                       e.currentTarget.style.background = 'var(--bg-primary)';
                     }}
                   >
-                    <div style={{
+                    <div className="type-icon" style={{
                       width: '48px',
                       height: '48px',
                       borderRadius: '12px',
@@ -284,12 +289,13 @@ export default function NewCampaignPage() {
                       alignItems: 'center',
                       justifyContent: 'center',
                       fontSize: '24px',
+                      flexShrink: 0,
                     }}>
                       {type.icon}
                     </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '16px', fontWeight: 600, marginBottom: '4px' }}>{type.name}</div>
-                      <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{type.description}</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div className="type-name" style={{ fontSize: '16px', fontWeight: 600, marginBottom: '4px' }}>{type.name}</div>
+                      <div className="type-desc" style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{type.description}</div>
                     </div>
                     <span style={{ color: 'var(--text-tertiary)', fontSize: '20px' }}>→</span>
                   </button>
@@ -300,7 +306,7 @@ export default function NewCampaignPage() {
 
           {/* Step 3: Campaign Details */}
           {step === 3 && (
-            <div className="card" style={{ padding: '32px' }}>
+            <div className="card new-campaign-card" style={{ padding: '32px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                 <button
                   className="btn btn-ghost btn-sm"
@@ -314,7 +320,7 @@ export default function NewCampaignPage() {
                 Campaign Details
               </h2>
               <p style={{ color: 'var(--text-secondary)', textAlign: 'center', marginBottom: '32px' }}>
-                Set up your campaign settings
+                Set up your campaign
               </p>
 
               <form onSubmit={handleDetailsSubmit}>
@@ -409,7 +415,7 @@ export default function NewCampaignPage() {
 
           {/* Step 4: Review & Create */}
           {step === 4 && (
-            <div className="card" style={{ padding: '32px' }}>
+            <div className="card new-campaign-card" style={{ padding: '32px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                 <button
                   className="btn btn-ghost btn-sm"
@@ -420,19 +426,19 @@ export default function NewCampaignPage() {
                 </button>
               </div>
               <h2 style={{ fontSize: '24px', fontWeight: 600, marginBottom: '8px', textAlign: 'center' }}>
-                Review Campaign
+                Review
               </h2>
               <p style={{ color: 'var(--text-secondary)', textAlign: 'center', marginBottom: '32px' }}>
-                Review your campaign settings before creating
+                Review before creating
               </p>
 
-              <div style={{
+              <div className="review-section" style={{
                 background: 'var(--surface-secondary)',
                 borderRadius: '12px',
                 padding: '24px',
                 marginBottom: '24px',
               }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                <div className="review-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
                   <div>
                     <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px' }}>Platform</div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 500 }}>
@@ -477,7 +483,7 @@ export default function NewCampaignPage() {
               </div>
 
               {/* Demo Notice */}
-              <div style={{
+              <div className="demo-notice" style={{
                 background: 'rgba(59, 130, 246, 0.1)',
                 border: '1px solid var(--info)',
                 borderRadius: '8px',
@@ -489,32 +495,33 @@ export default function NewCampaignPage() {
               }}>
                 <span style={{ fontSize: '20px' }}>ℹ️</span>
                 <div style={{ fontSize: '13px' }}>
-                  <strong>Demo Mode:</strong> In demo mode, this campaign won't actually be created. Connect your ad accounts to create real campaigns.
+                  <strong>Demo Mode:</strong> Campaign won&apos;t be created. Connect ad accounts first.
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: '12px' }}>
+              <div className="action-buttons" style={{ display: 'flex', gap: '12px' }}>
+                {/* Primary action first on mobile (CSS reverses order) */}
                 <button
-                  className="btn btn-secondary"
-                  onClick={() => router.push('/campaigns')}
-                  style={{ flex: 1 }}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="btn btn-primary"
+                  className="btn btn-primary action-primary"
                   onClick={handleCreateCampaign}
                   disabled={isSubmitting}
                   style={{ flex: 2 }}
                 >
                   {isSubmitting ? (
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                       <span className="loading-spinner-sm" />
-                      Creating Campaign...
+                      Creating...
                     </span>
                   ) : (
                     'Create Campaign'
                   )}
+                </button>
+                <button
+                  className="btn btn-secondary action-secondary"
+                  onClick={() => router.push('/campaigns')}
+                  style={{ flex: 1 }}
+                >
+                  Cancel
                 </button>
               </div>
             </div>
@@ -534,6 +541,101 @@ export default function NewCampaignPage() {
         }
         @keyframes spin {
           to { transform: rotate(360deg); }
+        }
+      `}</style>
+
+      <style jsx global>{`
+        @media (max-width: 767px) {
+          /* Progress stepper - compact */
+          .new-campaign-stepper {
+            gap: 4px !important;
+            margin-bottom: 20px !important;
+          }
+          .new-campaign-stepper .step-circle {
+            width: 28px !important;
+            height: 28px !important;
+            font-size: 12px !important;
+          }
+          .new-campaign-stepper .step-line {
+            width: 32px !important;
+          }
+
+          /* Card - compact padding */
+          .new-campaign-card {
+            padding: 20px !important;
+          }
+          .new-campaign-card h2 {
+            font-size: 20px !important;
+          }
+          .new-campaign-card p {
+            font-size: 14px !important;
+            margin-bottom: 20px !important;
+          }
+
+          /* Platform grid - single column */
+          .platform-grid {
+            grid-template-columns: 1fr !important;
+            gap: 12px !important;
+          }
+          .platform-btn {
+            padding: 20px !important;
+          }
+          .platform-icon {
+            width: 52px !important;
+            height: 52px !important;
+            font-size: 24px !important;
+            margin-bottom: 12px !important;
+          }
+          .platform-name {
+            font-size: 16px !important;
+          }
+          .platform-desc {
+            font-size: 12px !important;
+          }
+
+          /* Campaign type buttons - compact */
+          .type-btn {
+            padding: 14px 16px !important;
+            gap: 12px !important;
+          }
+          .type-icon {
+            width: 40px !important;
+            height: 40px !important;
+            font-size: 20px !important;
+          }
+          .type-name {
+            font-size: 14px !important;
+          }
+          .type-desc {
+            font-size: 12px !important;
+          }
+
+          /* Review grid - single column */
+          .review-grid {
+            grid-template-columns: 1fr !important;
+            gap: 16px !important;
+          }
+          .review-section {
+            padding: 16px !important;
+          }
+
+          /* Demo notice - compact */
+          .demo-notice {
+            padding: 12px !important;
+            font-size: 12px !important;
+          }
+
+          /* Action buttons - stack with primary on top */
+          .action-buttons {
+            flex-direction: column !important;
+            gap: 10px !important;
+          }
+          .action-buttons button {
+            flex: none !important;
+            width: 100% !important;
+            min-height: 48px !important;
+            font-size: 15px !important;
+          }
         }
       `}</style>
     </>

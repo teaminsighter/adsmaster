@@ -5,16 +5,50 @@ import { useRouter } from 'next/navigation';
 import Header from '@/components/layout/Header';
 import DemoBanner from '@/components/ui/DemoBanner';
 import AddKeywordsModal from '@/components/keywords/AddKeywordsModal';
+import KeywordCard from '@/components/keywords/KeywordCard';
 import { useKeywords, useCampaigns } from '@/lib/hooks/useApi';
+import { useIsMobile } from '@/lib/hooks/useIsMobile';
 import { formatMicros, formatNumber } from '@/lib/api';
+
+// Toast component
+function Toast({ message, onClose }: { message: string; onClose: () => void }) {
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        bottom: '80px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        padding: '12px 20px',
+        background: '#1a1a1a',
+        color: 'white',
+        borderRadius: '8px',
+        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3)',
+        zIndex: 9999,
+        fontSize: '14px',
+        fontWeight: 500,
+        maxWidth: 'calc(100vw - 32px)',
+      }}
+    >
+      {message}
+    </div>
+  );
+}
 
 export default function KeywordsPage() {
   const router = useRouter();
+  const isMobile = useIsMobile();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [toast, setToast] = useState<string | null>(null);
+
+  const showToast = (message: string) => {
+    setToast(message);
+    setTimeout(() => setToast(null), 2000);
+  };
 
   const { data, loading, error, isDemo, refetch } = useKeywords({
     status: statusFilter || undefined,
@@ -92,7 +126,7 @@ export default function KeywordsPage() {
   };
 
   const handleBulkAction = (action: 'pause' | 'enable') => {
-    alert(`Demo: Would ${action} ${selectedIds.size} keywords`);
+    showToast(`Would ${action} ${selectedIds.size} keywords`);
     setSelectedIds(new Set());
   };
 
@@ -130,6 +164,7 @@ export default function KeywordsPage() {
     <>
       {isDemo && <DemoBanner onConnect={() => router.push('/connect')} />}
       <Header title="Keywords" />
+      {toast && <Toast message={toast} onClose={() => setToast(null)} />}
       <div className="page-content">
         {/* Success Message */}
         {successMessage && (
@@ -189,16 +224,9 @@ export default function KeywordsPage() {
 
         {/* Wasting Keywords Alert */}
         {summary.wasting_keywords > 0 && (
-          <div style={{
-            marginBottom: '24px',
-            padding: '16px',
-            background: 'rgba(239, 68, 68, 0.05)',
-            border: '1px solid rgba(239, 68, 68, 0.2)',
-            borderLeft: '4px solid var(--error)',
-            borderRadius: '8px',
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
+          <div className="wasting-alert">
+            <div className="wasting-content">
+              <div className="wasting-info">
                 <div style={{ fontWeight: 600, color: 'var(--error)', marginBottom: '4px' }}>
                   ⚠️ {summary.wasting_keywords} Wasting Keywords Detected
                 </div>
@@ -206,14 +234,13 @@ export default function KeywordsPage() {
                   {formatMicros(summary.wasting_spend_micros)} spent with 0 conversions in the last 30 days
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: '8px' }}>
+              <div className="wasting-actions">
                 <button className="btn btn-secondary btn-sm" onClick={() => setStatusFilter('PAUSED')}>
                   Show Paused
                 </button>
                 <button
-                  className="btn btn-sm"
-                  style={{ background: 'var(--error)', color: 'white' }}
-                  onClick={() => alert('Demo: Would pause wasting keywords')}
+                  className="btn btn-sm wasting-pause-btn"
+                  onClick={() => showToast('Would pause wasting keywords')}
                 >
                   Pause All Wasting
                 </button>
@@ -224,13 +251,12 @@ export default function KeywordsPage() {
 
         {/* Filters */}
         <div className="card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <div style={{ display: 'flex', gap: '12px' }}>
+          <div className="keywords-toolbar">
+            <div className="keywords-filters">
               <input
                 type="text"
-                className="input"
+                className="input keywords-search"
                 placeholder="Search keywords..."
-                style={{ width: '250px' }}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -244,10 +270,10 @@ export default function KeywordsPage() {
                 <option value="PAUSED">Paused</option>
               </select>
             </div>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <div className="keywords-actions">
               {selectedIds.size > 0 && (
                 <>
-                  <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                  <span className="hide-mobile" style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
                     {selectedIds.size} selected
                   </span>
                   <button className="btn btn-secondary btn-sm" onClick={() => handleBulkAction('pause')}>
@@ -256,87 +282,104 @@ export default function KeywordsPage() {
                   <button className="btn btn-secondary btn-sm" onClick={() => handleBulkAction('enable')}>
                     Enable
                   </button>
-                  <div style={{ width: '1px', height: '20px', background: 'var(--border-default)' }} />
+                  <div className="hide-mobile" style={{ width: '1px', height: '20px', background: 'var(--border-default)' }} />
                 </>
               )}
               <button className="btn btn-primary btn-sm" onClick={() => setShowAddModal(true)}>
-                + Add Keywords
+                + Add
               </button>
             </div>
           </div>
 
-          {/* Keywords Table */}
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th style={{ width: '30px' }}>
-                  <input
-                    type="checkbox"
-                    checked={selectedIds.size === filteredKeywords.length && filteredKeywords.length > 0}
-                    onChange={(e) => handleSelectAll(e.target.checked)}
-                  />
-                </th>
-                <th>Keyword</th>
-                <th>Match</th>
-                <th>Campaign</th>
-                <th>Status</th>
-                <th className="right">Impr</th>
-                <th className="right">Clicks</th>
-                <th className="right">Conv</th>
-                <th className="right">Spend</th>
-                <th className="right">CPA</th>
-                <th className="center">QS</th>
-              </tr>
-            </thead>
-            <tbody>
+          {/* Mobile: Card View */}
+          {isMobile ? (
+            <div className="keyword-cards-container">
               {filteredKeywords.map((kw) => (
-                <tr
+                <KeywordCard
                   key={kw.id}
-                  style={{
-                    background: kw.conversions === 0 && kw.spend_micros > 200_000000 ? 'rgba(239, 68, 68, 0.05)' : undefined,
-                  }}
-                >
-                  <td>
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.has(kw.id)}
-                      onChange={(e) => handleSelect(kw.id, e.target.checked)}
-                    />
-                  </td>
-                  <td className="mono" style={{ fontSize: '12px' }}>{kw.text}</td>
-                  <td>
-                    <span className="badge badge-neutral" style={{ fontSize: '10px' }}>{kw.match_type}</span>
-                  </td>
-                  <td style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{kw.campaign}</td>
-                  <td>
-                    <span style={{ color: kw.status === 'ENABLED' ? 'var(--success)' : 'var(--text-tertiary)' }}>
-                      {kw.status === 'ENABLED' ? '● Active' : '○ Paused'}
-                    </span>
-                  </td>
-                  <td className="right mono">{formatNumber(kw.impressions)}</td>
-                  <td className="right mono">{formatNumber(kw.clicks)}</td>
-                  <td
-                    className="right mono"
-                    style={{ color: kw.conversions === 0 ? 'var(--error)' : undefined }}
-                  >
-                    {kw.conversions || '—'}
-                  </td>
-                  <td className="right mono">{formatMicros(kw.spend_micros)}</td>
-                  <td className="right mono">{kw.cpa_micros > 0 ? formatMicros(kw.cpa_micros) : '—'}</td>
-                  <td className="center">
-                    <span
+                  keyword={kw}
+                  selected={selectedIds.has(kw.id)}
+                  onSelect={handleSelect}
+                  onAction={(id, action) => showToast(`Would ${action} keyword`)}
+                />
+              ))}
+            </div>
+          ) : (
+            /* Desktop: Table View */
+            <div className="keywords-table-wrapper">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th style={{ width: '30px' }}>
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.size === filteredKeywords.length && filteredKeywords.length > 0}
+                        onChange={(e) => handleSelectAll(e.target.checked)}
+                      />
+                    </th>
+                    <th>Keyword</th>
+                    <th>Match</th>
+                    <th>Campaign</th>
+                    <th>Status</th>
+                    <th className="right">Impr</th>
+                    <th className="right">Clicks</th>
+                    <th className="right">Conv</th>
+                    <th className="right">Spend</th>
+                    <th className="right">CPA</th>
+                    <th className="center">QS</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredKeywords.map((kw) => (
+                    <tr
+                      key={kw.id}
                       style={{
-                        color: kw.quality_score >= 7 ? 'var(--success)' : kw.quality_score >= 5 ? 'var(--warning)' : 'var(--error)',
-                        fontWeight: 600,
+                        background: kw.conversions === 0 && kw.spend_micros > 200_000000 ? 'rgba(239, 68, 68, 0.05)' : undefined,
                       }}
                     >
-                      {kw.quality_score}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                      <td>
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(kw.id)}
+                          onChange={(e) => handleSelect(kw.id, e.target.checked)}
+                        />
+                      </td>
+                      <td className="mono" style={{ fontSize: '12px' }}>{kw.text}</td>
+                      <td>
+                        <span className="badge badge-neutral" style={{ fontSize: '10px' }}>{kw.match_type}</span>
+                      </td>
+                      <td style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{kw.campaign}</td>
+                      <td>
+                        <span style={{ color: kw.status === 'ENABLED' ? 'var(--success)' : 'var(--text-tertiary)' }}>
+                          {kw.status === 'ENABLED' ? '● Active' : '○ Paused'}
+                        </span>
+                      </td>
+                      <td className="right mono">{formatNumber(kw.impressions)}</td>
+                      <td className="right mono">{formatNumber(kw.clicks)}</td>
+                      <td
+                        className="right mono"
+                        style={{ color: kw.conversions === 0 ? 'var(--error)' : undefined }}
+                      >
+                        {kw.conversions || '—'}
+                      </td>
+                      <td className="right mono">{formatMicros(kw.spend_micros)}</td>
+                      <td className="right mono">{kw.cpa_micros > 0 ? formatMicros(kw.cpa_micros) : '—'}</td>
+                      <td className="center">
+                        <span
+                          style={{
+                            color: kw.quality_score >= 7 ? 'var(--success)' : kw.quality_score >= 5 ? 'var(--warning)' : 'var(--error)',
+                            fontWeight: 600,
+                          }}
+                        >
+                          {kw.quality_score}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
 
           {/* Empty State */}
           {filteredKeywords.length === 0 && (
@@ -346,21 +389,10 @@ export default function KeywordsPage() {
           )}
 
           {/* Footer */}
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginTop: '16px',
-              paddingTop: '16px',
-              borderTop: '1px solid var(--border-default)',
-              fontSize: '13px',
-              color: 'var(--text-secondary)',
-            }}
-          >
+          <div className="keywords-footer">
             <span>Showing {filteredKeywords.length} of {data.total} keywords</span>
-            <div style={{ display: 'flex', gap: '8px', paddingRight: '70px' }}>
-              <button className="btn btn-ghost btn-sm" disabled>Previous</button>
+            <div className="keywords-pagination">
+              <button className="btn btn-ghost btn-sm" disabled>Prev</button>
               <button className="btn btn-ghost btn-sm" disabled>Next</button>
             </div>
           </div>
@@ -375,6 +407,150 @@ export default function KeywordsPage() {
         campaigns={campaigns}
         isDemo={isDemo}
       />
+
+      <style jsx>{`
+        .wasting-alert {
+          margin-bottom: 24px;
+          padding: 16px;
+          background: rgba(239, 68, 68, 0.05);
+          border: 1px solid rgba(239, 68, 68, 0.2);
+          border-left: 4px solid var(--error);
+          border-radius: 8px;
+        }
+
+        .wasting-content {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 16px;
+        }
+
+        .wasting-actions {
+          display: flex;
+          gap: 8px;
+          flex-shrink: 0;
+        }
+
+        .wasting-pause-btn {
+          background: var(--error);
+          color: white;
+        }
+
+        .keywords-toolbar {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 16px;
+        }
+
+        .keywords-filters {
+          display: flex;
+          gap: 12px;
+          flex: 1;
+        }
+
+        .keywords-search {
+          width: 250px;
+        }
+
+        .keywords-actions {
+          display: flex;
+          gap: 8px;
+          align-items: center;
+        }
+
+        .keywords-table-wrapper {
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        .keywords-footer {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-top: 16px;
+          padding-top: 16px;
+          border-top: 1px solid var(--border-default);
+          font-size: 13px;
+          color: var(--text-secondary);
+        }
+
+        .keywords-pagination {
+          display: flex;
+          gap: 8px;
+        }
+
+        @media (max-width: 767px) {
+          .wasting-alert {
+            margin-bottom: 16px;
+            padding: 12px;
+          }
+
+          .wasting-content {
+            flex-direction: column;
+            align-items: stretch;
+          }
+
+          .wasting-actions {
+            margin-top: 12px;
+          }
+
+          .wasting-actions .btn {
+            flex: 1;
+          }
+
+          .keywords-toolbar {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 12px;
+          }
+
+          .keywords-filters {
+            width: 100%;
+            gap: 8px;
+          }
+
+          .keywords-search {
+            flex: 1;
+            min-width: 0;
+          }
+
+          .keywords-filters .select {
+            width: auto;
+            flex-shrink: 0;
+          }
+
+          .keywords-actions {
+            width: 100%;
+            justify-content: space-between;
+          }
+
+          .keywords-table-wrapper {
+            margin: 0 -12px;
+            padding: 0 12px;
+          }
+
+          .keywords-table-wrapper table {
+            min-width: 700px;
+          }
+
+          .keywords-footer {
+            flex-direction: column;
+            gap: 12px;
+            align-items: center;
+          }
+
+          .keywords-pagination {
+            width: 100%;
+            justify-content: center;
+          }
+
+          .hide-mobile {
+            display: none;
+          }
+        }
+      `}</style>
     </>
   );
 }

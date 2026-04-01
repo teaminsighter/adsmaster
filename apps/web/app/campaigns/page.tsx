@@ -15,6 +15,12 @@ export default function CampaignsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [platformFilter, setPlatformFilter] = useState<string>('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [toast, setToast] = useState<string | null>(null);
+
+  const showToast = (message: string) => {
+    setToast(message);
+    setTimeout(() => setToast(null), 2000);
+  };
 
   const { data, loading, error, isDemo, refetch } = useCampaigns({
     status: statusFilter || undefined,
@@ -39,7 +45,7 @@ export default function CampaignsPage() {
   };
 
   const handleBulkAction = async (action: 'pause' | 'enable') => {
-    alert(`Demo: Would ${action} ${selectedIds.size} campaigns`);
+    showToast(`Would ${action} ${selectedIds.size} campaigns`);
     setSelectedIds(new Set());
   };
 
@@ -103,6 +109,27 @@ export default function CampaignsPage() {
     <>
       {isDemo && <DemoBanner onConnect={() => router.push('/connect')} />}
       <Header title="Campaigns" />
+
+      {/* Toast */}
+      {toast && (
+        <div style={{
+          position: 'fixed',
+          bottom: '80px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          padding: '12px 20px',
+          background: '#1a1a1a',
+          color: 'white',
+          borderRadius: '8px',
+          boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3)',
+          zIndex: 9999,
+          fontSize: '14px',
+          fontWeight: 500,
+        }}>
+          {toast}
+        </div>
+      )}
+
       <div className="page-content">
         {/* Summary Stats */}
         <div className="metrics-grid" style={{ marginBottom: '24px' }}>
@@ -180,6 +207,7 @@ export default function CampaignsPage() {
                   campaign={campaign}
                   selected={selectedIds.has(campaign.id)}
                   onSelect={handleSelect}
+                  onAction={(id, action) => showToast(`Would ${action} campaign`)}
                 />
               ))}
             </div>
@@ -274,10 +302,10 @@ export default function CampaignsPage() {
                         className="btn btn-ghost btn-sm"
                         onClick={() => {
                           const action = campaign.status === 'ENABLED' ? 'pause' : 'enable';
-                          alert(`Demo: Would ${action} "${campaign.name}"`);
+                          showToast(`Would ${action} "${campaign.name}"`);
                         }}
                       >
-                        ...
+                        ⋮
                       </button>
                     </td>
                   </tr>
@@ -299,6 +327,22 @@ export default function CampaignsPage() {
       </div>
 
       <style jsx>{`
+        .campaigns-toolbar {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 16px;
+        }
+        .campaigns-filters {
+          display: flex;
+          gap: 8px;
+        }
+        .campaigns-actions {
+          display: flex;
+          gap: 8px;
+          align-items: center;
+        }
         .campaigns-footer {
           display: flex;
           justify-content: space-between;
@@ -314,6 +358,24 @@ export default function CampaignsPage() {
           gap: 8px;
         }
         @media (max-width: 767px) {
+          .campaigns-toolbar {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 12px;
+          }
+          .campaigns-filters {
+            width: 100%;
+            gap: 8px;
+          }
+          .campaigns-filters :global(.select) {
+            flex: 1;
+            min-width: 0;
+            font-size: 13px;
+          }
+          .campaigns-actions {
+            width: 100%;
+            justify-content: space-between;
+          }
           .campaigns-footer {
             flex-direction: column;
             gap: 12px;

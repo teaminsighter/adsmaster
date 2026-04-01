@@ -190,7 +190,7 @@ function AccountsSettingsContent() {
           <div className="card-header">
             <span className="card-title">Connect New Account</span>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+          <div className="connect-grid">
             {/* Google Ads */}
             <div
               style={{
@@ -303,6 +303,7 @@ function AccountsSettingsContent() {
               <div style={{ fontSize: '14px' }}>Connect your first ad account to get started</div>
             </div>
           ) : (
+            <div className="accounts-table-wrapper">
             <table className="data-table">
               <thead>
                 <tr>
@@ -382,20 +383,12 @@ function AccountsSettingsContent() {
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </div>
 
         {/* Help Text */}
-        <div
-          style={{
-            marginTop: '24px',
-            padding: '16px',
-            background: 'var(--surface-secondary)',
-            borderRadius: '8px',
-            fontSize: '13px',
-            color: 'var(--text-secondary)',
-          }}
-        >
+        <div className="help-text">
           <strong>Need help?</strong> Check our{' '}
           <a href="/help" style={{ color: 'var(--primary)' }}>
             documentation
@@ -403,6 +396,48 @@ function AccountsSettingsContent() {
           for step-by-step guides on connecting your ad accounts.
         </div>
       </div>
+
+      <style jsx>{`
+        .connect-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 16px;
+        }
+
+        .accounts-table-wrapper {
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        .help-text {
+          margin-top: 24px;
+          padding: 16px;
+          background: var(--surface-secondary);
+          border-radius: 8px;
+          font-size: 13px;
+          color: var(--text-secondary);
+        }
+
+        @media (max-width: 767px) {
+          .connect-grid {
+            grid-template-columns: 1fr;
+            gap: 12px;
+          }
+
+          .accounts-table-wrapper {
+            margin: 0 -12px;
+            padding: 0 12px;
+          }
+
+          .accounts-table-wrapper table {
+            min-width: 550px;
+          }
+
+          .help-text {
+            margin-top: 16px;
+          }
+        }
+      `}</style>
     </>
   );
 }

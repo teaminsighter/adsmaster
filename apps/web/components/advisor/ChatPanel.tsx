@@ -777,6 +777,128 @@ export default function ChatPanel({ messages, onSendMessage, isLoading, context,
         .rec-impact strong {
           color: var(--success);
         }
+
+        /* Mobile Styles */
+        @media (max-width: 767px) {
+          .chat-welcome {
+            padding: 1.5em 1em;
+            justify-content: flex-start;
+            padding-top: 2em;
+          }
+
+          .chat-icon {
+            width: 3em;
+            height: 3em;
+          }
+
+          .chat-icon-wrapper {
+            margin-bottom: 0.75em;
+          }
+
+          .chat-title {
+            font-size: 1.1em;
+            margin-bottom: 1.25rem;
+          }
+
+          .chat-suggestions-box {
+            border-radius: 1em;
+            padding: 0.75em;
+            gap: 0.5em;
+            box-shadow: 0 2em 2em hsla(0, 0%, 0%, 0.15);
+          }
+
+          .chat-suggestion {
+            padding: 0.625em 0.875em;
+            font-size: 13px;
+          }
+
+          .chat-input {
+            padding: 0.875em;
+            padding-right: 3em;
+            font-size: 16px; /* Prevent zoom on iOS */
+          }
+
+          .chat-submit {
+            width: 2em;
+            height: 2em;
+          }
+
+          .rec-context-card {
+            padding: 12px;
+            margin-bottom: 12px;
+          }
+
+          .rec-title {
+            font-size: 14px;
+          }
+
+          .rec-description {
+            font-size: 12px;
+          }
+
+          /* Conversation View Mobile */
+          .chat-conversation {
+            padding-bottom: 0;
+          }
+
+          .chat-message-scroller {
+            padding: 1em 0;
+          }
+
+          .chat-messages {
+            padding: 0 0.75em;
+          }
+
+          .chat-message {
+            gap: 0.5em;
+            margin: 0.5em 0;
+          }
+
+          .chat-message-content {
+            max-width: 85%;
+            padding: 0.75em 1em;
+            border-radius: 1.25em;
+          }
+
+          .chat-message-text {
+            font-size: 13px;
+          }
+
+          .chat-icon-small {
+            width: 1.75em;
+            height: 1.75em;
+          }
+
+          .chat-input-box {
+            border-radius: 1em 1em 0 0;
+            padding: 0.75em;
+            margin: 0;
+            width: 100%;
+            max-width: none;
+          }
+
+          .chat-suggestion-tags {
+            gap: 0.375em;
+            margin-bottom: 0.5em;
+          }
+
+          .chat-suggestion-tag {
+            font-size: 12px;
+            padding: 0.25em 0.5em;
+          }
+
+          .chat-textarea {
+            padding: 0.75em;
+            padding-right: 3em;
+            font-size: 16px; /* Prevent zoom on iOS */
+            min-height: 2.5em;
+          }
+
+          .chat-submit-textarea {
+            bottom: 0.375em;
+            right: 0.375em;
+          }
+        }
       `}</style>
     </div>
   );

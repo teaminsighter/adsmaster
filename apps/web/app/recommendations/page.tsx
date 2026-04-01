@@ -17,6 +17,12 @@ export default function RecommendationsPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [expandedWhy, setExpandedWhy] = useState<Set<string>>(new Set());
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
 
   const toggleWhy = (id: string) => {
     setExpandedWhy((prev) => {
@@ -68,11 +74,11 @@ export default function RecommendationsPage() {
     try {
       const result = await applyRecommendation(recommendationId, optionId);
       if (result.success) {
-        alert(`${isDemo ? 'Demo: ' : ''}${result.message}`);
+        showToast(`${isDemo ? 'Demo: ' : ''}${result.message}`, 'success');
         refetch();
       }
     } catch (err) {
-      alert('Failed to apply recommendation');
+      showToast('Failed to apply recommendation', 'error');
     } finally {
       setActionLoading(null);
       setSelectedIds((prev) => {
@@ -88,11 +94,11 @@ export default function RecommendationsPage() {
     try {
       const result = await dismissRecommendation(recommendationId);
       if (result.success) {
-        alert(`${isDemo ? 'Demo: ' : ''}Recommendation dismissed`);
+        showToast(`${isDemo ? 'Demo: ' : ''}Recommendation dismissed`, 'success');
         refetch();
       }
     } catch (err) {
-      alert('Failed to dismiss recommendation');
+      showToast('Failed to dismiss recommendation', 'error');
     } finally {
       setActionLoading(null);
       setSelectedIds((prev) => {
@@ -186,6 +192,34 @@ export default function RecommendationsPage() {
     <>
       {isDemo && <DemoBanner onConnect={() => router.push('/connect')} />}
       <Header title="AI Recommendations" />
+
+      {/* Toast Notification */}
+      {toast && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '80px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            padding: '12px 20px',
+            background: toast.type === 'success' ? '#10B981' : '#EF4444',
+            color: 'white',
+            borderRadius: '8px',
+            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)',
+            zIndex: 9999,
+            fontSize: '14px',
+            fontWeight: 500,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            maxWidth: 'calc(100vw - 32px)',
+          }}
+        >
+          <span>{toast.type === 'success' ? '✓' : '✕'}</span>
+          {toast.message}
+        </div>
+      )}
+
       <div className="page-content">
         {/* Summary Cards */}
         <div className="metrics-grid" style={{ marginBottom: '24px' }}>
@@ -231,17 +265,8 @@ export default function RecommendationsPage() {
         </div>
 
         {/* Filters */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '16px',
-            flexWrap: 'wrap',
-            gap: '12px',
-          }}
-        >
-          <div style={{ display: 'flex', gap: '8px' }}>
+        <div className="rec-toolbar">
+          <div className="rec-filters">
             <select
               className="select"
               value={statusFilter}
@@ -265,33 +290,24 @@ export default function RecommendationsPage() {
           </div>
 
           {selectedIds.size > 0 && (
-            <div
-              style={{
-                display: 'flex',
-                gap: '8px',
-                padding: '8px 12px',
-                background: 'var(--primary-light)',
-                borderRadius: '8px',
-                alignItems: 'center',
-              }}
-            >
-              <span style={{ fontSize: '13px', fontWeight: 500 }}>{selectedIds.size} selected</span>
+            <div className="rec-bulk-actions">
+              <span className="rec-bulk-count">{selectedIds.size} selected</span>
               <button className="btn btn-primary btn-sm" onClick={handleBulkApply}>
-                Apply All
+                Apply
               </button>
               <button className="btn btn-ghost btn-sm" onClick={handleBulkDismiss}>
-                Dismiss All
+                Dismiss
               </button>
               <button className="btn btn-ghost btn-sm" onClick={() => setSelectedIds(new Set())}>
-                Clear
+                ×
               </button>
             </div>
           )}
 
           {recommendations.filter((r) => r.status === 'pending').length > 0 && (
-            <button className="btn btn-ghost btn-sm" onClick={handleSelectAll}>
+            <button className="btn btn-ghost btn-sm rec-select-all" onClick={handleSelectAll}>
               {selectedIds.size === recommendations.filter((r) => r.status === 'pending').length
-                ? 'Deselect All'
+                ? 'Deselect'
                 : 'Select All'}
             </button>
           )}
@@ -778,29 +794,114 @@ export default function RecommendationsPage() {
         </div>
 
         {/* Footer */}
-        <div
-          style={{
-            marginTop: '24px',
-            padding: '16px',
-            background: 'var(--surface-secondary)',
-            borderRadius: '8px',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            fontSize: '13px',
-            color: 'var(--text-secondary)',
-          }}
-        >
+        <div className="rec-footer">
           <span>Showing {recommendations.length} recommendations</span>
           <span>Last updated: {new Date().toLocaleString()}</span>
         </div>
       </div>
 
-      {/* Tooltip CSS */}
+      {/* Tooltip CSS + Mobile Styles */}
       <style jsx>{`
         .tooltip-wrapper:hover .tooltip-content {
           opacity: 1 !important;
           visibility: visible !important;
+        }
+
+        .rec-toolbar {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 16px;
+          flex-wrap: wrap;
+          gap: 12px;
+        }
+
+        .rec-filters {
+          display: flex;
+          gap: 8px;
+        }
+
+        .rec-bulk-actions {
+          display: flex;
+          gap: 8px;
+          padding: 8px 12px;
+          background: var(--primary-light);
+          border-radius: 8px;
+          align-items: center;
+        }
+
+        .rec-bulk-count {
+          font-size: 13px;
+          font-weight: 500;
+        }
+
+        .rec-footer {
+          margin-top: 24px;
+          padding: 16px;
+          background: var(--surface-secondary);
+          border-radius: 8px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          font-size: 13px;
+          color: var(--text-secondary);
+        }
+
+        @media (max-width: 767px) {
+          .rec-toolbar {
+            flex-direction: column;
+            align-items: stretch;
+          }
+
+          .rec-filters {
+            width: 100%;
+          }
+
+          .rec-filters :global(.select) {
+            flex: 1;
+          }
+
+          .rec-bulk-actions {
+            width: 100%;
+            justify-content: space-between;
+          }
+
+          .rec-bulk-count {
+            display: none;
+          }
+
+          .rec-select-all {
+            width: 100%;
+          }
+
+          .rec-footer {
+            flex-direction: column;
+            gap: 8px;
+            text-align: center;
+            margin-top: 16px;
+            padding: 12px;
+          }
+        }
+      `}</style>
+
+      {/* Mobile Card Styles */}
+      <style jsx global>{`
+        @media (max-width: 767px) {
+          .page-content .card[style*="borderLeft"] {
+            padding-bottom: 70px !important;
+          }
+
+          .page-content .card[style*="borderLeft"] > div > div:first-child > div:first-child {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 8px !important;
+          }
+
+          .page-content .card[style*="borderLeft"] button[style*="position: absolute"] {
+            left: 16px !important;
+            right: 16px !important;
+            width: calc(100% - 32px) !important;
+          }
         }
       `}</style>
     </>

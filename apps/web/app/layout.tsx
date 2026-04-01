@@ -1,7 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import Sidebar from "@/components/layout/Sidebar";
+import AppShell from "@/components/layout/AppShell";
 import AIAdvisorWrapper from "@/components/AIAdvisor/AIAdvisorWrapper";
 
 const inter = Inter({
@@ -19,6 +19,13 @@ export const metadata: Metadata = {
   description: "Manage Google Ads and Meta Ads with AI-powered recommendations",
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: "cover",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -28,10 +35,9 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${inter.variable} ${jetbrainsMono.variable}`}>
         <div className="app-layout">
-          <Sidebar />
-          <main className="main-content">
+          <AppShell>
             {children}
-          </main>
+          </AppShell>
         </div>
         <AIAdvisorWrapper />
       </body>

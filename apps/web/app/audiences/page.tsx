@@ -6,6 +6,7 @@ import Header from '@/components/layout/Header';
 import DemoBanner from '@/components/ui/DemoBanner';
 import CreateAudienceModal from '@/components/audiences/CreateAudienceModal';
 import { useAudiences, createAudience } from '@/lib/hooks/useApi';
+import { useIsMobile } from '@/lib/hooks/useIsMobile';
 
 const audienceTypes: Record<string, { label: string; color: string }> = {
   REMARKETING: { label: 'Remarketing', color: 'var(--primary)' },
@@ -23,11 +24,18 @@ const formatSize = (size: number) => {
 
 export default function AudiencesPage() {
   const router = useRouter();
+  const isMobile = useIsMobile();
   const [platformFilter, setPlatformFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [toast, setToast] = useState<string | null>(null);
+
+  const showToast = (message: string) => {
+    setToast(message);
+    setTimeout(() => setToast(null), 2000);
+  };
 
   const { data, loading, error, isDemo, refetch } = useAudiences({
     platform: platformFilter || undefined,
@@ -134,6 +142,29 @@ export default function AudiencesPage() {
     <>
       {isDemo && <DemoBanner onConnect={() => router.push('/connect')} />}
       <Header title="Audiences" />
+
+      {/* Toast Notification */}
+      {toast && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '80px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            padding: '12px 20px',
+            background: '#1a1a1a',
+            color: 'white',
+            borderRadius: '8px',
+            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3)',
+            zIndex: 9999,
+            fontSize: '14px',
+            fontWeight: 500,
+          }}
+        >
+          {toast}
+        </div>
+      )}
+
       <div className="page-content">
         {/* Success Message */}
         {successMessage && (
@@ -186,36 +217,77 @@ export default function AudiencesPage() {
 
         {/* Filters */}
         <div className="card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <div style={{ display: 'flex', gap: '12px' }}>
+          <div style={{
+            display: 'flex',
+            flexDirection: isMobile ? 'column' : 'row',
+            justifyContent: 'space-between',
+            alignItems: isMobile ? 'stretch' : 'center',
+            gap: isMobile ? '12px' : '8px',
+            marginBottom: '16px'
+          }}>
+            <div style={{
+              display: 'flex',
+              flexDirection: isMobile ? 'column' : 'row',
+              gap: '12px',
+              flex: 1,
+            }}>
               <input
                 type="text"
                 className="input"
                 placeholder="Search audiences..."
-                style={{ width: '250px' }}
+                style={{ width: isMobile ? '100%' : '250px' }}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
-              <select
-                className="select"
-                value={platformFilter}
-                onChange={(e) => setPlatformFilter(e.target.value)}
-              >
-                <option value="">All Platforms</option>
-                <option value="google">Google Ads</option>
-                <option value="meta">Meta Ads</option>
-              </select>
-              <select
-                className="select"
-                value={typeFilter}
-                onChange={(e) => setTypeFilter(e.target.value)}
-              >
-                <option value="">All Types</option>
-                <option value="REMARKETING">Remarketing</option>
-                <option value="CUSTOMER_LIST">Customer List</option>
-                <option value="LOOKALIKE">Lookalike</option>
-                <option value="ENGAGEMENT">Engagement</option>
-              </select>
+              {isMobile ? (
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <select
+                    className="select"
+                    value={platformFilter}
+                    onChange={(e) => setPlatformFilter(e.target.value)}
+                    style={{ flex: 1 }}
+                  >
+                    <option value="">All Platforms</option>
+                    <option value="google">Google Ads</option>
+                    <option value="meta">Meta Ads</option>
+                  </select>
+                  <select
+                    className="select"
+                    value={typeFilter}
+                    onChange={(e) => setTypeFilter(e.target.value)}
+                    style={{ flex: 1 }}
+                  >
+                    <option value="">All Types</option>
+                    <option value="REMARKETING">Remarketing</option>
+                    <option value="CUSTOMER_LIST">Customer List</option>
+                    <option value="LOOKALIKE">Lookalike</option>
+                    <option value="ENGAGEMENT">Engagement</option>
+                  </select>
+                </div>
+              ) : (
+                <>
+                  <select
+                    className="select"
+                    value={platformFilter}
+                    onChange={(e) => setPlatformFilter(e.target.value)}
+                  >
+                    <option value="">All Platforms</option>
+                    <option value="google">Google Ads</option>
+                    <option value="meta">Meta Ads</option>
+                  </select>
+                  <select
+                    className="select"
+                    value={typeFilter}
+                    onChange={(e) => setTypeFilter(e.target.value)}
+                  >
+                    <option value="">All Types</option>
+                    <option value="REMARKETING">Remarketing</option>
+                    <option value="CUSTOMER_LIST">Customer List</option>
+                    <option value="LOOKALIKE">Lookalike</option>
+                    <option value="ENGAGEMENT">Engagement</option>
+                  </select>
+                </>
+              )}
             </div>
             <button className="btn btn-primary btn-sm" onClick={() => setShowCreateModal(true)}>
               + Create Audience
@@ -223,38 +295,44 @@ export default function AudiencesPage() {
           </div>
 
           {/* Audiences Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+            gap: isMobile ? '12px' : '16px'
+          }}>
             {filteredAudiences.map((audience) => (
               <div
                 key={audience.id}
                 style={{
-                  padding: '16px',
+                  padding: isMobile ? '14px' : '16px',
                   border: '1px solid var(--border-default)',
-                  borderRadius: '8px',
-                  background: audience.status === 'PAUSED' ? 'var(--surface-secondary)' : undefined,
+                  borderRadius: '10px',
+                  background: audience.status === 'PAUSED' ? 'var(--surface-secondary)' : 'var(--surface-card)',
                   opacity: audience.status === 'PAUSED' ? 0.7 : 1,
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
                       <span
                         style={{
                           width: '8px',
                           height: '8px',
                           borderRadius: '50%',
                           background: audience.platform === 'google' ? '#4285F4' : '#0668E1',
+                          flexShrink: 0,
                         }}
                       />
-                      <span style={{ fontWeight: 500 }}>{audience.name}</span>
+                      <span style={{ fontWeight: 600, fontSize: '14px' }}>{audience.name}</span>
                     </div>
-                    <div style={{ display: 'flex', gap: '8px', fontSize: '12px' }}>
+                    <div style={{ display: 'flex', gap: '8px', fontSize: '12px', flexWrap: 'wrap' }}>
                       <span
                         style={{
-                          padding: '2px 6px',
+                          padding: '2px 8px',
                           borderRadius: '4px',
                           background: `${audienceTypes[audience.type]?.color || 'var(--text-tertiary)'}20`,
                           color: audienceTypes[audience.type]?.color || 'var(--text-tertiary)',
+                          fontWeight: 500,
                         }}
                       >
                         {audienceTypes[audience.type]?.label || audience.type}
@@ -266,34 +344,43 @@ export default function AudiencesPage() {
                   </div>
                   <span
                     className={`badge ${audience.status === 'ACTIVE' ? 'badge-success' : 'badge-neutral'}`}
+                    style={{ marginLeft: '8px', flexShrink: 0 }}
                   >
                     {audience.status === 'ACTIVE' ? '● Active' : '○ Paused'}
                   </span>
                 </div>
 
-                <div style={{ display: 'flex', gap: '32px', fontSize: '13px' }}>
-                  <div>
-                    <div style={{ color: 'var(--text-primary)', fontSize: '11px', fontWeight: 500, opacity: 0.7, marginBottom: '2px' }}>Size</div>
-                    <div className="mono" style={{ fontWeight: 500 }}>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(3, 1fr)',
+                  gap: '8px',
+                  padding: '12px',
+                  background: 'var(--surface-secondary)',
+                  borderRadius: '8px',
+                  marginBottom: '12px',
+                }}>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '10px', color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: '2px' }}>Size</div>
+                    <div className="mono" style={{ fontWeight: 600, fontSize: '15px' }}>
                       {formatSize(audience.size)}
                     </div>
                   </div>
-                  <div>
-                    <div style={{ color: 'var(--text-primary)', fontSize: '11px', fontWeight: 500, opacity: 0.7, marginBottom: '2px' }}>Campaigns</div>
-                    <div className="mono" style={{ fontWeight: 500 }}>{audience.campaigns}</div>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '10px', color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: '2px' }}>Campaigns</div>
+                    <div className="mono" style={{ fontWeight: 600, fontSize: '15px' }}>{audience.campaigns}</div>
                   </div>
-                  <div>
-                    <div style={{ color: 'var(--text-primary)', fontSize: '11px', fontWeight: 500, opacity: 0.7, marginBottom: '2px' }}>Conversions</div>
-                    <div className="mono" style={{ fontWeight: 500, color: audience.conversions > 0 ? 'var(--success)' : 'var(--text-tertiary)' }}>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '10px', color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: '2px' }}>Conv</div>
+                    <div className="mono" style={{ fontWeight: 600, fontSize: '15px', color: audience.conversions > 0 ? 'var(--success)' : 'var(--text-tertiary)' }}>
                       {audience.conversions || '—'}
                     </div>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '8px', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid var(--border-default)' }}>
-                  <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={() => alert(`Demo: Would view ${audience.name}`)}>View</button>
-                  <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={() => alert(`Demo: Would edit ${audience.name}`)}>Edit</button>
-                  <button className="btn btn-ghost btn-sm" onClick={() => alert('Demo: More options')}>...</button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button className="btn btn-ghost btn-sm" style={{ flex: 1, minHeight: '36px' }} onClick={() => showToast(`Viewing ${audience.name}`)}>View</button>
+                  <button className="btn btn-ghost btn-sm" style={{ flex: 1, minHeight: '36px' }} onClick={() => showToast(`Editing ${audience.name}`)}>Edit</button>
+                  <button className="btn btn-ghost btn-sm" style={{ minWidth: '44px', minHeight: '36px' }} onClick={() => showToast('More options')}>⋮</button>
                 </div>
               </div>
             ))}
@@ -310,8 +397,10 @@ export default function AudiencesPage() {
           <div
             style={{
               display: 'flex',
+              flexDirection: isMobile ? 'column' : 'row',
               justifyContent: 'space-between',
-              alignItems: 'center',
+              alignItems: isMobile ? 'center' : 'center',
+              gap: isMobile ? '12px' : '8px',
               marginTop: '16px',
               paddingTop: '16px',
               borderTop: '1px solid var(--border-default)',
@@ -320,7 +409,7 @@ export default function AudiencesPage() {
             }}
           >
             <span>Showing {filteredAudiences.length} of {data.total} audiences</span>
-            <div style={{ display: 'flex', gap: '8px', paddingRight: '70px' }}>
+            <div style={{ display: 'flex', gap: '8px' }}>
               <button className="btn btn-ghost btn-sm" disabled>Previous</button>
               <button className="btn btn-ghost btn-sm" disabled>Next</button>
             </div>

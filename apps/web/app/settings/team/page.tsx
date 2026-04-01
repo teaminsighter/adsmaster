@@ -146,51 +146,55 @@ export default function TeamSettingsPage() {
               )}
             </div>
             {showInvite ? (
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end' }}>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px', color: 'var(--text-secondary)' }}>
-                    Email Address
-                  </label>
-                  <input
-                    type="email"
-                    className="input"
-                    placeholder="colleague@company.com"
-                    value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
-                    style={{ width: '100%' }}
-                    disabled={inviting}
-                  />
+              <div className="invite-form">
+                <div className="invite-fields">
+                  <div className="invite-email">
+                    <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px', color: 'var(--text-secondary)' }}>
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      className="input"
+                      placeholder="colleague@company.com"
+                      value={inviteEmail}
+                      onChange={(e) => setInviteEmail(e.target.value)}
+                      style={{ width: '100%' }}
+                      disabled={inviting}
+                    />
+                  </div>
+                  <div className="invite-role">
+                    <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px', color: 'var(--text-secondary)' }}>
+                      Role
+                    </label>
+                    <select
+                      className="select"
+                      value={inviteRole}
+                      onChange={(e) => setInviteRole(e.target.value)}
+                      style={{ width: '100%' }}
+                      disabled={inviting}
+                    >
+                      <option value="viewer">Viewer</option>
+                      <option value="editor">Editor</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </div>
                 </div>
-                <div style={{ width: '150px' }}>
-                  <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px', color: 'var(--text-secondary)' }}>
-                    Role
-                  </label>
-                  <select
-                    className="select"
-                    value={inviteRole}
-                    onChange={(e) => setInviteRole(e.target.value)}
-                    style={{ width: '100%' }}
+                <div className="invite-actions">
+                  <button
+                    className="btn btn-primary invite-btn"
+                    onClick={handleInvite}
+                    disabled={inviting || !inviteEmail.trim()}
+                  >
+                    {inviting ? 'Sending...' : 'Send Invite'}
+                  </button>
+                  <button
+                    className="btn btn-ghost"
+                    onClick={() => setShowInvite(false)}
                     disabled={inviting}
                   >
-                    <option value="viewer">Viewer</option>
-                    <option value="editor">Editor</option>
-                    <option value="admin">Admin</option>
-                  </select>
+                    Cancel
+                  </button>
                 </div>
-                <button
-                  className="btn btn-primary"
-                  onClick={handleInvite}
-                  disabled={inviting || !inviteEmail.trim()}
-                >
-                  {inviting ? 'Sending...' : 'Send Invite'}
-                </button>
-                <button
-                  className="btn btn-ghost"
-                  onClick={() => setShowInvite(false)}
-                  disabled={inviting}
-                >
-                  Cancel
-                </button>
               </div>
             ) : (
               <button
@@ -216,6 +220,7 @@ export default function TeamSettingsPage() {
                 {members.length} members
               </span>
             </div>
+            <div className="team-table-wrapper">
             <table className="data-table">
               <thead>
                 <tr>
@@ -293,6 +298,7 @@ export default function TeamSettingsPage() {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
 
           {/* Role Permissions */}
@@ -300,9 +306,9 @@ export default function TeamSettingsPage() {
             <div className="card-header">
               <span className="card-title">Role Permissions</span>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+            <div className="roles-grid">
               {Object.entries(rolePermissions).map(([role, description]) => (
-                <div key={role} style={{ padding: '12px', background: 'var(--surface-secondary)', borderRadius: '8px' }}>
+                <div key={role} className="role-card">
                   <div style={{ fontWeight: 600, textTransform: 'capitalize', marginBottom: '4px' }}>{role}</div>
                   <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{description}</div>
                 </div>
@@ -311,6 +317,87 @@ export default function TeamSettingsPage() {
           </div>
         </div>
       </div>
+
+      <style jsx>{`
+        .invite-form {
+          display: flex;
+          gap: 12px;
+          align-items: flex-end;
+        }
+
+        .invite-fields {
+          display: flex;
+          gap: 12px;
+          flex: 1;
+        }
+
+        .invite-email {
+          flex: 1;
+        }
+
+        .invite-role {
+          width: 150px;
+        }
+
+        .invite-actions {
+          display: flex;
+          gap: 8px;
+        }
+
+        .team-table-wrapper {
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        .roles-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 16px;
+        }
+
+        .role-card {
+          padding: 12px;
+          background: var(--surface-secondary);
+          border-radius: 8px;
+        }
+
+        @media (max-width: 767px) {
+          .invite-form {
+            flex-direction: column;
+            align-items: stretch;
+          }
+
+          .invite-fields {
+            flex-direction: column;
+          }
+
+          .invite-role {
+            width: 100%;
+          }
+
+          .invite-actions {
+            flex-direction: column;
+          }
+
+          .invite-btn {
+            width: 100%;
+          }
+
+          .team-table-wrapper {
+            margin: 0 -12px;
+            padding: 0 12px;
+          }
+
+          .team-table-wrapper table {
+            min-width: 600px;
+          }
+
+          .roles-grid {
+            grid-template-columns: 1fr;
+            gap: 12px;
+          }
+        }
+      `}</style>
     </>
   );
 }

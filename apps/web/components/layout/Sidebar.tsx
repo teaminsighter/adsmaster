@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useIsMobile } from '@/lib/hooks/useIsMobile';
 
 const navItems = [
   { href: '/', label: 'Dashboard', icon: '📊' },
@@ -28,6 +29,17 @@ const connectedAccounts = [
 export default function Sidebar() {
   const pathname = usePathname();
   const [selectedAccount, setSelectedAccount] = useState('all');
+  const isMobile = useIsMobile();
+
+  // Don't render sidebar on admin pages
+  if (pathname.startsWith('/admin')) {
+    return null;
+  }
+
+  // Don't render on mobile - SidebarMobile handles that
+  if (isMobile) {
+    return null;
+  }
 
   return (
     <aside className="sidebar">

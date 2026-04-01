@@ -136,11 +136,11 @@ export default function PreferencesSettingsPage() {
           )}
 
           {/* Regional Settings */}
-          <div className="card" style={{ marginBottom: '24px' }}>
+          <div className="card pref-card">
             <div className="card-header">
               <span className="card-title">Regional Settings</span>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div className="pref-fields">
               <div>
                 <label style={{ display: 'block', fontWeight: 500, marginBottom: '8px' }}>Timezone</label>
                 <select
@@ -189,20 +189,19 @@ export default function PreferencesSettingsPage() {
           </div>
 
           {/* Display Settings */}
-          <div className="card" style={{ marginBottom: '24px' }}>
+          <div className="card pref-card">
             <div className="card-header">
               <span className="card-title">Display Settings</span>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div className="pref-fields">
               <div>
-                <label style={{ display: 'block', fontWeight: 500, marginBottom: '8px' }}>Theme</label>
-                <div style={{ display: 'flex', gap: '12px' }}>
+                <label className="pref-label">Theme</label>
+                <div className="theme-buttons">
                   {(['light', 'dark', 'system'] as const).map(theme => (
                     <button
                       key={theme}
-                      className={`btn ${prefs.theme === theme ? 'btn-primary' : 'btn-secondary'}`}
+                      className={`btn theme-btn ${prefs.theme === theme ? 'btn-primary' : 'btn-secondary'}`}
                       onClick={() => setPrefs({ ...prefs, theme })}
-                      style={{ flex: 1, textTransform: 'capitalize' }}
                     >
                       {theme}
                     </button>
@@ -243,7 +242,7 @@ export default function PreferencesSettingsPage() {
           </div>
 
           {/* Default Settings */}
-          <div className="card" style={{ marginBottom: '24px' }}>
+          <div className="card pref-card">
             <div className="card-header">
               <span className="card-title">Default Settings</span>
             </div>
@@ -266,9 +265,9 @@ export default function PreferencesSettingsPage() {
           </div>
 
           {/* Save Button */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <div className="save-row">
             <button
-              className="btn btn-primary"
+              className="btn btn-primary save-btn"
               onClick={handleSave}
               disabled={saving}
             >
@@ -277,6 +276,71 @@ export default function PreferencesSettingsPage() {
           </div>
         </div>
       </div>
+
+      <style jsx>{`
+        .pref-card {
+          margin-bottom: 24px;
+        }
+
+        .pref-fields {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+        }
+
+        .pref-label {
+          display: block;
+          font-weight: 500;
+          margin-bottom: 8px;
+        }
+
+        .theme-buttons {
+          display: flex;
+          gap: 12px;
+        }
+
+        .theme-btn {
+          flex: 1;
+          text-transform: capitalize;
+        }
+
+        .save-row {
+          display: flex;
+          justify-content: flex-end;
+        }
+
+        @media (max-width: 767px) {
+          .pref-card {
+            margin-bottom: 16px;
+          }
+
+          .pref-fields {
+            gap: 14px;
+          }
+
+          .pref-label {
+            margin-bottom: 6px;
+            font-size: 14px;
+          }
+
+          .theme-buttons {
+            gap: 8px;
+          }
+
+          .theme-btn {
+            padding: 10px 8px;
+            font-size: 13px;
+          }
+
+          .save-row {
+            justify-content: stretch;
+          }
+
+          .save-btn {
+            width: 100%;
+          }
+        }
+      `}</style>
     </>
   );
 }

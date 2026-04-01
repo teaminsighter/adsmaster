@@ -257,6 +257,24 @@ function AdvisorContent() {
     <div className="advisor-page">
       {/* Main Chat Area */}
       <div className="advisor-main">
+        {/* Mobile Context Selector */}
+        <div className="mobile-context-bar">
+          <select
+            value={contextType}
+            onChange={(e) => setContextType(e.target.value)}
+            className="mobile-context-select"
+          >
+            <option value="general">💬 General</option>
+            <option value="campaigns">📢 Campaigns</option>
+            <option value="analytics">📈 Analytics</option>
+            <option value="keywords">🔑 Keywords</option>
+            <option value="recommendations">🤖 AI Recommendations</option>
+          </select>
+          <button className="mobile-new-chat-btn" onClick={handleNewChat}>
+            + New
+          </button>
+        </div>
+
         <ChatPanel
           messages={messages}
           onSendMessage={handleSendMessage}
@@ -271,22 +289,24 @@ function AdvisorContent() {
         />
       </div>
 
-      {/* Right Sidebar */}
-      <ContextSidebar
-        chatHistory={chatHistory}
-        activeChatId={activeChatId}
-        onSelectChat={handleSelectChat}
-        onNewChat={handleNewChat}
-        onDeleteChat={handleDeleteChat}
-        contextType={contextType}
-        onContextTypeChange={setContextType}
-        selectedCampaignId={selectedCampaignId}
-        onCampaignChange={setSelectedCampaignId}
-        campaigns={mockCampaigns}
-        recommendations={mockRecommendations}
-        selectedRecommendationId={selectedRecommendationId}
-        onRecommendationChange={setSelectedRecommendationId}
-      />
+      {/* Right Sidebar - Desktop Only */}
+      <div className="advisor-sidebar">
+        <ContextSidebar
+          chatHistory={chatHistory}
+          activeChatId={activeChatId}
+          onSelectChat={handleSelectChat}
+          onNewChat={handleNewChat}
+          onDeleteChat={handleDeleteChat}
+          contextType={contextType}
+          onContextTypeChange={setContextType}
+          selectedCampaignId={selectedCampaignId}
+          onCampaignChange={setSelectedCampaignId}
+          campaigns={mockCampaigns}
+          recommendations={mockRecommendations}
+          selectedRecommendationId={selectedRecommendationId}
+          onRecommendationChange={setSelectedRecommendationId}
+        />
+      </div>
 
       <style jsx>{`
         .advisor-page {
@@ -302,6 +322,74 @@ function AdvisorContent() {
           flex-direction: column;
           overflow: hidden;
           min-width: 0;
+        }
+
+        .advisor-sidebar {
+          width: 320px;
+          flex-shrink: 0;
+        }
+
+        .mobile-context-bar {
+          display: none;
+        }
+
+        /* Mobile Styles */
+        @media (max-width: 767px) {
+          .advisor-page {
+            height: calc(100vh - 56px - 64px);
+            flex-direction: column;
+          }
+
+          .advisor-main {
+            height: 100%;
+          }
+
+          .advisor-sidebar {
+            display: none;
+          }
+
+          .mobile-context-bar {
+            display: flex;
+            gap: 8px;
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border-default);
+            background: var(--surface-card);
+            flex-shrink: 0;
+          }
+
+          .mobile-context-select {
+            flex: 1;
+            padding: 8px 10px;
+            border: 1px solid var(--border-default);
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 14px;
+            cursor: pointer;
+            -webkit-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            padding-right: 32px;
+          }
+
+          .mobile-new-chat-btn {
+            padding: 8px 14px;
+            background: linear-gradient(135deg, hsl(217 90% 50%), hsl(252 90% 65%));
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            box-shadow: 0 2px 8px hsla(252, 90%, 50%, 0.3);
+          }
+
+          .mobile-new-chat-btn:active {
+            transform: scale(0.97);
+          }
         }
       `}</style>
     </div>

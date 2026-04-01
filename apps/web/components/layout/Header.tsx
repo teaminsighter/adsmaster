@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import DateRangePicker from '@/components/ui/DateRangePicker';
+import { useIsMobile } from '@/lib/hooks/useIsMobile';
 
 interface DateRange {
   start: Date;
@@ -29,6 +30,7 @@ export default function Header({ title = 'Dashboard', showDateFilter = true, onD
   const [dateRange, setDateRange] = useState<DateRange>(getDefaultDateRange);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     // Check for saved theme or system preference
@@ -58,6 +60,11 @@ export default function Header({ title = 'Dashboard', showDateFilter = true, onD
     document.body.setAttribute('data-theme', newTheme);
     localStorage.setItem('theme', newTheme);
   };
+
+  // Don't render on mobile - MobileHeader handles that (MUST be after all hooks)
+  if (isMobile) {
+    return null;
+  }
 
   const handleDateRangeChange = (range: DateRange) => {
     setDateRange(range);

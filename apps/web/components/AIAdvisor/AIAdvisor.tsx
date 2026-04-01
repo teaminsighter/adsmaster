@@ -517,6 +517,17 @@ export default function AIAdvisor({ context }: AIAdvisorProps) {
             transform: translateY(0);
           }
         }
+
+        /* Mobile styles - hide FAB since AI is in bottom nav */
+        @media (max-width: 767px) {
+          .ai-advisor-fab {
+            display: none !important;
+          }
+
+          .ai-advisor-panel {
+            display: none !important;
+          }
+        }
       `}</style>
     </>
   );

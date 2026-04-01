@@ -1,13 +1,15 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
+import { useIsMobile } from '@/lib/hooks/useIsMobile';
 import AIAdvisor from './AIAdvisor';
 
 export default function AIAdvisorWrapper() {
   const pathname = usePathname();
+  const isMobile = useIsMobile();
 
-  // Don't show floating chatbot on the full AI Advisor page
-  if (pathname === '/advisor') {
+  // Don't show floating chatbot on mobile (AI is in bottom nav), on AI Advisor page, or admin pages
+  if (isMobile || pathname === '/advisor' || pathname.startsWith('/admin')) {
     return null;
   }
 

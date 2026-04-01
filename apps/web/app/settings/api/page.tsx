@@ -223,12 +223,12 @@ export default function ApiSettingsPage() {
                 </div>
               </div>
             ) : (
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div className="create-key-row">
                 <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
                   API keys allow external applications to access your AdsMaster data
                 </div>
                 <button
-                  className="btn btn-primary"
+                  className="btn btn-primary create-key-btn"
                   onClick={() => setShowCreate(true)}
                   disabled={!!(data && data.total >= data.max_keys)}
                 >
@@ -256,6 +256,7 @@ export default function ApiSettingsPage() {
                 No API keys created yet
               </div>
             ) : (
+              <div className="api-keys-table-wrapper">
               <table className="data-table">
                 <thead>
                   <tr>
@@ -309,6 +310,7 @@ export default function ApiSettingsPage() {
                   ))}
                 </tbody>
               </table>
+              </div>
             )}
           </div>
 
@@ -317,32 +319,14 @@ export default function ApiSettingsPage() {
             <div className="card-header">
               <span className="card-title">API Documentation</span>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
-              <a
-                href="/docs/api"
-                style={{
-                  padding: '16px',
-                  background: 'var(--surface-secondary)',
-                  borderRadius: '8px',
-                  textDecoration: 'none',
-                  color: 'inherit',
-                }}
-              >
+            <div className="docs-grid">
+              <a href="/docs/api" className="docs-link">
                 <div style={{ fontWeight: 600, marginBottom: '4px' }}>REST API Reference</div>
                 <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
                   Complete API documentation with examples
                 </div>
               </a>
-              <a
-                href="/docs/webhooks"
-                style={{
-                  padding: '16px',
-                  background: 'var(--surface-secondary)',
-                  borderRadius: '8px',
-                  textDecoration: 'none',
-                  color: 'inherit',
-                }}
-              >
+              <a href="/docs/webhooks" className="docs-link">
                 <div style={{ fontWeight: 600, marginBottom: '4px' }}>Webhooks</div>
                 <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
                   Set up real-time event notifications
@@ -352,6 +336,59 @@ export default function ApiSettingsPage() {
           </div>
         </div>
       </div>
+
+      <style jsx>{`
+        .create-key-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 16px;
+        }
+
+        .api-keys-table-wrapper {
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        .docs-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 16px;
+        }
+
+        .docs-link {
+          padding: 16px;
+          background: var(--surface-secondary);
+          border-radius: 8px;
+          text-decoration: none;
+          color: inherit;
+        }
+
+        @media (max-width: 767px) {
+          .create-key-row {
+            flex-direction: column;
+            align-items: stretch;
+          }
+
+          .create-key-btn {
+            width: 100%;
+          }
+
+          .api-keys-table-wrapper {
+            margin: 0 -12px;
+            padding: 0 12px;
+          }
+
+          .api-keys-table-wrapper table {
+            min-width: 600px;
+          }
+
+          .docs-grid {
+            grid-template-columns: 1fr;
+            gap: 12px;
+          }
+        }
+      `}</style>
     </>
   );
 }

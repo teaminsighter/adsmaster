@@ -128,17 +128,8 @@ export default function NotificationsSettingsPage() {
               <span className="card-title">Notification Preferences</span>
             </div>
 
-            {/* Channel Headers */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 80px 80px 80px',
-              gap: '16px',
-              padding: '12px 0',
-              borderBottom: '1px solid var(--border-default)',
-              fontSize: '12px',
-              fontWeight: 600,
-              color: 'var(--text-secondary)',
-            }}>
+            {/* Channel Headers - Desktop only */}
+            <div className="notif-header">
               <div>Notification Type</div>
               <div style={{ textAlign: 'center' }}>Email</div>
               <div style={{ textAlign: 'center' }}>Push</div>
@@ -147,50 +138,40 @@ export default function NotificationsSettingsPage() {
 
             {/* Settings Rows */}
             {settings.map((setting) => (
-              <div
-                key={setting.id}
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 80px 80px 80px',
-                  gap: '16px',
-                  padding: '16px 0',
-                  borderBottom: '1px solid var(--border-default)',
-                  alignItems: 'center',
-                }}
-              >
-                <div>
+              <div key={setting.id} className="notif-row">
+                <div className="notif-info">
                   <div style={{ fontWeight: 500, marginBottom: '4px' }}>{setting.label}</div>
                   <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{setting.description}</div>
                 </div>
-                <div style={{ textAlign: 'center' }}>
-                  <input
-                    type="checkbox"
-                    checked={setting.email}
-                    onChange={() => handleToggle(setting.id, 'email')}
-                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-                  />
-                </div>
-                <div style={{ textAlign: 'center' }}>
-                  <input
-                    type="checkbox"
-                    checked={setting.push}
-                    onChange={() => handleToggle(setting.id, 'push')}
-                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-                  />
-                </div>
-                <div style={{ textAlign: 'center' }}>
-                  <input
-                    type="checkbox"
-                    checked={setting.slack}
-                    onChange={() => handleToggle(setting.id, 'slack')}
-                    disabled={!data?.slack_connected}
-                    style={{
-                      width: '18px',
-                      height: '18px',
-                      cursor: data?.slack_connected ? 'pointer' : 'not-allowed',
-                      opacity: data?.slack_connected ? 1 : 0.5,
-                    }}
-                  />
+                <div className="notif-toggles">
+                  <label className="notif-toggle">
+                    <input
+                      type="checkbox"
+                      checked={setting.email}
+                      onChange={() => handleToggle(setting.id, 'email')}
+                    />
+                    <span className="notif-toggle-label">Email</span>
+                  </label>
+                  <label className="notif-toggle">
+                    <input
+                      type="checkbox"
+                      checked={setting.push}
+                      onChange={() => handleToggle(setting.id, 'push')}
+                    />
+                    <span className="notif-toggle-label">Push</span>
+                  </label>
+                  <label className="notif-toggle">
+                    <input
+                      type="checkbox"
+                      checked={setting.slack}
+                      onChange={() => handleToggle(setting.id, 'slack')}
+                      disabled={!data?.slack_connected}
+                      style={{
+                        opacity: data?.slack_connected ? 1 : 0.5,
+                      }}
+                    />
+                    <span className="notif-toggle-label">Slack</span>
+                  </label>
                 </div>
               </div>
             ))}
@@ -207,14 +188,14 @@ export default function NotificationsSettingsPage() {
           </div>
 
           {/* Slack Integration */}
-          <div className="card" style={{ marginTop: '24px' }}>
+          <div className="card slack-card">
             <div className="card-header">
               <span className="card-title">Slack Integration</span>
               {data?.slack_connected && (
                 <span className="badge badge-success">Connected</span>
               )}
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="slack-content">
               <div>
                 <div style={{ fontWeight: 500, marginBottom: '4px' }}>
                   {data?.slack_connected ? 'Slack Connected' : 'Connect to Slack'}
@@ -225,13 +206,121 @@ export default function NotificationsSettingsPage() {
                     : 'Receive notifications directly in your Slack workspace'}
                 </div>
               </div>
-              <button className="btn btn-secondary">
+              <button className="btn btn-secondary slack-btn">
                 {data?.slack_connected ? 'Manage' : 'Connect Slack'}
               </button>
             </div>
           </div>
         </div>
       </div>
+
+      <style jsx>{`
+        .notif-header {
+          display: grid;
+          grid-template-columns: 1fr 80px 80px 80px;
+          gap: 16px;
+          padding: 12px 0;
+          border-bottom: 1px solid var(--border-default);
+          font-size: 12px;
+          font-weight: 600;
+          color: var(--text-secondary);
+        }
+
+        .notif-row {
+          display: grid;
+          grid-template-columns: 1fr 80px 80px 80px;
+          gap: 16px;
+          padding: 16px 0;
+          border-bottom: 1px solid var(--border-default);
+          align-items: center;
+        }
+
+        .notif-toggles {
+          display: contents;
+        }
+
+        .notif-toggle {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          cursor: pointer;
+        }
+
+        .notif-toggle input {
+          width: 18px;
+          height: 18px;
+          cursor: pointer;
+        }
+
+        .notif-toggle-label {
+          display: none;
+        }
+
+        .slack-content {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 16px;
+        }
+
+        .slack-card {
+          margin-top: 24px;
+        }
+
+        @media (max-width: 767px) {
+          .notif-header {
+            display: none;
+          }
+
+          .notif-row {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 16px 0;
+          }
+
+          .notif-info {
+            width: 100%;
+          }
+
+          .notif-toggles {
+            display: flex;
+            gap: 16px;
+            width: 100%;
+          }
+
+          .notif-toggle {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 12px;
+            background: var(--surface-secondary);
+            border-radius: 8px;
+            flex: 1;
+            justify-content: center;
+          }
+
+          .notif-toggle-label {
+            display: inline;
+            font-size: 12px;
+            color: var(--text-secondary);
+          }
+
+          .slack-card {
+            margin-top: 16px;
+          }
+
+          .slack-content {
+            flex-direction: column;
+            align-items: stretch;
+          }
+
+          .slack-btn {
+            width: 100%;
+            margin-top: 12px;
+          }
+        }
+      `}</style>
     </>
   );
 }

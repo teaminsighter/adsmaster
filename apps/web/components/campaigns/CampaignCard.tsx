@@ -64,9 +64,8 @@ export default function CampaignCard({ campaign, selected, onSelect, onAction }:
     setMenuOpen(false);
     if (onAction) {
       onAction(campaign.id, action);
-    } else {
-      alert(`Demo: Would ${action} "${campaign.name}"`);
     }
+    // No alert fallback - parent handles via onAction
   };
 
   return (
