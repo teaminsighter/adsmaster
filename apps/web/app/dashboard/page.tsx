@@ -3,6 +3,16 @@
 import { useRouter } from 'next/navigation';
 import Header from '@/components/layout/Header';
 import DemoBanner from '@/components/ui/DemoBanner';
+import AccountOverviewBar from '@/components/dashboard/AccountOverviewBar';
+import AlertsPanel from '@/components/dashboard/AlertsPanel';
+import PerformanceChart from '@/components/dashboard/PerformanceChart';
+import PlatformComparison from '@/components/dashboard/PlatformComparison';
+import AIRecommendationsSummary from '@/components/dashboard/AIRecommendationsSummary';
+import QuickActionsGrid from '@/components/dashboard/QuickActionsGrid';
+import BudgetPacing from '@/components/dashboard/BudgetPacing';
+import SpendDistributionChart from '@/components/dashboard/SpendDistributionChart';
+import ConversionFunnel from '@/components/dashboard/ConversionFunnel';
+import DeviceBreakdown from '@/components/dashboard/DeviceBreakdown';
 import { useDashboard } from '@/lib/hooks/useApi';
 import { formatMicros, formatNumber } from '@/lib/api';
 
@@ -15,13 +25,35 @@ export default function DashboardPage() {
       <>
         <Header title="Dashboard" />
         <div className="page-content">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '400px' }}>
-            <div style={{ textAlign: 'center' }}>
-              <div className="loading-spinner" style={{ marginBottom: '16px' }} />
-              <div style={{ color: 'var(--text-secondary)' }}>Loading dashboard...</div>
-            </div>
+          <div className="loading-container">
+            <div className="loading-spinner" />
+            <div className="loading-text">Loading dashboard...</div>
           </div>
         </div>
+        <style jsx>{`
+          .loading-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 400px;
+            gap: 16px;
+          }
+          .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border-default);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+          }
+          .loading-text {
+            color: var(--text-secondary);
+          }
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+        `}</style>
       </>
     );
   }
@@ -31,15 +63,39 @@ export default function DashboardPage() {
       <>
         <Header title="Dashboard" />
         <div className="page-content">
-          <div className="card" style={{ textAlign: 'center', padding: '48px' }}>
-            <div style={{ fontSize: '48px', marginBottom: '16px' }}>!</div>
-            <div style={{ fontSize: '18px', fontWeight: 500, marginBottom: '8px' }}>Unable to load dashboard</div>
-            <div style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>{error || 'Unknown error'}</div>
+          <div className="error-card">
+            <div className="error-icon">!</div>
+            <div className="error-title">Unable to load dashboard</div>
+            <div className="error-message">{error || 'Unknown error'}</div>
             <button className="btn btn-primary" onClick={() => window.location.reload()}>
               Retry
             </button>
           </div>
         </div>
+        <style jsx>{`
+          .error-card {
+            background: var(--surface-card);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-lg);
+            text-align: center;
+            padding: 48px;
+          }
+          .error-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            color: var(--error);
+          }
+          .error-title {
+            font-size: 18px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+          }
+          .error-message {
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+          }
+        `}</style>
       </>
     );
   }
@@ -50,302 +106,375 @@ export default function DashboardPage() {
     <>
       {isDemo && <DemoBanner onConnect={() => router.push('/connect')} />}
       <Header title="Dashboard" />
-      <div className="page-content">
-        {/* AI Savings Banner */}
-        {ai_savings_this_month > 0 && (
-          <div className="ai-savings-banner">
-            <div className="ai-savings-content">
-              <span className="ai-savings-icon hide-mobile">💰</span>
-              <div>
-                <div style={{ fontWeight: 600, color: 'var(--success)' }}>
-                  {formatMicros(ai_savings_this_month)} saved this month by AI
-                </div>
-                <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                  From {pending_recommendations} applied recommendations
-                </div>
-              </div>
-            </div>
-            <button className="btn btn-ghost btn-sm hide-mobile" onClick={() => router.push('/recommendations')}>
-              View All
-            </button>
-          </div>
-        )}
+      <div className="page-content dashboard">
+        {/* Row 1: Account Overview Bar */}
+        <AccountOverviewBar
+          healthScore={health_score.overall}
+          aiSavings={ai_savings_this_month}
+          onSyncAll={() => console.log('Sync all accounts')}
+        />
 
-        {/* Metrics Grid */}
-        <div className="metrics-grid" style={{ marginBottom: '24px' }}>
+        {/* Row 2: Key Metrics */}
+        <div className="metrics-grid">
           <div className="metric-card">
             <div className="metric-label">Total Spend (30d)</div>
             <div className="metric-value mono">{formatMicros(metrics.spend_micros)}</div>
             <div className={`metric-change ${metrics_change.spend >= 0 ? 'up' : 'down'}`}>
-              {metrics_change.spend >= 0 ? '+' : ''}{metrics_change.spend}% vs last period
+              {metrics_change.spend >= 0 ? '+' : ''}{metrics_change.spend}%
             </div>
           </div>
           <div className="metric-card">
             <div className="metric-label">Revenue</div>
             <div className="metric-value mono">{formatMicros(metrics.revenue_micros)}</div>
             <div className={`metric-change ${metrics_change.revenue >= 0 ? 'up' : 'down'}`}>
-              {metrics_change.revenue >= 0 ? '+' : ''}{metrics_change.revenue}% vs last period
+              {metrics_change.revenue >= 0 ? '+' : ''}{metrics_change.revenue}%
             </div>
           </div>
           <div className="metric-card">
             <div className="metric-label">ROAS</div>
             <div className="metric-value mono">{metrics.roas}x</div>
             <div className={`metric-change ${metrics_change.roas >= 0 ? 'up' : 'down'}`}>
-              {metrics_change.roas >= 0 ? '+' : ''}{metrics_change.roas}x vs last period
+              {metrics_change.roas >= 0 ? '+' : ''}{metrics_change.roas}x
             </div>
           </div>
           <div className="metric-card">
             <div className="metric-label">Conversions</div>
             <div className="metric-value mono">{formatNumber(metrics.conversions)}</div>
             <div className={`metric-change ${metrics_change.conversions >= 0 ? 'up' : 'down'}`}>
-              {metrics_change.conversions >= 0 ? '+' : ''}{metrics_change.conversions}% vs last period
+              {metrics_change.conversions >= 0 ? '+' : ''}{metrics_change.conversions}%
             </div>
           </div>
           <div className="metric-card">
             <div className="metric-label">Avg CPA</div>
             <div className="metric-value mono">{formatMicros(metrics.cpa_micros)}</div>
             <div className={`metric-change ${metrics_change.cpa <= 0 ? 'down' : 'up'}`}>
-              {metrics_change.cpa}% (better)
+              {metrics_change.cpa}%
             </div>
           </div>
           <div className="metric-card">
             <div className="metric-label">CTR</div>
             <div className="metric-value mono">{metrics.ctr}%</div>
             <div className={`metric-change ${metrics_change.ctr >= 0 ? 'up' : 'down'}`}>
-              {metrics_change.ctr >= 0 ? '+' : ''}{metrics_change.ctr}% vs last period
+              {metrics_change.ctr >= 0 ? '+' : ''}{metrics_change.ctr}%
             </div>
           </div>
         </div>
 
-        <div className="grid-2-1">
-          {/* Performance Chart */}
-          <div className="card">
-            <div className="card-header">
-              <span className="card-title">Performance Trend (14 Days)</span>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button className="btn btn-ghost btn-sm" style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}>
-                  Spend
+        {/* Row 3: Budget Pacing + Alerts */}
+        <div className="row-3">
+          <div className="budget-section">
+            <BudgetPacing />
+          </div>
+          <div className="alerts-section">
+            <AlertsPanel />
+          </div>
+        </div>
+
+        {/* Row 4: Performance Chart + Platform Comparison */}
+        <div className="row-4">
+          <div className="chart-section">
+            <PerformanceChart data={chart_data} />
+          </div>
+          <div className="comparison-section">
+            <PlatformComparison data={platform_breakdown} />
+          </div>
+        </div>
+
+        {/* Row 5: Top Campaigns + AI Recommendations */}
+        <div className="row-5">
+          <div className="campaigns-section">
+            <div className="card campaigns-card">
+              <div className="card-header">
+                <span className="card-title">Top Campaigns</span>
+                <button className="btn btn-ghost btn-sm" onClick={() => router.push('/campaigns')}>
+                  View All
                 </button>
-                <button className="btn btn-ghost btn-sm">Conversions</button>
               </div>
-            </div>
-            <div style={{ height: '200px', display: 'flex', alignItems: 'flex-end', gap: '4px', padding: '16px 0' }}>
-              {chart_data.map((day, i) => {
-                const maxSpend = Math.max(...chart_data.map(d => d.spend));
-                const height = maxSpend > 0 ? (day.spend / maxSpend) * 100 : 0;
-                return (
+              <div className="campaigns-list">
+                {top_campaigns.slice(0, 5).map((campaign) => (
                   <div
-                    key={i}
-                    style={{
-                      flex: 1,
-                      height: `${height}%`,
-                      background: 'linear-gradient(180deg, var(--primary) 0%, rgba(16, 185, 129, 0.3) 100%)',
-                      borderRadius: '4px 4px 0 0',
-                      minHeight: '4px',
-                    }}
-                    title={`${day.date}: ${formatMicros(day.spend * 1000000)}`}
-                  />
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Health Score */}
-          <div className="card">
-            <div className="card-header">
-              <span className="card-title">Account Health</span>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
-              <div style={{ textAlign: 'center', padding: '12px' }}>
-                <div style={{ fontSize: '28px', fontWeight: 700, color: health_score.overall >= 80 ? 'var(--success)' : health_score.overall >= 60 ? 'var(--warning)' : 'var(--error)' }}>
-                  {health_score.overall}%
-                </div>
-                <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Overall</div>
-              </div>
-              <div style={{ textAlign: 'center', padding: '12px' }}>
-                <div style={{ fontSize: '28px', fontWeight: 700, color: health_score.budget_utilization >= 80 ? 'var(--success)' : 'var(--warning)' }}>
-                  {health_score.budget_utilization}%
-                </div>
-                <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Budget</div>
-              </div>
-              <div style={{ textAlign: 'center', padding: '12px' }}>
-                <div style={{ fontSize: '28px', fontWeight: 700, color: health_score.quality_score >= 70 ? 'var(--success)' : health_score.quality_score >= 50 ? 'var(--warning)' : 'var(--error)' }}>
-                  {health_score.quality_score}%
-                </div>
-                <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Quality</div>
-              </div>
-              <div style={{ textAlign: 'center', padding: '12px' }}>
-                <div style={{ fontSize: '28px', fontWeight: 700, color: health_score.conversion_rate >= 80 ? 'var(--success)' : 'var(--warning)' }}>
-                  {health_score.conversion_rate}%
-                </div>
-                <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Conv Rate</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Platform Breakdown + AI Recommendations */}
-        <div className="grid-2" style={{ marginTop: '24px' }}>
-          {/* Platform Breakdown */}
-          <div className="card">
-            <div className="card-header">
-              <span className="card-title">Platform Breakdown</span>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {platform_breakdown.map((platform) => (
-                <div
-                  key={platform.platform}
-                  style={{
-                    padding: '12px',
-                    background: 'var(--surface-secondary)',
-                    borderRadius: '8px',
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span
-                        style={{
-                          width: '10px',
-                          height: '10px',
-                          borderRadius: '50%',
-                          background: platform.platform === 'google' ? '#4285F4' : '#0668E1',
-                        }}
-                      />
-                      <span style={{ fontWeight: 500, textTransform: 'capitalize' }}>{platform.platform}</span>
-                    </div>
-                    <span className="mono" style={{ fontWeight: 600 }}>{formatMicros(platform.spend_micros)}</span>
-                  </div>
-                  <div style={{ display: 'flex', gap: '16px', fontSize: '12px', color: 'var(--text-secondary)' }}>
-                    <span>{platform.conversions} conversions</span>
-                    <span>{platform.roas}x ROAS</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Pending Recommendations */}
-          <div className="card">
-            <div className="card-header">
-              <span className="card-title">AI Recommendations</span>
-              <button className="btn btn-ghost btn-sm" onClick={() => router.push('/recommendations')}>
-                View All ({pending_recommendations})
-              </button>
-            </div>
-            <div style={{ textAlign: 'center', padding: '24px' }}>
-              <div style={{ fontSize: '48px', fontWeight: 700, color: 'var(--primary)', marginBottom: '8px' }}>
-                {pending_recommendations}
-              </div>
-              <div style={{ color: 'var(--text-secondary)', marginBottom: '16px' }}>
-                pending recommendations
-              </div>
-              <button className="btn btn-primary" onClick={() => router.push('/recommendations')}>
-                Review Now
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Top Campaigns Table */}
-        <div className="card" style={{ marginTop: '24px', padding: 0, overflow: 'hidden' }}>
-          <div className="card-header" style={{ padding: '16px' }}>
-            <span className="card-title">Top Campaigns</span>
-            <button className="btn btn-ghost btn-sm" onClick={() => router.push('/campaigns')}>
-              View All
-            </button>
-          </div>
-          <div className="table-wrapper">
-            <table className="data-table">
-            <thead>
-              <tr>
-                <th>Campaign</th>
-                <th>Platform</th>
-                <th>Status</th>
-                <th className="right">Spend</th>
-                <th className="right">Conv</th>
-                <th className="right">ROAS</th>
-              </tr>
-            </thead>
-            <tbody>
-              {top_campaigns.slice(0, 5).map((campaign) => (
-                <tr
-                  key={campaign.id}
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => router.push(`/campaigns/${campaign.id}`)}
-                >
-                  <td style={{ fontWeight: 500 }}>{campaign.name}</td>
-                  <td>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px' }}>
-                      <span
-                        style={{
-                          width: '8px',
-                          height: '8px',
-                          borderRadius: '50%',
-                          background: campaign.platform === 'google' ? '#4285F4' : '#0668E1',
-                        }}
-                      />
-                      {campaign.platform === 'google' ? 'Google' : 'Meta'}
-                    </span>
-                  </td>
-                  <td>
-                    <span style={{ color: campaign.status === 'ENABLED' ? 'var(--success)' : 'var(--text-tertiary)' }}>
-                      {campaign.status === 'ENABLED' ? '●' : '○'}
-                    </span>
-                  </td>
-                  <td className="right mono">{formatMicros(campaign.spend_micros)}</td>
-                  <td className="right mono">{campaign.conversions}</td>
-                  <td
-                    className="right mono"
-                    style={{
-                      color: campaign.roas >= 4 ? 'var(--success)' : campaign.roas >= 3 ? 'var(--warning)' : 'var(--error)',
-                    }}
+                    key={campaign.id}
+                    className="campaign-item"
+                    onClick={() => router.push(`/campaigns/${campaign.id}`)}
                   >
-                    {campaign.roas}x
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    <div className="campaign-info">
+                      <span className={`status-dot ${campaign.status === 'ENABLED' ? 'active' : 'paused'}`} />
+                      <div className="campaign-details">
+                        <div className="campaign-name">{campaign.name}</div>
+                        <div className="campaign-platform">
+                          <span
+                            className="platform-dot"
+                            style={{ background: campaign.platform === 'google' ? '#4285F4' : '#0668E1' }}
+                          />
+                          {campaign.platform === 'google' ? 'Google' : 'Meta'}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="campaign-metrics">
+                      <div className="campaign-metric">
+                        <span className="metric-label">Spend</span>
+                        <span className="metric-value mono">{formatMicros(campaign.spend_micros)}</span>
+                      </div>
+                      <div className="campaign-metric">
+                        <span className="metric-label">Conv</span>
+                        <span className="metric-value mono">{campaign.conversions}</span>
+                      </div>
+                      <div className="campaign-metric">
+                        <span className="metric-label">ROAS</span>
+                        <span
+                          className="metric-value mono"
+                          style={{
+                            color: campaign.roas >= 4 ? 'var(--success)' : campaign.roas >= 3 ? 'var(--warning)' : 'var(--error)',
+                          }}
+                        >
+                          {campaign.roas}x
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="ai-section">
+            <AIRecommendationsSummary
+              pendingCount={pending_recommendations}
+              aiSavings={ai_savings_this_month}
+            />
           </div>
         </div>
+
+        {/* Row 6: Additional Charts */}
+        <div className="row-6">
+          <SpendDistributionChart
+            googleSpend={platform_breakdown.find(p => p.platform === 'google')?.spend_micros || 0}
+            metaSpend={platform_breakdown.find(p => p.platform === 'meta')?.spend_micros || 0}
+          />
+          <ConversionFunnel
+            impressions={metrics.impressions}
+            clicks={metrics.clicks}
+            conversions={metrics.conversions}
+          />
+          <DeviceBreakdown />
+        </div>
+
+        {/* Row 7: Quick Actions */}
+        <QuickActionsGrid />
       </div>
 
       <style jsx>{`
-        .loading-spinner {
-          width: 40px;
-          height: 40px;
-          border: 3px solid var(--border-default);
-          border-top-color: var(--primary);
-          border-radius: 50%;
-          animation: spin 1s linear infinite;
-          margin: 0 auto;
+        .dashboard {
+          max-width: 1400px;
         }
-        @keyframes spin {
-          to { transform: rotate(360deg); }
+
+        /* Row 2: Metrics Grid */
+        .metrics-grid {
+          display: grid;
+          grid-template-columns: repeat(6, 1fr);
+          gap: 16px;
+          margin-bottom: 20px;
         }
-        .ai-savings-banner {
-          background: linear-gradient(90deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
-          border: 1px solid var(--success);
-          border-radius: 8px;
-          padding: 12px 16px;
-          margin-bottom: 24px;
+
+        .metric-card {
+          background: var(--surface-card);
+          border: 1px solid var(--border-default);
+          border-radius: var(--radius-lg);
+          padding: 16px;
+          text-align: center;
+        }
+
+        .metric-label {
+          font-size: 11px;
+          color: var(--text-tertiary);
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          margin-bottom: 8px;
+        }
+
+        .metric-value {
+          font-size: 24px;
+          font-weight: 700;
+          color: var(--text-primary);
+          line-height: 1.2;
+        }
+
+        .metric-change {
+          font-size: 12px;
+          margin-top: 6px;
+          font-weight: 500;
+        }
+
+        .metric-change.up { color: var(--success); }
+        .metric-change.down { color: var(--error); }
+
+        /* Row 3: Budget + Alerts */
+        .row-3 {
+          display: grid;
+          grid-template-columns: 1.5fr 1fr;
+          gap: 20px;
+          margin-bottom: 20px;
+        }
+
+        /* Row 4: Chart + Platform */
+        .row-4 {
+          display: grid;
+          grid-template-columns: 2fr 1fr;
+          gap: 20px;
+          margin-bottom: 20px;
+        }
+
+        /* Row 5: Campaigns + AI */
+        .row-5 {
+          display: grid;
+          grid-template-columns: 1.5fr 1fr;
+          gap: 20px;
+          margin-bottom: 20px;
+        }
+
+        /* Row 6: Additional Charts */
+        .row-6 {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 20px;
+          margin-bottom: 20px;
+        }
+
+        /* Campaigns Card */
+        .campaigns-card {
+          height: 100%;
+        }
+
+        .campaigns-list {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .campaign-item {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 12px;
+          padding: 12px;
+          background: var(--surface-secondary);
+          border-radius: var(--radius-md);
+          cursor: pointer;
+          transition: background 0.15s ease;
         }
-        .ai-savings-content {
+
+        .campaign-item:hover {
+          background: var(--surface-hover);
+        }
+
+        .campaign-info {
           display: flex;
           align-items: center;
           gap: 12px;
         }
-        .ai-savings-icon {
-          font-size: 24px;
+
+        .status-dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
         }
+
+        .status-dot.active { background: var(--success); }
+        .status-dot.paused { background: var(--text-tertiary); }
+
+        .campaign-details {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+        }
+
+        .campaign-name {
+          font-size: 13px;
+          font-weight: 500;
+          color: var(--text-primary);
+        }
+
+        .campaign-platform {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          font-size: 11px;
+          color: var(--text-tertiary);
+        }
+
+        .platform-dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+        }
+
+        .campaign-metrics {
+          display: flex;
+          gap: 16px;
+        }
+
+        .campaign-metric {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
+          gap: 2px;
+        }
+
+        .campaign-metric .metric-label {
+          font-size: 10px;
+          margin-bottom: 0;
+        }
+
+        .campaign-metric .metric-value {
+          font-size: 13px;
+          font-weight: 600;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 1200px) {
+          .metrics-grid {
+            grid-template-columns: repeat(3, 1fr);
+          }
+        }
+
+        @media (max-width: 900px) {
+          .row-3,
+          .row-4,
+          .row-5 {
+            grid-template-columns: 1fr;
+          }
+
+          .row-6 {
+            grid-template-columns: 1fr;
+          }
+        }
+
         @media (max-width: 767px) {
-          .ai-savings-banner {
-            padding: 10px 12px;
+          .metrics-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+          }
+
+          .metric-card {
+            padding: 12px;
+          }
+
+          .metric-value {
+            font-size: 20px;
+          }
+
+          .row-3,
+          .row-4,
+          .row-5,
+          .row-6 {
+            gap: 16px;
             margin-bottom: 16px;
+          }
+
+          .campaign-metrics {
+            display: none;
+          }
+
+          .campaign-item {
+            padding: 10px;
           }
         }
       `}</style>

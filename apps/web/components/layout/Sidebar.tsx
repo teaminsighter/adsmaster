@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import { useIsMobile } from '@/lib/hooks/useIsMobile';
 
 const navItems = [
-  { href: '/', label: 'Dashboard', icon: '📊' },
+  { href: '/dashboard', label: 'Dashboard', icon: '📊' },
   { href: '/campaigns', label: 'Campaigns', icon: '📢' },
   { href: '/recommendations', label: 'AI Recommendations', icon: '🤖' },
   { href: '/analytics', label: 'Analytics', icon: '📈' },
@@ -95,9 +95,7 @@ export default function Sidebar() {
       {/* Main Navigation */}
       <nav style={{ flex: 1, padding: '12px 0' }}>
         {navItems.map((item) => {
-          const isActive = item.href === '/'
-            ? pathname === '/'
-            : pathname.startsWith(item.href);
+          const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
           return (
             <Link
               key={item.href}

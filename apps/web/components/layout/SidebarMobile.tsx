@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const navItems = [
-  { href: '/', label: 'Dashboard', icon: '📊' },
+  { href: '/dashboard', label: 'Dashboard', icon: '📊' },
   { href: '/campaigns', label: 'Campaigns', icon: '📢' },
   { href: '/recommendations', label: 'AI Recommendations', icon: '🤖' },
   { href: '/analytics', label: 'Analytics', icon: '📈' },
@@ -56,10 +56,7 @@ export default function SidebarMobile({ isOpen, onClose }: SidebarMobileProps) {
   }, [onClose]);
 
   const isActive = (href: string) => {
-    if (href === '/') {
-      return pathname === '/';
-    }
-    return pathname.startsWith(href);
+    return pathname === href || pathname.startsWith(href + '/');
   };
 
   return (

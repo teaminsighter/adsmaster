@@ -43,7 +43,7 @@ const icons = {
 };
 
 const navItems = [
-  { href: '/', label: 'Dashboard', icon: 'dashboard' as const },
+  { href: '/dashboard', label: 'Dashboard', icon: 'dashboard' as const },
   { href: '/campaigns', label: 'Campaigns', icon: 'campaigns' as const },
   { href: '/recommendations', label: 'AI', icon: 'ai' as const },
   { href: '/analytics', label: 'Analytics', icon: 'analytics' as const },
@@ -59,10 +59,7 @@ export default function BottomNav() {
   }
 
   const isActive = (href: string) => {
-    if (href === '/') {
-      return pathname === '/';
-    }
-    return pathname.startsWith(href);
+    return pathname === href || pathname.startsWith(href + '/');
   };
 
   return (

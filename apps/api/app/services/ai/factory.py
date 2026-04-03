@@ -68,9 +68,19 @@ def get_ai_provider(
             elif provider_type == AIProviderType.ANTHROPIC:
                 api_key = settings.get("anthropic_api_key")
 
-    # 2. Check environment variables (default to OpenAI for better JSON handling)
+    # 2. Check environment variables - auto-detect based on available API keys
     if not provider_type:
-        env_provider = os.getenv("AI_PROVIDER", "openai").lower()
+        env_provider = os.getenv("AI_PROVIDER", "").lower()
+        if not env_provider:
+            # Auto-detect: prefer Gemini if key exists, then OpenAI, then Anthropic
+            if os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_AI_API_KEY"):
+                env_provider = "gemini"
+            elif os.getenv("OPENAI_API_KEY"):
+                env_provider = "openai"
+            elif os.getenv("ANTHROPIC_API_KEY"):
+                env_provider = "anthropic"
+            else:
+                env_provider = "gemini"  # Default
         provider_type = AIProviderType(env_provider)
 
     # 3. Get provider class

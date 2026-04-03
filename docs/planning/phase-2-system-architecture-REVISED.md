@@ -571,3 +571,4 @@ Google Ads API (source of truth)
 *Document Version: 2.0 (Revised)*
 *Created: March 2026*
 *Status: PENDING APPROVAL*
+![alt text](image.png)
