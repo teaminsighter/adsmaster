@@ -12,7 +12,8 @@ import QuickActionsGrid from '@/components/dashboard/QuickActionsGrid';
 import BudgetPacing from '@/components/dashboard/BudgetPacing';
 import SpendDistributionChart from '@/components/dashboard/SpendDistributionChart';
 import ConversionFunnel from '@/components/dashboard/ConversionFunnel';
-import DeviceBreakdown from '@/components/dashboard/DeviceBreakdown';
+import MLForecastWidget from '@/components/dashboard/MLForecastWidget';
+import AnomalyAlertsWidget from '@/components/dashboard/AnomalyAlertsWidget';
 import { useDashboard } from '@/lib/hooks/useApi';
 import { formatMicros, formatNumber } from '@/lib/api';
 
@@ -244,8 +245,14 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Row 6: Additional Charts */}
-        <div className="row-6">
+        {/* Row 6: AI Insights */}
+        <div className="row-6-ai">
+          <MLForecastWidget />
+          <AnomalyAlertsWidget />
+        </div>
+
+        {/* Row 7: Additional Charts */}
+        <div className="row-7">
           <SpendDistributionChart
             googleSpend={platform_breakdown.find(p => p.platform === 'google')?.spend_micros || 0}
             metaSpend={platform_breakdown.find(p => p.platform === 'meta')?.spend_micros || 0}
@@ -255,7 +262,6 @@ export default function DashboardPage() {
             clicks={metrics.clicks}
             conversions={metrics.conversions}
           />
-          <DeviceBreakdown />
         </div>
 
         {/* Row 7: Quick Actions */}
@@ -331,10 +337,18 @@ export default function DashboardPage() {
           margin-bottom: 20px;
         }
 
-        /* Row 6: Additional Charts */
-        .row-6 {
+        /* Row 6: AI Insights */
+        .row-6-ai {
           display: grid;
-          grid-template-columns: repeat(3, 1fr);
+          grid-template-columns: repeat(2, 1fr);
+          gap: 20px;
+          margin-bottom: 20px;
+        }
+
+        /* Row 7: Additional Charts */
+        .row-7 {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
           gap: 20px;
           margin-bottom: 20px;
         }
@@ -438,11 +452,9 @@ export default function DashboardPage() {
         @media (max-width: 900px) {
           .row-3,
           .row-4,
-          .row-5 {
-            grid-template-columns: 1fr;
-          }
-
-          .row-6 {
+          .row-5,
+          .row-6-ai,
+          .row-7 {
             grid-template-columns: 1fr;
           }
         }
@@ -464,7 +476,8 @@ export default function DashboardPage() {
           .row-3,
           .row-4,
           .row-5,
-          .row-6 {
+          .row-6-ai,
+          .row-7 {
             gap: 16px;
             margin-bottom: 16px;
           }

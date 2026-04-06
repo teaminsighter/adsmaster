@@ -4,8 +4,9 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/layout/Header';
 import DemoBanner from '@/components/ui/DemoBanner';
-import { useAnalytics } from '@/lib/hooks/useApi';
+import { useAnalytics, useMLDemoForecast, useMLDemoAnomalies, useMLStatus } from '@/lib/hooks/useApi';
 import { useIsMobile } from '@/lib/hooks/useIsMobile';
+import { TrendingUp, AlertTriangle, Brain, Activity } from 'lucide-react';
 
 // Helper to format micros to dollars
 const formatMoney = (micros: number) => {
@@ -18,7 +19,13 @@ export default function AnalyticsPage() {
   const [period, setPeriod] = useState('30d');
   const [chartMetric, setChartMetric] = useState<'spend' | 'revenue'>('spend');
   const [hoveredBar, setHoveredBar] = useState<number | null>(null);
+  const [forecastMetric, setForecastMetric] = useState<'spend' | 'conversions'>('spend');
   const { data, loading, error, isDemo } = useAnalytics(period);
+
+  // ML Data hooks
+  const { data: mlStatus } = useMLStatus();
+  const { data: forecastData, loading: forecastLoading } = useMLDemoForecast();
+  const { data: anomalyData, loading: anomalyLoading } = useMLDemoAnomalies();
 
   // Loading state
   if (loading) {
@@ -365,6 +372,314 @@ export default function AnalyticsPage() {
               </div>
             ))}
           </div>
+        </div>
+
+        {/* AI Forecasting Section */}
+        <div
+          style={{
+            background: 'var(--surface-card)',
+            border: '1px solid var(--border-default)',
+            borderRadius: '12px',
+            padding: '20px',
+            marginBottom: '24px',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '8px',
+                background: 'rgba(139, 92, 246, 0.15)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                <Brain size={18} color="#8B5CF6" />
+              </div>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>AI Forecast</h3>
+                <p style={{ margin: '2px 0 0', fontSize: '11px', color: 'var(--text-tertiary)' }}>
+                  {mlStatus?.services?.bigquery_ml === 'connected' ? 'BigQuery ML' : 'Demo Mode'} · 30-day prediction
+                </p>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '4px', background: 'var(--surface-secondary)', borderRadius: '8px', padding: '4px' }}>
+              <button
+                onClick={() => setForecastMetric('spend')}
+                style={{
+                  padding: '6px 12px',
+                  fontSize: '12px',
+                  fontWeight: 500,
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  background: forecastMetric === 'spend' ? 'var(--surface-card)' : 'transparent',
+                  color: forecastMetric === 'spend' ? '#8B5CF6' : 'var(--text-secondary)',
+                  boxShadow: forecastMetric === 'spend' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                }}
+              >
+                Spend
+              </button>
+              <button
+                onClick={() => setForecastMetric('conversions')}
+                style={{
+                  padding: '6px 12px',
+                  fontSize: '12px',
+                  fontWeight: 500,
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  background: forecastMetric === 'conversions' ? 'var(--surface-card)' : 'transparent',
+                  color: forecastMetric === 'conversions' ? '#10B981' : 'var(--text-secondary)',
+                  boxShadow: forecastMetric === 'conversions' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                }}
+              >
+                Conversions
+              </button>
+            </div>
+          </div>
+
+          {forecastLoading ? (
+            <div style={{ textAlign: 'center', padding: '40px' }}>
+              <div className="loading-spinner" style={{ width: '32px', height: '32px', margin: '0 auto 12px' }} />
+              <div style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>Loading forecast...</div>
+            </div>
+          ) : forecastData?.data ? (
+            <>
+              {/* Forecast Summary */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr',
+                gap: '12px',
+                marginBottom: '20px',
+              }}>
+                <div style={{
+                  padding: '16px',
+                  background: 'rgba(139, 92, 246, 0.08)',
+                  borderRadius: '10px',
+                  borderLeft: '4px solid #8B5CF6',
+                }}>
+                  <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>NEXT 7 DAYS</div>
+                  <div className="mono" style={{ fontSize: '20px', fontWeight: 700, color: '#8B5CF6' }}>
+                    {forecastMetric === 'spend' ? '$' : ''}
+                    {forecastData.data[forecastMetric].predictions.slice(0, 7).reduce((sum, p) => sum + p.value, 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  </div>
+                </div>
+                <div style={{
+                  padding: '16px',
+                  background: 'var(--surface-secondary)',
+                  borderRadius: '10px',
+                }}>
+                  <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>NEXT 14 DAYS</div>
+                  <div className="mono" style={{ fontSize: '20px', fontWeight: 700 }}>
+                    {forecastMetric === 'spend' ? '$' : ''}
+                    {forecastData.data[forecastMetric].predictions.slice(0, 14).reduce((sum, p) => sum + p.value, 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  </div>
+                </div>
+                <div style={{
+                  padding: '16px',
+                  background: 'var(--surface-secondary)',
+                  borderRadius: '10px',
+                }}>
+                  <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>NEXT 30 DAYS</div>
+                  <div className="mono" style={{ fontSize: '20px', fontWeight: 700 }}>
+                    {forecastMetric === 'spend' ? '$' : ''}
+                    {forecastData.data[forecastMetric].predictions.reduce((sum, p) => sum + p.value, 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Forecast Chart */}
+              <div style={{ position: 'relative', height: '150px', display: 'flex', alignItems: 'flex-end', gap: '2px' }}>
+                {forecastData.data[forecastMetric].predictions.slice(0, 14).map((p, i) => {
+                  const maxVal = Math.max(...forecastData.data[forecastMetric].predictions.slice(0, 14).map(x => x.upper_bound));
+                  const height = (p.value / maxVal) * 100;
+                  const lowerHeight = (p.lower_bound / maxVal) * 100;
+                  const upperHeight = (p.upper_bound / maxVal) * 100;
+                  return (
+                    <div key={i} style={{ flex: 1, position: 'relative', height: '100%' }}>
+                      {/* Confidence Interval */}
+                      <div
+                        style={{
+                          position: 'absolute',
+                          bottom: `${lowerHeight}%`,
+                          left: '20%',
+                          right: '20%',
+                          height: `${upperHeight - lowerHeight}%`,
+                          background: forecastMetric === 'spend' ? 'rgba(139, 92, 246, 0.15)' : 'rgba(16, 185, 129, 0.15)',
+                          borderRadius: '2px',
+                        }}
+                      />
+                      {/* Value Bar */}
+                      <div
+                        style={{
+                          position: 'absolute',
+                          bottom: 0,
+                          left: '30%',
+                          right: '30%',
+                          height: `${height}%`,
+                          background: forecastMetric === 'spend'
+                            ? 'linear-gradient(180deg, #8B5CF6 0%, rgba(139, 92, 246, 0.6) 100%)'
+                            : 'linear-gradient(180deg, #10B981 0%, rgba(16, 185, 129, 0.6) 100%)',
+                          borderRadius: '3px 3px 0 0',
+                        }}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                fontSize: '10px',
+                color: 'var(--text-tertiary)',
+                marginTop: '8px',
+              }}>
+                <span>Today</span>
+                <span>+7 days</span>
+                <span>+14 days</span>
+              </div>
+            </>
+          ) : (
+            <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
+              No forecast data available
+            </div>
+          )}
+        </div>
+
+        {/* Anomaly Detection Section */}
+        <div
+          style={{
+            background: 'var(--surface-card)',
+            border: '1px solid var(--border-default)',
+            borderRadius: '12px',
+            padding: '20px',
+            marginBottom: '24px',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+            <div style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '8px',
+              background: 'rgba(239, 68, 68, 0.15)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+              <Activity size={18} color="#EF4444" />
+            </div>
+            <div>
+              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>Anomaly Detection</h3>
+              <p style={{ margin: '2px 0 0', fontSize: '11px', color: 'var(--text-tertiary)' }}>
+                AI-detected unusual patterns in your metrics
+              </p>
+            </div>
+          </div>
+
+          {anomalyLoading ? (
+            <div style={{ textAlign: 'center', padding: '40px' }}>
+              <div className="loading-spinner" style={{ width: '32px', height: '32px', margin: '0 auto 12px' }} />
+              <div style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>Analyzing metrics...</div>
+            </div>
+          ) : anomalyData?.data?.anomalies && anomalyData.data.anomalies.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {anomalyData.data.anomalies.map((anomaly, i) => (
+                <div
+                  key={anomaly.id || i}
+                  style={{
+                    padding: '16px',
+                    background: anomaly.severity === 'critical'
+                      ? 'rgba(239, 68, 68, 0.08)'
+                      : anomaly.severity === 'warning'
+                      ? 'rgba(245, 158, 11, 0.08)'
+                      : 'rgba(59, 130, 246, 0.08)',
+                    borderRadius: '10px',
+                    borderLeft: `4px solid ${
+                      anomaly.severity === 'critical'
+                        ? '#EF4444'
+                        : anomaly.severity === 'warning'
+                        ? '#F59E0B'
+                        : '#3B82F6'
+                    }`,
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <AlertTriangle
+                        size={16}
+                        color={
+                          anomaly.severity === 'critical'
+                            ? '#EF4444'
+                            : anomaly.severity === 'warning'
+                            ? '#F59E0B'
+                            : '#3B82F6'
+                        }
+                      />
+                      <span style={{
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        textTransform: 'uppercase',
+                        color: anomaly.severity === 'critical'
+                          ? '#EF4444'
+                          : anomaly.severity === 'warning'
+                          ? '#F59E0B'
+                          : '#3B82F6',
+                      }}>
+                        {anomaly.severity}
+                      </span>
+                      <span style={{
+                        fontSize: '11px',
+                        padding: '2px 6px',
+                        background: 'var(--surface-secondary)',
+                        borderRadius: '4px',
+                        color: 'var(--text-secondary)',
+                      }}>
+                        {anomaly.metric}
+                      </span>
+                    </div>
+                    <span className="mono" style={{
+                      fontSize: '14px',
+                      fontWeight: 700,
+                      color: anomaly.deviation_pct >= 0 ? '#EF4444' : '#10B981',
+                    }}>
+                      {anomaly.deviation_pct >= 0 ? '+' : ''}{anomaly.deviation_pct.toFixed(1)}%
+                    </span>
+                  </div>
+                  <p style={{ margin: '0 0 8px', fontSize: '13px', color: 'var(--text-primary)' }}>
+                    {anomaly.description}
+                  </p>
+                  <div style={{ display: 'flex', gap: '16px', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                    <span>
+                      Actual: <span className="mono" style={{ fontWeight: 600 }}>{anomaly.actual_value.toLocaleString()}</span>
+                    </span>
+                    <span>
+                      Expected: <span className="mono" style={{ fontWeight: 600 }}>{anomaly.expected_value.toLocaleString()}</span>
+                    </span>
+                    {anomaly.affected_entity?.campaign_name && (
+                      <span>
+                        Campaign: <span style={{ fontWeight: 500 }}>{anomaly.affected_entity.campaign_name}</span>
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{
+              textAlign: 'center',
+              padding: '40px',
+              background: 'rgba(16, 185, 129, 0.08)',
+              borderRadius: '10px',
+            }}>
+              <div style={{ fontSize: '32px', marginBottom: '8px' }}>✓</div>
+              <div style={{ fontWeight: 600, color: '#10B981', marginBottom: '4px' }}>All Clear</div>
+              <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                No anomalies detected in your recent metrics
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Top Campaigns */}

@@ -21,7 +21,7 @@ except ImportError:
     print("python-dotenv not installed, environment variables must be set manually")
 
 from .api import auth, accounts, campaigns, sync, recommendations, meta_auth, meta_campaigns, demo, admin_settings, ai_chat, audiences, settings, user_auth, automations, admin
-from .api import admin_marketing, admin_ai, admin_api_monitor, admin_system
+from .api import admin_marketing, admin_ai, admin_api_monitor, admin_system, ml
 
 app = FastAPI(
     title="AdsMaster API",
@@ -60,6 +60,7 @@ app.include_router(admin_marketing.router)
 app.include_router(admin_ai.router)
 app.include_router(admin_api_monitor.router)
 app.include_router(admin_system.router)
+app.include_router(ml.router)
 
 
 @app.get("/")

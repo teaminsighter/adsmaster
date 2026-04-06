@@ -875,3 +875,87 @@ export async function updateProfile(
   }
   return response.json();
 }
+
+// ============================================================================
+// ML / FORECASTING HOOKS
+// ============================================================================
+
+export interface ForecastPrediction {
+  date: string;
+  value: number;
+  lower_bound: number;
+  upper_bound: number;
+}
+
+export interface MLAnomaly {
+  id: string;
+  metric: string;
+  type: string;
+  severity: 'critical' | 'warning' | 'info';
+  timestamp: string;
+  actual_value: number;
+  expected_value: number;
+  deviation_pct: number;
+  description: string;
+  affected_entity: {
+    campaign_id?: string;
+    campaign_name?: string;
+  } | null;
+}
+
+/**
+ * Hook for ML service status
+ */
+export function useMLStatus() {
+  return useApi<{
+    gcp_project: string;
+    bigquery_dataset: string;
+    services: {
+      bigquery_ml: string;
+      vertex_ai: string;
+      local_fallback: string;
+    };
+    features: {
+      spend_forecast: boolean;
+      conversion_forecast: boolean;
+      anomaly_detection: boolean;
+      keyword_prediction: boolean;
+      search_term_classification: boolean;
+    };
+  }>('/api/v1/ml/status');
+}
+
+/**
+ * Hook for demo spend/conversion forecasts (no auth required)
+ */
+export function useMLDemoForecast() {
+  return useApi<{
+    data: {
+      spend: {
+        metric: string;
+        predictions: ForecastPrediction[];
+        model_info: { type: string };
+      };
+      conversions: {
+        metric: string;
+        predictions: ForecastPrediction[];
+        model_info: { type: string };
+      };
+    };
+    demo_mode: boolean;
+    error: string | null;
+  }>('/api/v1/ml/demo/forecast');
+}
+
+/**
+ * Hook for demo anomalies (no auth required)
+ */
+export function useMLDemoAnomalies() {
+  return useApi<{
+    data: {
+      anomalies: MLAnomaly[];
+    };
+    demo_mode: boolean;
+    error: string | null;
+  }>('/api/v1/ml/demo/anomalies');
+}
