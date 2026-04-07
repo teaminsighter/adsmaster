@@ -127,6 +127,8 @@ class MutateResult:
     success: bool
     resource_name: Optional[str] = None
     error_message: Optional[str] = None
+    error_code: Optional[str] = None
+    rollback_data: Optional[dict] = None  # Data needed to undo this action
 
 
 class GoogleAdsAdapterBase(ABC):
@@ -234,6 +236,31 @@ class GoogleAdsAdapterBase(ABC):
     @abstractmethod
     async def pause_keywords(self, keyword_ids: list[str]) -> MutateResult:
         """Pause multiple keywords."""
+        pass
+
+    @abstractmethod
+    async def enable_keywords(self, keyword_ids: list[str]) -> MutateResult:
+        """Enable multiple keywords."""
+        pass
+
+    @abstractmethod
+    async def update_keyword_bid(
+        self,
+        keyword_id: str,
+        ad_group_id: str,
+        new_bid_micros: int,
+    ) -> MutateResult:
+        """Update a keyword's CPC bid."""
+        pass
+
+    @abstractmethod
+    async def add_negative_keyword(
+        self,
+        campaign_id: str,
+        keyword_text: str,
+        match_type: str = "EXACT",
+    ) -> MutateResult:
+        """Add a negative keyword to a campaign."""
         pass
 
     # =========================================================================

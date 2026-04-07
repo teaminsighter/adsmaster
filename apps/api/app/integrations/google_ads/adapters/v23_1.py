@@ -603,7 +603,171 @@ class GoogleAdsAdapterV23_1(GoogleAdsAdapterBase):
 
             return MutateResult(
                 success=True,
-                resource_name=f"Paused {len(response.results)} keywords"
+                resource_name=f"Paused {len(response.results)} keywords",
+                rollback_data={"previous_status": "ENABLED", "keyword_ids": keyword_ids}
+            )
+
+        except Exception as e:
+            return MutateResult(success=False, error_message=str(e))
+
+    async def enable_keywords(self, keyword_ids: List[str]) -> MutateResult:
+        """Enable multiple keywords."""
+        try:
+            client = self._get_client()
+            ad_group_criterion_service = client.get_service("AdGroupCriterionService")
+            ga_service = client.get_service("GoogleAdsService")
+
+            customer_id = self._format_customer_id(self.customer_id)
+
+            # Get the resource names for these keywords
+            ids_str = ", ".join(keyword_ids)
+            query = f"""
+                SELECT
+                    ad_group_criterion.resource_name
+                FROM ad_group_criterion
+                WHERE ad_group_criterion.type = 'KEYWORD'
+                    AND ad_group_criterion.criterion_id IN ({ids_str})
+            """
+
+            response = ga_service.search(customer_id=customer_id, query=query)
+
+            # Build operations
+            operations = []
+            for row in response:
+                operation = client.get_type("AdGroupCriterionOperation")
+                criterion = operation.update
+                criterion.resource_name = row.ad_group_criterion.resource_name
+                criterion.status = client.enums.AdGroupCriterionStatusEnum.ENABLED
+
+                client.copy_from(
+                    operation.update_mask,
+                    client.get_type("FieldMask")(paths=["status"])
+                )
+                operations.append(operation)
+
+            if not operations:
+                return MutateResult(success=False, error_message="No keywords found")
+
+            # Execute mutations
+            response = ad_group_criterion_service.mutate_ad_group_criteria(
+                customer_id=customer_id,
+                operations=operations
+            )
+
+            return MutateResult(
+                success=True,
+                resource_name=f"Enabled {len(response.results)} keywords",
+                rollback_data={"previous_status": "PAUSED", "keyword_ids": keyword_ids}
+            )
+
+        except Exception as e:
+            return MutateResult(success=False, error_message=str(e))
+
+    async def update_keyword_bid(
+        self,
+        keyword_id: str,
+        ad_group_id: str,
+        new_bid_micros: int,
+    ) -> MutateResult:
+        """Update a keyword's CPC bid."""
+        try:
+            client = self._get_client()
+            ad_group_criterion_service = client.get_service("AdGroupCriterionService")
+            ga_service = client.get_service("GoogleAdsService")
+
+            customer_id = self._format_customer_id(self.customer_id)
+
+            # First, get current bid for rollback data
+            query = f"""
+                SELECT
+                    ad_group_criterion.resource_name,
+                    ad_group_criterion.cpc_bid_micros
+                FROM ad_group_criterion
+                WHERE ad_group_criterion.type = 'KEYWORD'
+                    AND ad_group_criterion.criterion_id = {keyword_id}
+            """
+
+            response = ga_service.search(customer_id=customer_id, query=query)
+
+            resource_name = None
+            current_bid = None
+            for row in response:
+                resource_name = row.ad_group_criterion.resource_name
+                current_bid = row.ad_group_criterion.cpc_bid_micros
+                break
+
+            if not resource_name:
+                return MutateResult(success=False, error_message="Keyword not found")
+
+            # Build update operation
+            operation = client.get_type("AdGroupCriterionOperation")
+            criterion = operation.update
+            criterion.resource_name = resource_name
+            criterion.cpc_bid_micros = new_bid_micros
+
+            client.copy_from(
+                operation.update_mask,
+                client.get_type("FieldMask")(paths=["cpc_bid_micros"])
+            )
+
+            # Execute mutation
+            response = ad_group_criterion_service.mutate_ad_group_criteria(
+                customer_id=customer_id,
+                operations=[operation]
+            )
+
+            return MutateResult(
+                success=True,
+                resource_name=response.results[0].resource_name,
+                rollback_data={"previous_bid_micros": current_bid, "keyword_id": keyword_id}
+            )
+
+        except Exception as e:
+            return MutateResult(success=False, error_message=str(e))
+
+    async def add_negative_keyword(
+        self,
+        campaign_id: str,
+        keyword_text: str,
+        match_type: str = "EXACT",
+    ) -> MutateResult:
+        """Add a negative keyword to a campaign."""
+        try:
+            client = self._get_client()
+            campaign_criterion_service = client.get_service("CampaignCriterionService")
+
+            customer_id = self._format_customer_id(self.customer_id)
+            campaign_resource = f"customers/{customer_id}/campaigns/{campaign_id}"
+
+            # Map match type
+            match_type_enum = {
+                "EXACT": client.enums.KeywordMatchTypeEnum.EXACT,
+                "PHRASE": client.enums.KeywordMatchTypeEnum.PHRASE,
+                "BROAD": client.enums.KeywordMatchTypeEnum.BROAD,
+            }.get(match_type.upper(), client.enums.KeywordMatchTypeEnum.EXACT)
+
+            # Build create operation
+            operation = client.get_type("CampaignCriterionOperation")
+            criterion = operation.create
+            criterion.campaign = campaign_resource
+            criterion.negative = True
+            criterion.keyword.text = keyword_text
+            criterion.keyword.match_type = match_type_enum
+
+            # Execute mutation
+            response = campaign_criterion_service.mutate_campaign_criteria(
+                customer_id=customer_id,
+                operations=[operation]
+            )
+
+            return MutateResult(
+                success=True,
+                resource_name=response.results[0].resource_name,
+                rollback_data={
+                    "campaign_id": campaign_id,
+                    "keyword_text": keyword_text,
+                    "resource_name": response.results[0].resource_name
+                }
             )
 
         except Exception as e:
