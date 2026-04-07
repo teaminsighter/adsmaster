@@ -24,6 +24,18 @@ class MetaMutateResult:
     rollback_data: Optional[dict] = None  # Data needed to undo this action
 
 
+@dataclass
+class MetaVerificationResult:
+    """Result of a verification check on Meta Ads."""
+    verified: bool
+    expected_value: str
+    actual_value: Optional[str] = None
+    entity_type: Optional[str] = None
+    entity_id: Optional[str] = None
+    error_message: Optional[str] = None
+    checked_at: Optional[str] = None
+
+
 class MetaAdsBaseAdapter(ABC):
     """
     Abstract base class for Meta Ads API adapters.
@@ -172,6 +184,51 @@ class MetaAdsBaseAdapter(ABC):
         lifetime_budget: Optional[int] = None,
     ) -> MetaMutateResult:
         """Update ad set budget. Returns result with rollback data."""
+        pass
+
+    # =========================================================================
+    # VERIFICATION METHODS (Phase 3: Post-execution verification)
+    # =========================================================================
+
+    @abstractmethod
+    async def verify_campaign_status(
+        self,
+        campaign_id: str,
+        access_token: str,
+        expected_status: str,
+    ) -> 'MetaVerificationResult':
+        """Verify a campaign has the expected status."""
+        pass
+
+    @abstractmethod
+    async def verify_ad_set_status(
+        self,
+        ad_set_id: str,
+        access_token: str,
+        expected_status: str,
+    ) -> 'MetaVerificationResult':
+        """Verify an ad set has the expected status."""
+        pass
+
+    @abstractmethod
+    async def verify_ad_status(
+        self,
+        ad_id: str,
+        access_token: str,
+        expected_status: str,
+    ) -> 'MetaVerificationResult':
+        """Verify an ad has the expected status."""
+        pass
+
+    @abstractmethod
+    async def verify_ad_set_budget(
+        self,
+        ad_set_id: str,
+        access_token: str,
+        expected_daily_budget: Optional[int] = None,
+        expected_lifetime_budget: Optional[int] = None,
+    ) -> 'MetaVerificationResult':
+        """Verify an ad set has the expected budget."""
         pass
 
 

@@ -214,6 +214,53 @@ class ActionExecutor:
             # Allow operation if rate limiter fails (fail open)
             return True, "Rate limiter unavailable"
 
+    async def _verify_execution(
+        self,
+        recommendation_id: str,
+        action_type: str,
+        entity_type: str,
+        entity_id: str,
+        ad_account_id: str,
+        expected_state: Dict[str, Any],
+    ) -> None:
+        """
+        Verify that an action was executed correctly (async, non-blocking).
+
+        Runs after successful execution to confirm the platform state matches expected.
+        """
+        try:
+            from .verification_service import VerificationService
+
+            verification_service = VerificationService(self.db)
+
+            # Get platform entity ID
+            platform_entity_id = await verification_service._get_platform_entity_id(
+                entity_type, entity_id
+            )
+
+            # Run verification
+            result = await verification_service.verify_action(
+                recommendation_id=recommendation_id,
+                action_type=action_type,
+                entity_type=entity_type,
+                entity_id=entity_id,
+                platform_entity_id=platform_entity_id,
+                ad_account_id=ad_account_id,
+                expected_state=expected_state,
+            )
+
+            if not result.status.value == "verified":
+                logger.warning(
+                    f"Verification failed for {recommendation_id}: "
+                    f"expected {result.expected_value}, got {result.actual_value}"
+                )
+            else:
+                logger.info(f"Verification passed for {recommendation_id}")
+
+        except Exception as e:
+            # Don't fail the action if verification fails
+            logger.error(f"Post-execution verification error: {e}")
+
     async def _log_execution(
         self,
         recommendation_id: str,
@@ -316,7 +363,8 @@ class ActionExecutor:
         self,
         recommendation_id: str,
         option_id: int,
-        organization_id: str
+        organization_id: str,
+        verify_after: bool = True
     ) -> ActionResult:
         """
         Execute a recommendation action.
@@ -458,6 +506,17 @@ class ActionExecutor:
                     "after_state": json.dumps(result.after_state),
                     "execution_count": rec.get("execution_count", 0) + 1
                 }).eq("id", recommendation_id).execute()
+
+                # Post-execution verification
+                if verify_after and ad_account_id:
+                    await self._verify_execution(
+                        recommendation_id=recommendation_id,
+                        action_type=action,
+                        entity_type=entity_type,
+                        entity_id=entity_id,
+                        ad_account_id=ad_account_id,
+                        expected_state=result.after_state,
+                    )
 
             return result
 

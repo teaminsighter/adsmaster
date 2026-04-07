@@ -1274,3 +1274,105 @@ Provide a JSON response with:
             "entity_type": entity_type,
             "entity_id": entity_id,
         }
+
+
+# =============================================================================
+# Verification Endpoints (Phase 3)
+# =============================================================================
+
+@router.post("/{recommendation_id}/verify")
+async def verify_recommendation(
+    recommendation_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Verify that a recommendation's action was executed correctly on the platform.
+
+    Checks the actual platform state against expected state after action execution.
+    """
+    from ..services.recommendations.verification_service import VerificationService
+
+    db = get_supabase_client()
+
+    # Check recommendation exists and belongs to user's org
+    result = db.table("recommendations").select("id, organization_id, status").eq(
+        "id", recommendation_id
+    ).execute()
+
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Recommendation not found")
+
+    rec = result.data[0]
+    user_org = current_user.get("organization_id")
+    if user_org and rec.get("organization_id") != user_org:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    if rec.get("status") != "applied":
+        return {
+            "success": False,
+            "error": "Can only verify applied recommendations",
+            "recommendation_id": recommendation_id,
+        }
+
+    verification_service = VerificationService(db)
+    result = await verification_service.verify_recommendation(recommendation_id)
+
+    return {
+        "success": True,
+        "recommendation_id": recommendation_id,
+        "verification": result.to_dict(),
+    }
+
+
+@router.post("/verify/batch")
+async def verify_recommendations_batch(
+    request: BulkApplyRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Verify multiple recommendations in batch.
+    """
+    from ..services.recommendations.verification_service import VerificationService
+
+    db = get_supabase_client()
+    verification_service = VerificationService(db)
+
+    results = await verification_service.batch_verify(request.recommendation_ids)
+
+    return {
+        "success": True,
+        "total": len(results),
+        "verified": sum(1 for r in results if r.status.value == "verified"),
+        "failed": sum(1 for r in results if r.status.value == "failed"),
+        "results": [r.to_dict() for r in results],
+    }
+
+
+@router.get("/verification/stats")
+async def get_verification_stats(
+    hours: int = Query(default=24, ge=1, le=168),
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Get verification statistics for the organization.
+
+    Args:
+        hours: Number of hours to look back (default 24, max 168/1 week)
+    """
+    from ..services.recommendations.verification_service import VerificationService
+
+    db = get_supabase_client()
+    verification_service = VerificationService(db)
+
+    org_id = current_user.get("organization_id")
+    if not org_id:
+        raise HTTPException(status_code=400, detail="Organization ID required")
+
+    stats = await verification_service.get_verification_stats(org_id, hours)
+
+    return {
+        "success": True,
+        "organization_id": org_id,
+        "time_range_hours": hours,
+        "stats": stats,
+    }

@@ -9,7 +9,7 @@ from datetime import datetime
 
 import httpx
 
-from .base import MetaAdsBaseAdapter, MetaCampaign, MetaAdSet, MetaInsights, MetaMutateResult
+from .base import MetaAdsBaseAdapter, MetaCampaign, MetaAdSet, MetaInsights, MetaMutateResult, MetaVerificationResult
 
 
 class MetaAdsV21Adapter(MetaAdsBaseAdapter):
@@ -538,4 +538,245 @@ class MetaAdsV21Adapter(MetaAdsBaseAdapter):
                 object_type="adset",
                 error_message=str(e),
                 error_code="exception",
+            )
+
+    # =========================================================================
+    # VERIFICATION METHODS (Phase 3: Post-execution verification)
+    # =========================================================================
+
+    async def verify_campaign_status(
+        self,
+        campaign_id: str,
+        access_token: str,
+        expected_status: str,
+    ) -> MetaVerificationResult:
+        """Verify a campaign has the expected status."""
+        checked_at = datetime.now().isoformat()
+
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(
+                    f"{self.BASE_URL}/{campaign_id}",
+                    params={
+                        "access_token": access_token,
+                        "fields": "status,effective_status",
+                    },
+                )
+
+                if response.status_code != 200:
+                    error_data = response.json()
+                    return MetaVerificationResult(
+                        verified=False,
+                        expected_value=expected_status,
+                        entity_type="campaign",
+                        entity_id=campaign_id,
+                        error_message=error_data.get("error", {}).get("message", response.text),
+                        checked_at=checked_at,
+                    )
+
+                data = response.json()
+                actual_status = data.get("effective_status") or data.get("status")
+
+                # Meta uses ACTIVE vs Google's ENABLED
+                normalized_expected = "ACTIVE" if expected_status == "ENABLED" else expected_status
+                verified = actual_status == normalized_expected
+
+                return MetaVerificationResult(
+                    verified=verified,
+                    expected_value=expected_status,
+                    actual_value=actual_status,
+                    entity_type="campaign",
+                    entity_id=campaign_id,
+                    checked_at=checked_at,
+                )
+
+        except Exception as e:
+            return MetaVerificationResult(
+                verified=False,
+                expected_value=expected_status,
+                entity_type="campaign",
+                entity_id=campaign_id,
+                error_message=str(e),
+                checked_at=checked_at,
+            )
+
+    async def verify_ad_set_status(
+        self,
+        ad_set_id: str,
+        access_token: str,
+        expected_status: str,
+    ) -> MetaVerificationResult:
+        """Verify an ad set has the expected status."""
+        checked_at = datetime.now().isoformat()
+
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(
+                    f"{self.BASE_URL}/{ad_set_id}",
+                    params={
+                        "access_token": access_token,
+                        "fields": "status,effective_status",
+                    },
+                )
+
+                if response.status_code != 200:
+                    error_data = response.json()
+                    return MetaVerificationResult(
+                        verified=False,
+                        expected_value=expected_status,
+                        entity_type="adset",
+                        entity_id=ad_set_id,
+                        error_message=error_data.get("error", {}).get("message", response.text),
+                        checked_at=checked_at,
+                    )
+
+                data = response.json()
+                actual_status = data.get("effective_status") or data.get("status")
+
+                normalized_expected = "ACTIVE" if expected_status == "ENABLED" else expected_status
+                verified = actual_status == normalized_expected
+
+                return MetaVerificationResult(
+                    verified=verified,
+                    expected_value=expected_status,
+                    actual_value=actual_status,
+                    entity_type="adset",
+                    entity_id=ad_set_id,
+                    checked_at=checked_at,
+                )
+
+        except Exception as e:
+            return MetaVerificationResult(
+                verified=False,
+                expected_value=expected_status,
+                entity_type="adset",
+                entity_id=ad_set_id,
+                error_message=str(e),
+                checked_at=checked_at,
+            )
+
+    async def verify_ad_status(
+        self,
+        ad_id: str,
+        access_token: str,
+        expected_status: str,
+    ) -> MetaVerificationResult:
+        """Verify an ad has the expected status."""
+        checked_at = datetime.now().isoformat()
+
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(
+                    f"{self.BASE_URL}/{ad_id}",
+                    params={
+                        "access_token": access_token,
+                        "fields": "status,effective_status",
+                    },
+                )
+
+                if response.status_code != 200:
+                    error_data = response.json()
+                    return MetaVerificationResult(
+                        verified=False,
+                        expected_value=expected_status,
+                        entity_type="ad",
+                        entity_id=ad_id,
+                        error_message=error_data.get("error", {}).get("message", response.text),
+                        checked_at=checked_at,
+                    )
+
+                data = response.json()
+                actual_status = data.get("effective_status") or data.get("status")
+
+                normalized_expected = "ACTIVE" if expected_status == "ENABLED" else expected_status
+                verified = actual_status == normalized_expected
+
+                return MetaVerificationResult(
+                    verified=verified,
+                    expected_value=expected_status,
+                    actual_value=actual_status,
+                    entity_type="ad",
+                    entity_id=ad_id,
+                    checked_at=checked_at,
+                )
+
+        except Exception as e:
+            return MetaVerificationResult(
+                verified=False,
+                expected_value=expected_status,
+                entity_type="ad",
+                entity_id=ad_id,
+                error_message=str(e),
+                checked_at=checked_at,
+            )
+
+    async def verify_ad_set_budget(
+        self,
+        ad_set_id: str,
+        access_token: str,
+        expected_daily_budget: Optional[int] = None,
+        expected_lifetime_budget: Optional[int] = None,
+    ) -> MetaVerificationResult:
+        """Verify an ad set has the expected budget."""
+        checked_at = datetime.now().isoformat()
+
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(
+                    f"{self.BASE_URL}/{ad_set_id}",
+                    params={
+                        "access_token": access_token,
+                        "fields": "daily_budget,lifetime_budget",
+                    },
+                )
+
+                if response.status_code != 200:
+                    error_data = response.json()
+                    return MetaVerificationResult(
+                        verified=False,
+                        expected_value=str(expected_daily_budget or expected_lifetime_budget),
+                        entity_type="adset_budget",
+                        entity_id=ad_set_id,
+                        error_message=error_data.get("error", {}).get("message", response.text),
+                        checked_at=checked_at,
+                    )
+
+                data = response.json()
+                verified = True
+                actual_values = []
+
+                if expected_daily_budget is not None:
+                    actual_daily = int(data.get("daily_budget", 0))
+                    # Allow 1% tolerance
+                    tolerance = expected_daily_budget * 0.01
+                    if abs(actual_daily - expected_daily_budget) > tolerance:
+                        verified = False
+                    actual_values.append(f"daily:{actual_daily}")
+
+                if expected_lifetime_budget is not None:
+                    actual_lifetime = int(data.get("lifetime_budget", 0))
+                    tolerance = expected_lifetime_budget * 0.01
+                    if abs(actual_lifetime - expected_lifetime_budget) > tolerance:
+                        verified = False
+                    actual_values.append(f"lifetime:{actual_lifetime}")
+
+                expected_str = f"daily:{expected_daily_budget}" if expected_daily_budget else f"lifetime:{expected_lifetime_budget}"
+
+                return MetaVerificationResult(
+                    verified=verified,
+                    expected_value=expected_str,
+                    actual_value=",".join(actual_values),
+                    entity_type="adset_budget",
+                    entity_id=ad_set_id,
+                    checked_at=checked_at,
+                )
+
+        except Exception as e:
+            return MetaVerificationResult(
+                verified=False,
+                expected_value=str(expected_daily_budget or expected_lifetime_budget),
+                entity_type="adset_budget",
+                entity_id=ad_set_id,
+                error_message=str(e),
+                checked_at=checked_at,
             )

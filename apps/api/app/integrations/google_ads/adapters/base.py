@@ -317,3 +317,56 @@ class GoogleAdsAdapterBase(ABC):
     ) -> list[dict]:
         """Get auction insights showing competitor impression share."""
         pass
+
+    # =========================================================================
+    # VERIFICATION METHODS (Phase 3: Post-execution verification)
+    # =========================================================================
+
+    @abstractmethod
+    async def verify_keyword_status(
+        self,
+        keyword_id: str,
+        expected_status: str,
+    ) -> 'VerificationResult':
+        """Verify a keyword has the expected status."""
+        pass
+
+    @abstractmethod
+    async def verify_campaign_status(
+        self,
+        campaign_id: str,
+        expected_status: str,
+    ) -> 'VerificationResult':
+        """Verify a campaign has the expected status."""
+        pass
+
+    @abstractmethod
+    async def verify_campaign_budget(
+        self,
+        campaign_id: str,
+        expected_budget_micros: int,
+    ) -> 'VerificationResult':
+        """Verify a campaign has the expected budget."""
+        pass
+
+    @abstractmethod
+    async def verify_keyword_bid(
+        self,
+        keyword_id: str,
+        ad_group_id: str,
+        expected_bid_micros: int,
+    ) -> 'VerificationResult':
+        """Verify a keyword has the expected bid."""
+        pass
+
+
+@dataclass
+class VerificationResult:
+    """Result of a verification check."""
+    verified: bool
+    expected_value: str
+    actual_value: Optional[str] = None
+    entity_type: Optional[str] = None
+    entity_id: Optional[str] = None
+    error_message: Optional[str] = None
+    checked_at: Optional[str] = None

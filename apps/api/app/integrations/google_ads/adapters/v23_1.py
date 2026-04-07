@@ -25,6 +25,7 @@ from .base import (
     AudienceDefinition,
     BenchmarkData,
     MutateResult,
+    VerificationResult,
 )
 
 
@@ -941,3 +942,241 @@ class GoogleAdsAdapterV23_1(GoogleAdsAdapterBase):
         except Exception as e:
             print(f"Error fetching auction insights: {e}")
             return []
+
+    # =========================================================================
+    # VERIFICATION METHODS (Phase 3: Post-execution verification)
+    # =========================================================================
+
+    async def verify_keyword_status(
+        self,
+        keyword_id: str,
+        expected_status: str,
+    ) -> VerificationResult:
+        """Verify a keyword has the expected status."""
+        from datetime import datetime
+
+        try:
+            client = self._get_client()
+            ga_service = client.get_service("GoogleAdsService")
+
+            query = f"""
+                SELECT
+                    ad_group_criterion.criterion_id,
+                    ad_group_criterion.status
+                FROM ad_group_criterion
+                WHERE ad_group_criterion.criterion_id = {keyword_id}
+                    AND ad_group_criterion.type = 'KEYWORD'
+            """
+
+            customer_id = self._format_customer_id(self.customer_id)
+            response = ga_service.search(customer_id=customer_id, query=query)
+
+            for row in response:
+                actual_status = row.ad_group_criterion.status.name
+                verified = actual_status == expected_status
+
+                return VerificationResult(
+                    verified=verified,
+                    expected_value=expected_status,
+                    actual_value=actual_status,
+                    entity_type="keyword",
+                    entity_id=keyword_id,
+                    checked_at=datetime.utcnow().isoformat(),
+                )
+
+            # Keyword not found
+            return VerificationResult(
+                verified=False,
+                expected_value=expected_status,
+                actual_value=None,
+                entity_type="keyword",
+                entity_id=keyword_id,
+                error_message="Keyword not found",
+                checked_at=datetime.utcnow().isoformat(),
+            )
+
+        except Exception as e:
+            return VerificationResult(
+                verified=False,
+                expected_value=expected_status,
+                entity_type="keyword",
+                entity_id=keyword_id,
+                error_message=str(e),
+                checked_at=datetime.utcnow().isoformat(),
+            )
+
+    async def verify_campaign_status(
+        self,
+        campaign_id: str,
+        expected_status: str,
+    ) -> VerificationResult:
+        """Verify a campaign has the expected status."""
+        from datetime import datetime
+
+        try:
+            client = self._get_client()
+            ga_service = client.get_service("GoogleAdsService")
+
+            query = f"""
+                SELECT
+                    campaign.id,
+                    campaign.status
+                FROM campaign
+                WHERE campaign.id = {campaign_id}
+            """
+
+            customer_id = self._format_customer_id(self.customer_id)
+            response = ga_service.search(customer_id=customer_id, query=query)
+
+            for row in response:
+                actual_status = row.campaign.status.name
+                verified = actual_status == expected_status
+
+                return VerificationResult(
+                    verified=verified,
+                    expected_value=expected_status,
+                    actual_value=actual_status,
+                    entity_type="campaign",
+                    entity_id=campaign_id,
+                    checked_at=datetime.utcnow().isoformat(),
+                )
+
+            # Campaign not found
+            return VerificationResult(
+                verified=False,
+                expected_value=expected_status,
+                actual_value=None,
+                entity_type="campaign",
+                entity_id=campaign_id,
+                error_message="Campaign not found",
+                checked_at=datetime.utcnow().isoformat(),
+            )
+
+        except Exception as e:
+            return VerificationResult(
+                verified=False,
+                expected_value=expected_status,
+                entity_type="campaign",
+                entity_id=campaign_id,
+                error_message=str(e),
+                checked_at=datetime.utcnow().isoformat(),
+            )
+
+    async def verify_campaign_budget(
+        self,
+        campaign_id: str,
+        expected_budget_micros: int,
+    ) -> VerificationResult:
+        """Verify a campaign has the expected budget."""
+        from datetime import datetime
+
+        try:
+            client = self._get_client()
+            ga_service = client.get_service("GoogleAdsService")
+
+            query = f"""
+                SELECT
+                    campaign.id,
+                    campaign_budget.amount_micros
+                FROM campaign
+                WHERE campaign.id = {campaign_id}
+            """
+
+            customer_id = self._format_customer_id(self.customer_id)
+            response = ga_service.search(customer_id=customer_id, query=query)
+
+            for row in response:
+                actual_budget = row.campaign_budget.amount_micros
+                # Allow 1% tolerance for rounding
+                tolerance = expected_budget_micros * 0.01
+                verified = abs(actual_budget - expected_budget_micros) <= tolerance
+
+                return VerificationResult(
+                    verified=verified,
+                    expected_value=str(expected_budget_micros),
+                    actual_value=str(actual_budget),
+                    entity_type="campaign_budget",
+                    entity_id=campaign_id,
+                    checked_at=datetime.utcnow().isoformat(),
+                )
+
+            return VerificationResult(
+                verified=False,
+                expected_value=str(expected_budget_micros),
+                actual_value=None,
+                entity_type="campaign_budget",
+                entity_id=campaign_id,
+                error_message="Campaign not found",
+                checked_at=datetime.utcnow().isoformat(),
+            )
+
+        except Exception as e:
+            return VerificationResult(
+                verified=False,
+                expected_value=str(expected_budget_micros),
+                entity_type="campaign_budget",
+                entity_id=campaign_id,
+                error_message=str(e),
+                checked_at=datetime.utcnow().isoformat(),
+            )
+
+    async def verify_keyword_bid(
+        self,
+        keyword_id: str,
+        ad_group_id: str,
+        expected_bid_micros: int,
+    ) -> VerificationResult:
+        """Verify a keyword has the expected bid."""
+        from datetime import datetime
+
+        try:
+            client = self._get_client()
+            ga_service = client.get_service("GoogleAdsService")
+
+            query = f"""
+                SELECT
+                    ad_group_criterion.criterion_id,
+                    ad_group_criterion.cpc_bid_micros
+                FROM ad_group_criterion
+                WHERE ad_group_criterion.criterion_id = {keyword_id}
+                    AND ad_group.id = {ad_group_id}
+                    AND ad_group_criterion.type = 'KEYWORD'
+            """
+
+            customer_id = self._format_customer_id(self.customer_id)
+            response = ga_service.search(customer_id=customer_id, query=query)
+
+            for row in response:
+                actual_bid = row.ad_group_criterion.cpc_bid_micros
+                # Allow 1% tolerance for rounding
+                tolerance = expected_bid_micros * 0.01
+                verified = abs(actual_bid - expected_bid_micros) <= tolerance
+
+                return VerificationResult(
+                    verified=verified,
+                    expected_value=str(expected_bid_micros),
+                    actual_value=str(actual_bid),
+                    entity_type="keyword_bid",
+                    entity_id=keyword_id,
+                    checked_at=datetime.utcnow().isoformat(),
+                )
+
+            return VerificationResult(
+                verified=False,
+                expected_value=str(expected_bid_micros),
+                actual_value=None,
+                entity_type="keyword_bid",
+                entity_id=keyword_id,
+                error_message="Keyword not found",
+                checked_at=datetime.utcnow().isoformat(),
+            )
+
+        except Exception as e:
+            return VerificationResult(
+                verified=False,
+                expected_value=str(expected_bid_micros),
+                entity_type="keyword_bid",
+                entity_id=keyword_id,
+                error_message=str(e),
+                checked_at=datetime.utcnow().isoformat(),
+            )
