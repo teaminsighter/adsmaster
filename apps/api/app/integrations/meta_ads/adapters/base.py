@@ -2,11 +2,26 @@
 Base adapter for Meta Marketing API.
 
 Abstracts the Meta API to allow for version changes and testing.
+
+Pattern mirrors Google Ads adapter for consistency.
+Phase 2: Meta Ads action execution infrastructure.
 """
 
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import List, Dict, Any, Optional
 from datetime import date
+
+
+@dataclass
+class MetaMutateResult:
+    """Result of a mutation operation on Meta Ads."""
+    success: bool
+    object_id: Optional[str] = None
+    object_type: Optional[str] = None  # campaign, adset, ad
+    error_message: Optional[str] = None
+    error_code: Optional[str] = None
+    rollback_data: Optional[dict] = None  # Data needed to undo this action
 
 
 class MetaAdsBaseAdapter(ABC):
@@ -88,6 +103,75 @@ class MetaAdsBaseAdapter(ABC):
         lifetime_budget: Optional[int] = None,
     ) -> Dict[str, Any]:
         """Update campaign budget."""
+        pass
+
+    # =========================================================================
+    # ACTION METHODS (Phase 2: For recommendation execution)
+    # =========================================================================
+
+    @abstractmethod
+    async def pause_campaign(
+        self,
+        campaign_id: str,
+        access_token: str,
+    ) -> MetaMutateResult:
+        """Pause a campaign. Returns result with rollback data."""
+        pass
+
+    @abstractmethod
+    async def enable_campaign(
+        self,
+        campaign_id: str,
+        access_token: str,
+    ) -> MetaMutateResult:
+        """Enable a paused campaign. Returns result with rollback data."""
+        pass
+
+    @abstractmethod
+    async def pause_ad_set(
+        self,
+        ad_set_id: str,
+        access_token: str,
+    ) -> MetaMutateResult:
+        """Pause an ad set. Returns result with rollback data."""
+        pass
+
+    @abstractmethod
+    async def enable_ad_set(
+        self,
+        ad_set_id: str,
+        access_token: str,
+    ) -> MetaMutateResult:
+        """Enable a paused ad set. Returns result with rollback data."""
+        pass
+
+    @abstractmethod
+    async def pause_ad(
+        self,
+        ad_id: str,
+        access_token: str,
+    ) -> MetaMutateResult:
+        """Pause an ad. Returns result with rollback data."""
+        pass
+
+    @abstractmethod
+    async def enable_ad(
+        self,
+        ad_id: str,
+        access_token: str,
+    ) -> MetaMutateResult:
+        """Enable a paused ad. Returns result with rollback data."""
+        pass
+
+    @abstractmethod
+    async def update_ad_set_budget(
+        self,
+        ad_set_id: str,
+        access_token: str,
+        daily_budget: Optional[int] = None,
+        lifetime_budget: Optional[int] = None,
+    ) -> MetaMutateResult:
+        """Update ad set budget. Returns result with rollback data."""
         pass
 
 

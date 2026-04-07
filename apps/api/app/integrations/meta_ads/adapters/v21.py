@@ -9,7 +9,7 @@ from datetime import datetime
 
 import httpx
 
-from .base import MetaAdsBaseAdapter, MetaCampaign, MetaAdSet, MetaInsights
+from .base import MetaAdsBaseAdapter, MetaCampaign, MetaAdSet, MetaInsights, MetaMutateResult
 
 
 class MetaAdsV21Adapter(MetaAdsBaseAdapter):
@@ -297,3 +297,245 @@ class MetaAdsV21Adapter(MetaAdsBaseAdapter):
             conversions=conversions,
             raw_data=data,
         )
+
+    # =========================================================================
+    # ACTION METHODS (Phase 2: For recommendation execution)
+    # =========================================================================
+
+    async def _get_object_status(
+        self,
+        object_id: str,
+        access_token: str,
+    ) -> Optional[str]:
+        """Get current status of any Meta object (campaign, adset, ad)."""
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(
+                    f"{self.BASE_URL}/{object_id}",
+                    params={
+                        "access_token": access_token,
+                        "fields": "status,effective_status",
+                    },
+                )
+                if response.status_code == 200:
+                    data = response.json()
+                    return data.get("effective_status") or data.get("status")
+        except Exception:
+            pass
+        return None
+
+    async def _update_object_status(
+        self,
+        object_id: str,
+        access_token: str,
+        status: str,
+        object_type: str,
+    ) -> MetaMutateResult:
+        """Generic method to update status of any Meta object."""
+        try:
+            # Get current status for rollback
+            current_status = await self._get_object_status(object_id, access_token)
+
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    f"{self.BASE_URL}/{object_id}",
+                    params={"access_token": access_token},
+                    data={"status": status},
+                )
+
+                if response.status_code != 200:
+                    error_data = response.json()
+                    return MetaMutateResult(
+                        success=False,
+                        object_id=object_id,
+                        object_type=object_type,
+                        error_message=error_data.get("error", {}).get("message", response.text),
+                        error_code=str(error_data.get("error", {}).get("code", response.status_code)),
+                    )
+
+                return MetaMutateResult(
+                    success=True,
+                    object_id=object_id,
+                    object_type=object_type,
+                    rollback_data={
+                        "previous_status": current_status,
+                        "object_id": object_id,
+                        "object_type": object_type,
+                    }
+                )
+
+        except Exception as e:
+            return MetaMutateResult(
+                success=False,
+                object_id=object_id,
+                object_type=object_type,
+                error_message=str(e),
+                error_code="exception",
+            )
+
+    async def pause_campaign(
+        self,
+        campaign_id: str,
+        access_token: str,
+    ) -> MetaMutateResult:
+        """Pause a campaign."""
+        return await self._update_object_status(
+            object_id=campaign_id,
+            access_token=access_token,
+            status="PAUSED",
+            object_type="campaign",
+        )
+
+    async def enable_campaign(
+        self,
+        campaign_id: str,
+        access_token: str,
+    ) -> MetaMutateResult:
+        """Enable a paused campaign."""
+        return await self._update_object_status(
+            object_id=campaign_id,
+            access_token=access_token,
+            status="ACTIVE",
+            object_type="campaign",
+        )
+
+    async def pause_ad_set(
+        self,
+        ad_set_id: str,
+        access_token: str,
+    ) -> MetaMutateResult:
+        """Pause an ad set."""
+        return await self._update_object_status(
+            object_id=ad_set_id,
+            access_token=access_token,
+            status="PAUSED",
+            object_type="adset",
+        )
+
+    async def enable_ad_set(
+        self,
+        ad_set_id: str,
+        access_token: str,
+    ) -> MetaMutateResult:
+        """Enable a paused ad set."""
+        return await self._update_object_status(
+            object_id=ad_set_id,
+            access_token=access_token,
+            status="ACTIVE",
+            object_type="adset",
+        )
+
+    async def pause_ad(
+        self,
+        ad_id: str,
+        access_token: str,
+    ) -> MetaMutateResult:
+        """Pause an ad."""
+        return await self._update_object_status(
+            object_id=ad_id,
+            access_token=access_token,
+            status="PAUSED",
+            object_type="ad",
+        )
+
+    async def enable_ad(
+        self,
+        ad_id: str,
+        access_token: str,
+    ) -> MetaMutateResult:
+        """Enable a paused ad."""
+        return await self._update_object_status(
+            object_id=ad_id,
+            access_token=access_token,
+            status="ACTIVE",
+            object_type="ad",
+        )
+
+    async def _get_object_budget(
+        self,
+        object_id: str,
+        access_token: str,
+    ) -> Dict[str, Optional[int]]:
+        """Get current budget of a campaign or ad set."""
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(
+                    f"{self.BASE_URL}/{object_id}",
+                    params={
+                        "access_token": access_token,
+                        "fields": "daily_budget,lifetime_budget",
+                    },
+                )
+                if response.status_code == 200:
+                    data = response.json()
+                    return {
+                        "daily_budget": data.get("daily_budget"),
+                        "lifetime_budget": data.get("lifetime_budget"),
+                    }
+        except Exception:
+            pass
+        return {"daily_budget": None, "lifetime_budget": None}
+
+    async def update_ad_set_budget(
+        self,
+        ad_set_id: str,
+        access_token: str,
+        daily_budget: Optional[int] = None,
+        lifetime_budget: Optional[int] = None,
+    ) -> MetaMutateResult:
+        """Update ad set budget with rollback support."""
+        try:
+            # Get current budget for rollback
+            current_budget = await self._get_object_budget(ad_set_id, access_token)
+
+            data = {}
+            if daily_budget is not None:
+                data["daily_budget"] = daily_budget
+            if lifetime_budget is not None:
+                data["lifetime_budget"] = lifetime_budget
+
+            if not data:
+                return MetaMutateResult(
+                    success=False,
+                    object_id=ad_set_id,
+                    object_type="adset",
+                    error_message="No budget values provided",
+                    error_code="invalid_params",
+                )
+
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    f"{self.BASE_URL}/{ad_set_id}",
+                    params={"access_token": access_token},
+                    data=data,
+                )
+
+                if response.status_code != 200:
+                    error_data = response.json()
+                    return MetaMutateResult(
+                        success=False,
+                        object_id=ad_set_id,
+                        object_type="adset",
+                        error_message=error_data.get("error", {}).get("message", response.text),
+                        error_code=str(error_data.get("error", {}).get("code", response.status_code)),
+                    )
+
+                return MetaMutateResult(
+                    success=True,
+                    object_id=ad_set_id,
+                    object_type="adset",
+                    rollback_data={
+                        "previous_daily_budget": current_budget.get("daily_budget"),
+                        "previous_lifetime_budget": current_budget.get("lifetime_budget"),
+                        "ad_set_id": ad_set_id,
+                    }
+                )
+
+        except Exception as e:
+            return MetaMutateResult(
+                success=False,
+                object_id=ad_set_id,
+                object_type="adset",
+                error_message=str(e),
+                error_code="exception",
+            )

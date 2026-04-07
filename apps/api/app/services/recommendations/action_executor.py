@@ -20,7 +20,8 @@ import uuid
 
 from ..supabase_client import get_supabase_client
 from ...integrations.google_ads.adapters.v23_1 import GoogleAdsAdapterV23_1
-from ...integrations.rate_limiter import GoogleAdsRateLimiter
+from ...integrations.meta_ads.adapters.v21 import MetaAdsV21Adapter
+from ...integrations.rate_limiter import GoogleAdsRateLimiter, MetaAdsRateLimiter
 
 logger = logging.getLogger(__name__)
 
@@ -106,8 +107,10 @@ class ActionExecutor:
 
     def __init__(self, supabase_client=None):
         self.db = supabase_client or get_supabase_client()
-        self.rate_limiter = GoogleAdsRateLimiter()
-        self._adapter_cache: Dict[str, GoogleAdsAdapterV23_1] = {}
+        self.google_rate_limiter = GoogleAdsRateLimiter()
+        self.meta_rate_limiter = MetaAdsRateLimiter()
+        self._google_adapter_cache: Dict[str, GoogleAdsAdapterV23_1] = {}
+        self._meta_adapter_cache: Dict[str, tuple[MetaAdsV21Adapter, str]] = {}  # (adapter, access_token)
 
     async def _get_google_adapter(self, ad_account_id: str) -> Optional[GoogleAdsAdapterV23_1]:
         """
@@ -116,8 +119,8 @@ class ActionExecutor:
         Returns None if account not found or not a Google account.
         """
         # Check cache first
-        if ad_account_id in self._adapter_cache:
-            return self._adapter_cache[ad_account_id]
+        if ad_account_id in self._google_adapter_cache:
+            return self._google_adapter_cache[ad_account_id]
 
         # Get account credentials from database
         result = self.db.table("ad_accounts").select(
@@ -144,18 +147,57 @@ class ActionExecutor:
 
         # Create adapter and cache it
         adapter = GoogleAdsAdapterV23_1(refresh_token, customer_id)
-        self._adapter_cache[ad_account_id] = adapter
+        self._google_adapter_cache[ad_account_id] = adapter
 
         return adapter
 
-    async def _check_rate_limit(self, ad_account_id: str, operations: int = 1) -> tuple[bool, str]:
+    async def _get_meta_adapter(self, ad_account_id: str) -> Optional[tuple[MetaAdsV21Adapter, str]]:
+        """
+        Get Meta Ads adapter and access token for an account.
+
+        Returns (adapter, access_token) or None if not a Meta account.
+        """
+        # Check cache first
+        if ad_account_id in self._meta_adapter_cache:
+            return self._meta_adapter_cache[ad_account_id]
+
+        # Get account credentials from database
+        result = self.db.table("ad_accounts").select(
+            "id, platform, platform_account_id, access_token, ad_platforms(name)"
+        ).eq("id", ad_account_id).execute()
+
+        if not result.data:
+            logger.warning(f"Account {ad_account_id} not found")
+            return None
+
+        account = result.data[0]
+        platform = account.get("platform") or account.get("ad_platforms", {}).get("name", "")
+
+        if platform.lower() not in ["meta", "facebook"]:
+            logger.info(f"Account {ad_account_id} is not a Meta account")
+            return None
+
+        access_token = account.get("access_token")
+
+        if not access_token:
+            logger.warning(f"Missing access token for Meta account {ad_account_id}")
+            return None
+
+        # Create adapter and cache it
+        adapter = MetaAdsV21Adapter()
+        self._meta_adapter_cache[ad_account_id] = (adapter, access_token)
+
+        return (adapter, access_token)
+
+    async def _check_rate_limit(self, ad_account_id: str, operations: int = 1, platform: str = "google") -> tuple[bool, str]:
         """
         Check if we can proceed with API operations.
 
         Returns (can_proceed, message)
         """
         try:
-            quota_status = await self.rate_limiter.get_quota_status(ad_account_id)
+            rate_limiter = self.google_rate_limiter if platform == "google" else self.meta_rate_limiter
+            quota_status = await rate_limiter.get_quota_status(ad_account_id)
 
             if quota_status.get("blocked", False):
                 return False, f"Rate limit reached. Try again after {quota_status.get('reset_time', 'midnight')}"
@@ -164,7 +206,7 @@ class ActionExecutor:
                 logger.warning(f"Rate limit warning for account {ad_account_id}: {quota_status.get('usage_pct')}% used")
 
             # Increment usage
-            await self.rate_limiter.increment_usage(ad_account_id, operations)
+            await rate_limiter.increment_usage(ad_account_id, operations)
 
             return True, "OK"
         except Exception as e:
@@ -1313,75 +1355,305 @@ class ActionExecutor:
         )
 
     # =========================================================================
-    # Ad/Ad Set Actions
+    # Ad/Ad Set Actions (Meta Ads)
     # =========================================================================
 
-    async def _pause_ad(self, ad_id: str) -> ActionResult:
-        """Pause an ad."""
-        result = self.db.table("ads").select("status").eq(
-            "id", ad_id
-        ).execute()
+    async def _pause_ad(self, ad_id: str, ad_account_id: str = None) -> ActionResult:
+        """Pause an ad via Meta Ads API."""
+        # Get ad info with account details
+        result = self.db.table("ads").select(
+            "id, status, platform_ad_id, ad_group_id, ad_groups(ad_account_id, ad_accounts(id, platform, platform_account_id))"
+        ).eq("id", ad_id).execute()
 
-        before_state = {}
-        if result.data:
-            before_state = {"status": result.data[0].get("status")}
+        if not result.data:
+            return ActionResult(
+                success=False,
+                action="pause_ad",
+                message="Ad not found",
+                error="not_found"
+            )
 
+        ad = result.data[0]
+        before_state = {"status": ad.get("status")}
+
+        # Get account ID
+        if not ad_account_id:
+            ad_groups = ad.get("ad_groups")
+            if ad_groups:
+                ad_account_id = ad_groups.get("ad_account_id")
+                if not ad_account_id:
+                    ad_accounts = ad_groups.get("ad_accounts")
+                    if ad_accounts:
+                        ad_account_id = ad_accounts.get("id")
+
+        if ad_account_id:
+            # Check rate limit (Meta)
+            can_proceed, rate_msg = await self._check_rate_limit(ad_account_id, 1, "meta")
+            if not can_proceed:
+                return ActionResult(
+                    success=False,
+                    action="pause_ad",
+                    message=rate_msg,
+                    error="rate_limit"
+                )
+
+            # Get Meta adapter
+            meta_result = await self._get_meta_adapter(ad_account_id)
+
+            if meta_result:
+                adapter, access_token = meta_result
+                platform_ad_id = ad.get("platform_ad_id") or ad_id
+
+                # Call Meta Ads API
+                logger.info(f"Calling Meta Ads API to pause ad {platform_ad_id}")
+                api_result = await adapter.pause_ad(platform_ad_id, access_token)
+
+                if not api_result.success:
+                    logger.error(f"Meta Ads API error: {api_result.error_message}")
+                    return ActionResult(
+                        success=False,
+                        action="pause_ad",
+                        message=f"Meta Ads API error: {api_result.error_message}",
+                        error="api_error"
+                    )
+
+                logger.info(f"Successfully paused ad {platform_ad_id} via Meta Ads API")
+
+        # Update local database AFTER successful API call
         self.db.table("ads").update({
-            "status": "PAUSED"
+            "status": "PAUSED",
+            "last_modified_at": datetime.utcnow().isoformat(),
+            "last_modified_by": "ai_recommendation"
         }).eq("id", ad_id).execute()
 
         return ActionResult(
             success=True,
             action="pause_ad",
-            message="Ad paused successfully",
+            message="Ad paused successfully" + (" (via Meta Ads API)" if ad_account_id else " (database only)"),
             before_state=before_state,
             after_state={"status": "PAUSED", "action": "pause_ad"},
         )
 
-    async def _enable_ad(self, ad_id: str) -> ActionResult:
-        """Enable an ad."""
+    async def _enable_ad(self, ad_id: str, ad_account_id: str = None) -> ActionResult:
+        """Enable an ad via Meta Ads API."""
+        # Get ad info with account details
+        result = self.db.table("ads").select(
+            "id, status, platform_ad_id, ad_group_id, ad_groups(ad_account_id, ad_accounts(id, platform, platform_account_id))"
+        ).eq("id", ad_id).execute()
+
+        if not result.data:
+            return ActionResult(
+                success=False,
+                action="enable_ad",
+                message="Ad not found",
+                error="not_found"
+            )
+
+        ad = result.data[0]
+        before_state = {"status": ad.get("status")}
+
+        # Get account ID
+        if not ad_account_id:
+            ad_groups = ad.get("ad_groups")
+            if ad_groups:
+                ad_account_id = ad_groups.get("ad_account_id")
+                if not ad_account_id:
+                    ad_accounts = ad_groups.get("ad_accounts")
+                    if ad_accounts:
+                        ad_account_id = ad_accounts.get("id")
+
+        if ad_account_id:
+            # Check rate limit (Meta)
+            can_proceed, rate_msg = await self._check_rate_limit(ad_account_id, 1, "meta")
+            if not can_proceed:
+                return ActionResult(
+                    success=False,
+                    action="enable_ad",
+                    message=rate_msg,
+                    error="rate_limit"
+                )
+
+            # Get Meta adapter
+            meta_result = await self._get_meta_adapter(ad_account_id)
+
+            if meta_result:
+                adapter, access_token = meta_result
+                platform_ad_id = ad.get("platform_ad_id") or ad_id
+
+                # Call Meta Ads API
+                logger.info(f"Calling Meta Ads API to enable ad {platform_ad_id}")
+                api_result = await adapter.enable_ad(platform_ad_id, access_token)
+
+                if not api_result.success:
+                    logger.error(f"Meta Ads API error: {api_result.error_message}")
+                    return ActionResult(
+                        success=False,
+                        action="enable_ad",
+                        message=f"Meta Ads API error: {api_result.error_message}",
+                        error="api_error"
+                    )
+
+                logger.info(f"Successfully enabled ad {platform_ad_id} via Meta Ads API")
+
+        # Update local database
         self.db.table("ads").update({
-            "status": "ENABLED"
+            "status": "ENABLED",
+            "last_modified_at": datetime.utcnow().isoformat(),
+            "last_modified_by": "ai_recommendation_undo"
         }).eq("id", ad_id).execute()
 
         return ActionResult(
             success=True,
             action="enable_ad",
             message="Ad enabled successfully",
+            before_state=before_state,
             after_state={"status": "ENABLED"},
         )
 
-    async def _pause_adset(self, adset_id: str) -> ActionResult:
-        """Pause an ad set (ad group)."""
-        result = self.db.table("ad_groups").select("status").eq(
-            "id", adset_id
-        ).execute()
+    async def _pause_adset(self, adset_id: str, ad_account_id: str = None) -> ActionResult:
+        """Pause an ad set via Meta Ads API."""
+        # Get ad set info with account details
+        result = self.db.table("ad_groups").select(
+            "id, status, platform_ad_group_id, ad_account_id, ad_accounts(id, platform, platform_account_id)"
+        ).eq("id", adset_id).execute()
 
-        before_state = {}
-        if result.data:
-            before_state = {"status": result.data[0].get("status")}
+        if not result.data:
+            return ActionResult(
+                success=False,
+                action="pause_adset",
+                message="Ad set not found",
+                error="not_found"
+            )
 
+        adset = result.data[0]
+        before_state = {"status": adset.get("status")}
+
+        # Get account ID
+        if not ad_account_id:
+            ad_account_id = adset.get("ad_account_id")
+            if not ad_account_id:
+                ad_accounts = adset.get("ad_accounts")
+                if ad_accounts:
+                    ad_account_id = ad_accounts.get("id")
+
+        if ad_account_id:
+            # Check rate limit (Meta)
+            can_proceed, rate_msg = await self._check_rate_limit(ad_account_id, 1, "meta")
+            if not can_proceed:
+                return ActionResult(
+                    success=False,
+                    action="pause_adset",
+                    message=rate_msg,
+                    error="rate_limit"
+                )
+
+            # Get Meta adapter
+            meta_result = await self._get_meta_adapter(ad_account_id)
+
+            if meta_result:
+                adapter, access_token = meta_result
+                platform_adset_id = adset.get("platform_ad_group_id") or adset_id
+
+                # Call Meta Ads API
+                logger.info(f"Calling Meta Ads API to pause ad set {platform_adset_id}")
+                api_result = await adapter.pause_ad_set(platform_adset_id, access_token)
+
+                if not api_result.success:
+                    logger.error(f"Meta Ads API error: {api_result.error_message}")
+                    return ActionResult(
+                        success=False,
+                        action="pause_adset",
+                        message=f"Meta Ads API error: {api_result.error_message}",
+                        error="api_error"
+                    )
+
+                logger.info(f"Successfully paused ad set {platform_adset_id} via Meta Ads API")
+
+        # Update local database AFTER successful API call
         self.db.table("ad_groups").update({
-            "status": "PAUSED"
+            "status": "PAUSED",
+            "last_modified_at": datetime.utcnow().isoformat(),
+            "last_modified_by": "ai_recommendation"
         }).eq("id", adset_id).execute()
 
         return ActionResult(
             success=True,
             action="pause_adset",
-            message="Ad set paused successfully",
+            message="Ad set paused successfully" + (" (via Meta Ads API)" if ad_account_id else " (database only)"),
             before_state=before_state,
             after_state={"status": "PAUSED", "action": "pause_adset"},
         )
 
-    async def _enable_adset(self, adset_id: str) -> ActionResult:
-        """Enable an ad set (ad group)."""
+    async def _enable_adset(self, adset_id: str, ad_account_id: str = None) -> ActionResult:
+        """Enable an ad set via Meta Ads API."""
+        # Get ad set info with account details
+        result = self.db.table("ad_groups").select(
+            "id, status, platform_ad_group_id, ad_account_id, ad_accounts(id, platform, platform_account_id)"
+        ).eq("id", adset_id).execute()
+
+        if not result.data:
+            return ActionResult(
+                success=False,
+                action="enable_adset",
+                message="Ad set not found",
+                error="not_found"
+            )
+
+        adset = result.data[0]
+        before_state = {"status": adset.get("status")}
+
+        # Get account ID
+        if not ad_account_id:
+            ad_account_id = adset.get("ad_account_id")
+            if not ad_account_id:
+                ad_accounts = adset.get("ad_accounts")
+                if ad_accounts:
+                    ad_account_id = ad_accounts.get("id")
+
+        if ad_account_id:
+            # Check rate limit (Meta)
+            can_proceed, rate_msg = await self._check_rate_limit(ad_account_id, 1, "meta")
+            if not can_proceed:
+                return ActionResult(
+                    success=False,
+                    action="enable_adset",
+                    message=rate_msg,
+                    error="rate_limit"
+                )
+
+            # Get Meta adapter
+            meta_result = await self._get_meta_adapter(ad_account_id)
+
+            if meta_result:
+                adapter, access_token = meta_result
+                platform_adset_id = adset.get("platform_ad_group_id") or adset_id
+
+                # Call Meta Ads API
+                logger.info(f"Calling Meta Ads API to enable ad set {platform_adset_id}")
+                api_result = await adapter.enable_ad_set(platform_adset_id, access_token)
+
+                if not api_result.success:
+                    logger.error(f"Meta Ads API error: {api_result.error_message}")
+                    return ActionResult(
+                        success=False,
+                        action="enable_adset",
+                        message=f"Meta Ads API error: {api_result.error_message}",
+                        error="api_error"
+                    )
+
+                logger.info(f"Successfully enabled ad set {platform_adset_id} via Meta Ads API")
+
+        # Update local database
         self.db.table("ad_groups").update({
-            "status": "ENABLED"
+            "status": "ENABLED",
+            "last_modified_at": datetime.utcnow().isoformat(),
+            "last_modified_by": "ai_recommendation_undo"
         }).eq("id", adset_id).execute()
 
         return ActionResult(
             success=True,
             action="enable_adset",
             message="Ad set enabled successfully",
+            before_state=before_state,
             after_state={"status": "ENABLED"},
         )
