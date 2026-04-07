@@ -10,7 +10,7 @@ Provides endpoints for:
 Connected to Supabase database.
 """
 
-from fastapi import APIRouter, HTTPException, Query, BackgroundTasks, Depends
+from fastapi import APIRouter, HTTPException, Query, BackgroundTasks, Depends, Body
 from pydantic import BaseModel
 from typing import List, Optional, Literal
 from datetime import datetime, timedelta
@@ -95,6 +95,21 @@ class ApplyResponse(BaseModel):
 
 class DismissRequest(BaseModel):
     reason: Optional[str] = None
+
+
+class BulkApplyRequest(BaseModel):
+    recommendation_ids: List[str]
+    option_id: int
+    force: bool = False
+
+
+class BulkDismissRequest(BaseModel):
+    recommendation_ids: List[str]
+    reason: Optional[str] = None
+
+
+class BulkUndoRequest(BaseModel):
+    recommendation_ids: List[str]
 
 
 class DismissResponse(BaseModel):
@@ -500,6 +515,197 @@ async def get_undo_history(
 
 
 # =============================================================================
+# Bulk Operations - MUST be defined before /{recommendation_id} routes!
+# =============================================================================
+
+@router.post("/bulk/apply")
+async def bulk_apply_recommendations(
+    request: BulkApplyRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Apply multiple recommendations at once with the same option.
+
+    Includes data freshness check for each recommendation (Phase 14 critical fix).
+    Recommendations with stale data (>4 hours) will be skipped unless force=True.
+
+    Request body:
+        - recommendation_ids: List of recommendation IDs to apply
+        - option_id: Option ID to apply to all
+        - force: Force apply even if data is stale (admin override, default: false)
+    """
+    from ..workers.reconciliation_worker import DataFreshnessGuard
+
+    supabase = get_supabase_client()
+    organization_id = current_user.get("organization_id")
+    results = []
+    now = datetime.utcnow().isoformat()
+    stale_count = 0
+    guard = DataFreshnessGuard()
+
+    recommendation_ids = request.recommendation_ids
+    option_id = request.option_id
+    force = request.force
+
+    for rec_id in recommendation_ids:
+        # Get recommendation (with org filter for security)
+        query = supabase.table("recommendations").select("*").eq("id", rec_id)
+        if organization_id:
+            query = query.eq("organization_id", organization_id)
+        result = query.execute()
+
+        if not result.data or result.data[0].get("status") != "pending":
+            results.append({"id": rec_id, "success": False, "error": "Not found or not pending"})
+            continue
+
+        rec = result.data[0]
+
+        # Check data freshness before applying (Phase 14 critical fix)
+        if not force:
+            try:
+                freshness_result = await guard.guard_recommendation_apply(rec_id)
+                if not freshness_result.get("allowed"):
+                    stale_count += 1
+                    freshness_hours = freshness_result.get("freshness", {}).get("freshness_hours")
+                    error_msg = freshness_result.get("error") or "Data is stale"
+                    if freshness_hours is not None:
+                        error_msg = f"Data is {freshness_hours:.1f}h old (max 4h). Use force=true to override."
+                    results.append({
+                        "id": rec_id,
+                        "success": False,
+                        "error": "stale_data",
+                        "message": error_msg,
+                        "freshness_hours": freshness_hours,
+                    })
+                    continue
+            except Exception as e:
+                # Log but don't block on freshness check errors
+                print(f"Freshness check failed for {rec_id}: {e}")
+
+        options = rec.get("options") or []
+        if isinstance(options, str):
+            options = json.loads(options)
+
+        option = next((o for o in options if o.get("id") == option_id), None)
+        if not option:
+            results.append({"id": rec_id, "success": False, "error": "Invalid option"})
+            continue
+
+        # Store before state
+        before_state = {"status": rec.get("status")}
+
+        # Apply
+        supabase.table("recommendations").update({
+            "status": "applied",
+            "applied_at": now,
+            "applied_option_id": option_id,
+            "before_state": json.dumps(before_state),
+            "after_state": json.dumps({"action": option.get("action")}),
+        }).eq("id", rec_id).execute()
+
+        results.append({"id": rec_id, "success": True, "action": option.get("description")})
+
+    applied_count = sum(1 for r in results if r["success"])
+    failed_count = len(results) - applied_count
+
+    return {
+        "success": all(r["success"] for r in results),
+        "results": results,
+        "applied_count": applied_count,
+        "failed_count": failed_count,
+        "stale_data_count": stale_count,
+        "message": f"Applied {applied_count}/{len(recommendation_ids)} recommendations. {stale_count} skipped due to stale data." if stale_count > 0 else None,
+    }
+
+
+@router.post("/bulk/dismiss")
+async def bulk_dismiss_recommendations(
+    request: BulkDismissRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Dismiss multiple recommendations at once."""
+    supabase = get_supabase_client()
+    organization_id = current_user.get("organization_id")
+    results = []
+    now = datetime.utcnow().isoformat()
+
+    recommendation_ids = request.recommendation_ids
+    reason = request.reason
+
+    for rec_id in recommendation_ids:
+        # Get recommendation (with org filter for security)
+        query = supabase.table("recommendations").select("*").eq("id", rec_id)
+        if organization_id:
+            query = query.eq("organization_id", organization_id)
+        result = query.execute()
+
+        if not result.data or result.data[0].get("status") != "pending":
+            results.append({"id": rec_id, "success": False, "error": "Not found or not pending"})
+            continue
+
+        # Dismiss
+        supabase.table("recommendations").update({
+            "status": "dismissed",
+            "dismissed_at": now,
+            "dismiss_reason": reason,
+        }).eq("id", rec_id).execute()
+
+        results.append({"id": rec_id, "success": True})
+
+    return {
+        "success": all(r["success"] for r in results),
+        "results": results,
+        "dismissed_count": sum(1 for r in results if r["success"]),
+    }
+
+
+@router.post("/bulk/undo")
+async def bulk_undo_recommendations(
+    request: BulkUndoRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Undo multiple applied recommendations at once.
+
+    Only recommendations within the 24-hour undo window can be undone.
+    """
+    from ..services.recommendations.action_executor import ActionExecutor
+
+    supabase = get_supabase_client()
+    organization_id = current_user.get("organization_id")
+    results = []
+
+    executor = ActionExecutor(supabase_client=supabase)
+
+    recommendation_ids = request.recommendation_ids
+
+    for rec_id in recommendation_ids:
+        undo_result = await executor.undo_action(
+            recommendation_id=rec_id,
+            organization_id=organization_id
+        )
+
+        if undo_result.success:
+            results.append({
+                "id": rec_id,
+                "success": True,
+                "message": undo_result.message,
+            })
+        else:
+            results.append({
+                "id": rec_id,
+                "success": False,
+                "error": undo_result.error or undo_result.message,
+            })
+
+    return {
+        "success": all(r["success"] for r in results),
+        "results": results,
+        "undone_count": sum(1 for r in results if r["success"]),
+    }
+
+
+# =============================================================================
 # Single Recommendation Endpoints
 # =============================================================================
 
@@ -779,143 +985,6 @@ async def undo_recommendation(
         message=result.message,
         reverted_action=result.action,
     )
-
-
-@router.post("/bulk/apply")
-async def bulk_apply_recommendations(
-    recommendation_ids: List[str],
-    option_id: int = Query(..., description="Option ID to apply to all"),
-    current_user: dict = Depends(get_current_user),
-):
-    """Apply multiple recommendations at once with the same option."""
-    supabase = get_supabase_client()
-    organization_id = current_user.get("organization_id")
-    results = []
-    now = datetime.utcnow().isoformat()
-
-    for rec_id in recommendation_ids:
-        # Get recommendation (with org filter for security)
-        query = supabase.table("recommendations").select("*").eq("id", rec_id)
-        if organization_id:
-            query = query.eq("organization_id", organization_id)
-        result = query.execute()
-
-        if not result.data or result.data[0].get("status") != "pending":
-            results.append({"id": rec_id, "success": False, "error": "Not found or not pending"})
-            continue
-
-        rec = result.data[0]
-        options = rec.get("options") or []
-        if isinstance(options, str):
-            options = json.loads(options)
-
-        option = next((o for o in options if o.get("id") == option_id), None)
-        if not option:
-            results.append({"id": rec_id, "success": False, "error": "Invalid option"})
-            continue
-
-        # Store before state
-        before_state = {"status": rec.get("status")}
-
-        # Apply
-        supabase.table("recommendations").update({
-            "status": "applied",
-            "applied_at": now,
-            "applied_option_id": option_id,
-            "before_state": json.dumps(before_state),
-            "after_state": json.dumps({"action": option.get("action")}),
-        }).eq("id", rec_id).execute()
-
-        results.append({"id": rec_id, "success": True, "action": option.get("description")})
-
-    return {
-        "success": all(r["success"] for r in results),
-        "results": results,
-        "applied_count": sum(1 for r in results if r["success"]),
-    }
-
-
-@router.post("/bulk/dismiss")
-async def bulk_dismiss_recommendations(
-    recommendation_ids: List[str],
-    reason: Optional[str] = None,
-    current_user: dict = Depends(get_current_user),
-):
-    """Dismiss multiple recommendations at once."""
-    supabase = get_supabase_client()
-    organization_id = current_user.get("organization_id")
-    results = []
-    now = datetime.utcnow().isoformat()
-
-    for rec_id in recommendation_ids:
-        # Get recommendation (with org filter for security)
-        query = supabase.table("recommendations").select("*").eq("id", rec_id)
-        if organization_id:
-            query = query.eq("organization_id", organization_id)
-        result = query.execute()
-
-        if not result.data or result.data[0].get("status") != "pending":
-            results.append({"id": rec_id, "success": False, "error": "Not found or not pending"})
-            continue
-
-        # Dismiss
-        supabase.table("recommendations").update({
-            "status": "dismissed",
-            "dismissed_at": now,
-            "dismiss_reason": reason,
-        }).eq("id", rec_id).execute()
-
-        results.append({"id": rec_id, "success": True})
-
-    return {
-        "success": all(r["success"] for r in results),
-        "results": results,
-        "dismissed_count": sum(1 for r in results if r["success"]),
-    }
-
-
-@router.post("/bulk/undo")
-async def bulk_undo_recommendations(
-    recommendation_ids: List[str],
-    current_user: dict = Depends(get_current_user),
-):
-    """
-    Undo multiple applied recommendations at once.
-
-    Only recommendations within the 24-hour undo window can be undone.
-    """
-    from ..services.recommendations.action_executor import ActionExecutor
-
-    supabase = get_supabase_client()
-    organization_id = current_user.get("organization_id")
-    results = []
-
-    executor = ActionExecutor(supabase_client=supabase)
-
-    for rec_id in recommendation_ids:
-        undo_result = await executor.undo_action(
-            recommendation_id=rec_id,
-            organization_id=organization_id
-        )
-
-        if undo_result.success:
-            results.append({
-                "id": rec_id,
-                "success": True,
-                "message": undo_result.message,
-            })
-        else:
-            results.append({
-                "id": rec_id,
-                "success": False,
-                "error": undo_result.error or undo_result.message,
-            })
-
-    return {
-        "success": all(r["success"] for r in results),
-        "results": results,
-        "undone_count": sum(1 for r in results if r["success"]),
-    }
 
 
 # =============================================================================
