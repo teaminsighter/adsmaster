@@ -1,33 +1,108 @@
 'use client';
 
 import Link from 'next/link';
+import {
+  LayoutDashboard,
+  Users,
+  Building2,
+  Megaphone,
+  CreditCard,
+  RefreshCw,
+  TrendingUp,
+  Brain,
+  Lightbulb,
+  BarChart3,
+  Activity,
+  HeartPulse,
+  Cog,
+  FileText,
+  Mail,
+  Bell,
+  Settings,
+  User,
+  Globe,
+  Webhook,
+  LucideIcon,
+} from 'lucide-react';
 
 interface AdminSidebarProps {
   currentPath: string;
   theme?: 'light' | 'dark';
 }
 
-// Main navigation - 10 tabs
-const navItems = [
-  { href: '/admin/dashboard', label: 'Dashboard', icon: '📊' },
-  { href: '/admin/users', label: 'Users', icon: '👥' },
-  { href: '/admin/organizations', label: 'Organizations', icon: '🏢' },
-  { href: '/admin/marketing', label: 'Marketing', icon: '📈' },
-  { href: '/admin/billing', label: 'Billing', icon: '💳' },
-  { href: '/admin/ad-accounts', label: 'Ad Accounts', icon: '📱' },
-  { href: '/admin/ai', label: 'AI & ML', icon: '🤖' },
-  { href: '/admin/api-monitor', label: 'API Monitor', icon: '🔌' },
-  { href: '/admin/analytics', label: 'Analytics', icon: '📉' },
-  { href: '/admin/system', label: 'System', icon: '⚙️' },
+interface NavItem {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+}
+
+interface NavSection {
+  title: string;
+  items: NavItem[];
+}
+
+// Grouped navigation structure
+const navSections: NavSection[] = [
+  {
+    title: 'OVERVIEW',
+    items: [
+      { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    ],
+  },
+  {
+    title: 'USERS & ACCOUNTS',
+    items: [
+      { href: '/admin/users', label: 'Users', icon: Users },
+      { href: '/admin/organizations', label: 'Organizations', icon: Building2 },
+      { href: '/admin/ad-accounts', label: 'Ad Accounts', icon: Megaphone },
+    ],
+  },
+  {
+    title: 'REVENUE',
+    items: [
+      { href: '/admin/billing', label: 'Billing', icon: CreditCard },
+      { href: '/admin/subscriptions', label: 'Subscriptions', icon: RefreshCw },
+      { href: '/admin/marketing', label: 'Marketing', icon: TrendingUp },
+    ],
+  },
+  {
+    title: 'PLATFORM',
+    items: [
+      { href: '/admin/ai', label: 'AI Control', icon: Brain },
+      { href: '/admin/recommendations', label: 'Recommendations', icon: Lightbulb },
+      { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
+    ],
+  },
+  {
+    title: 'OPERATIONS',
+    items: [
+      { href: '/admin/api-monitor', label: 'API Monitor', icon: Activity },
+      { href: '/admin/system', label: 'System Health', icon: HeartPulse },
+      { href: '/admin/jobs', label: 'Background Jobs', icon: Cog },
+      { href: '/admin/webhooks', label: 'Webhooks', icon: Webhook },
+      { href: '/admin/audit-logs', label: 'Audit Logs', icon: FileText },
+    ],
+  },
+  {
+    title: 'COMMUNICATIONS',
+    items: [
+      { href: '/admin/emails', label: 'Email Templates', icon: Mail },
+      { href: '/admin/notifications', label: 'Notifications', icon: Bell },
+    ],
+  },
 ];
 
-// Settings & Profile
-const settingsItems = [
-  { href: '/admin/settings', label: 'Settings', icon: '⚙️' },
-  { href: '/admin/profile', label: 'Profile', icon: '👤' },
+// Admin section (Settings & Profile)
+const adminItems: NavItem[] = [
+  { href: '/admin/settings', label: 'Settings', icon: Settings },
+  { href: '/admin/profile', label: 'Profile', icon: User },
 ];
 
 export default function AdminSidebar({ currentPath, theme = 'dark' }: AdminSidebarProps) {
+  const isActive = (href: string) => {
+    return currentPath === href || currentPath.startsWith(href + '/');
+  };
+
   return (
     <aside className={`admin-sidebar ${theme}`}>
       <div className="admin-sidebar-header">
@@ -39,34 +114,48 @@ export default function AdminSidebar({ currentPath, theme = 'dark' }: AdminSideb
       </div>
 
       <nav className="admin-nav">
-        {navItems.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={`admin-nav-item ${currentPath === item.href || currentPath.startsWith(item.href + '/') ? 'active' : ''}`}
-          >
-            <span className="admin-nav-icon">{item.icon}</span>
-            <span className="admin-nav-label">{item.label}</span>
-          </Link>
+        {navSections.map((section, sectionIndex) => (
+          <div key={section.title} className="admin-nav-section">
+            <div className="admin-nav-section-title">{section.title}</div>
+            {section.items.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`admin-nav-item ${isActive(item.href) ? 'active' : ''}`}
+                >
+                  <Icon className="admin-nav-icon" size={18} />
+                  <span className="admin-nav-label">{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
         ))}
 
         <div className="admin-nav-divider" />
 
-        {settingsItems.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={`admin-nav-item ${currentPath === item.href ? 'active' : ''}`}
-          >
-            <span className="admin-nav-icon">{item.icon}</span>
-            <span className="admin-nav-label">{item.label}</span>
-          </Link>
-        ))}
+        <div className="admin-nav-section">
+          <div className="admin-nav-section-title">ADMIN</div>
+          {adminItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`admin-nav-item ${isActive(item.href) ? 'active' : ''}`}
+              >
+                <Icon className="admin-nav-icon" size={18} />
+                <span className="admin-nav-label">{item.label}</span>
+              </Link>
+            );
+          })}
+        </div>
       </nav>
 
       <div className="admin-sidebar-footer">
         <Link href="/" className="admin-nav-item">
-          <span className="admin-nav-icon">🌐</span>
+          <Globe className="admin-nav-icon" size={18} />
           <span className="admin-nav-label">Back to App</span>
         </Link>
       </div>
@@ -144,21 +233,39 @@ export default function AdminSidebar({ currentPath, theme = 'dark' }: AdminSideb
 
         .admin-nav {
           flex: 1;
-          padding: 16px 12px;
+          padding: 12px 12px;
           overflow-y: auto;
+        }
+
+        .admin-nav-section {
+          margin-bottom: 8px;
+        }
+
+        .admin-nav-section-title {
+          font-size: 10px;
+          font-weight: 600;
+          color: #64748b;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          padding: 8px 16px 6px;
+          margin-top: 4px;
+        }
+
+        .admin-sidebar.light .admin-nav-section-title {
+          color: #94a3b8;
         }
 
         :global(.admin-nav-item) {
           display: flex;
           align-items: center;
           gap: 12px;
-          padding: 12px 16px;
+          padding: 10px 16px;
           border-radius: 8px;
           color: #94a3b8;
           text-decoration: none;
           font-size: 14px;
           transition: all 0.15s ease;
-          margin-bottom: 4px;
+          margin-bottom: 2px;
         }
 
         :global(.admin-sidebar.light .admin-nav-item) {
@@ -185,10 +292,8 @@ export default function AdminSidebar({ currentPath, theme = 'dark' }: AdminSideb
           color: #059669;
         }
 
-        .admin-nav-icon {
-          font-size: 18px;
-          width: 24px;
-          text-align: center;
+        :global(.admin-nav-icon) {
+          flex-shrink: 0;
         }
 
         .admin-nav-label {
@@ -198,7 +303,7 @@ export default function AdminSidebar({ currentPath, theme = 'dark' }: AdminSideb
         .admin-nav-divider {
           height: 1px;
           background: #334155;
-          margin: 12px 16px;
+          margin: 8px 16px;
         }
 
         .admin-sidebar.light .admin-nav-divider {
@@ -206,7 +311,7 @@ export default function AdminSidebar({ currentPath, theme = 'dark' }: AdminSideb
         }
 
         .admin-sidebar-footer {
-          padding: 16px 12px;
+          padding: 12px;
           border-top: 1px solid #334155;
         }
 

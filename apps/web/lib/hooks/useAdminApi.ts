@@ -23,6 +23,20 @@ export async function adminFetch<T>(endpoint: string, options: RequestInit = {})
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ detail: 'Request failed' }));
+
+    // Handle token expiration - redirect to login
+    if (response.status === 401) {
+      // Clear invalid tokens
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('admin_token');
+        localStorage.removeItem('admin_refresh_token');
+        localStorage.removeItem('admin_user');
+        // Redirect to login
+        window.location.href = '/admin/login';
+      }
+      throw new Error('Session expired. Please log in again.');
+    }
+
     throw new Error(error.detail || 'Request failed');
   }
 
@@ -1033,4 +1047,519 @@ export async function setMaintenanceMode(
     method: 'POST',
     body: JSON.stringify({ enabled, message }),
   });
+}
+
+// ============================================================================
+// Enhanced User Management
+// ============================================================================
+
+export interface UserStats {
+  total: number;
+  active: number;
+  new_this_week: number;
+  suspended: number;
+  unverified: number;
+  at_risk: number;
+  timestamp: string;
+}
+
+export function useUserStats() {
+  return useAdminApi<UserStats>('/admin/users/stats');
+}
+
+export interface EnhancedUser {
+  id: string;
+  email: string;
+  name: string | null;
+  avatar_url: string | null;
+  is_active: boolean;
+  email_verified: boolean;
+  created_at: string;
+  last_login_at: string | null;
+  organization: string | null;
+  organization_id: string | null;
+  role: string | null;
+  plan: string;
+  ad_accounts_count: number;
+  signup_method?: string;
+}
+
+export interface EnhancedUsersResponse {
+  users: EnhancedUser[];
+  total: number;
+  page: number;
+  limit: number;
+  pages: number;
+}
+
+export interface UserFilters {
+  search?: string;
+  status?: string;
+  plan?: string;
+  signup_date?: string;
+  last_active?: string;
+  has_ad_account?: boolean;
+  signup_method?: string;
+  sort_by?: string;
+  sort_order?: string;
+}
+
+export function useEnhancedUsers(page: number = 1, filters: UserFilters = {}) {
+  const params = new URLSearchParams({ page: page.toString(), limit: '20' });
+  if (filters.search) params.set('search', filters.search);
+  if (filters.status) params.set('status', filters.status);
+  if (filters.plan) params.set('plan', filters.plan);
+  if (filters.signup_date) params.set('signup_date', filters.signup_date);
+  if (filters.last_active) params.set('last_active', filters.last_active);
+  if (filters.has_ad_account !== undefined) params.set('has_ad_account', String(filters.has_ad_account));
+  if (filters.signup_method) params.set('signup_method', filters.signup_method);
+  if (filters.sort_by) params.set('sort_by', filters.sort_by);
+  if (filters.sort_order) params.set('sort_order', filters.sort_order);
+  return useAdminApi<EnhancedUsersResponse>(`/admin/users/enhanced?${params}`);
+}
+
+export interface UserActivity {
+  type: string;
+  description: string;
+  ip_address?: string;
+  device?: string;
+  resource_id?: string;
+  created_at: string;
+}
+
+export interface UserActivityResponse {
+  user_id: string;
+  activities: UserActivity[];
+}
+
+export function useUserActivity(userId: string, limit: number = 50) {
+  return useAdminApi<UserActivityResponse>(`/admin/users/${userId}/activity?limit=${limit}`, !!userId);
+}
+
+export interface UserNote {
+  id: string;
+  user_id: string;
+  content: string;
+  admin_users: { email: string; name: string | null } | null;
+  created_at: string;
+}
+
+export interface UserNotesResponse {
+  notes: UserNote[];
+}
+
+export function useUserNotes(userId: string) {
+  return useAdminApi<UserNotesResponse>(`/admin/users/${userId}/notes`, !!userId);
+}
+
+export async function addUserNote(userId: string, content: string): Promise<{ success: boolean; note: UserNote }> {
+  return adminFetch(`/admin/users/${userId}/notes?content=${encodeURIComponent(content)}`, { method: 'POST' });
+}
+
+export async function impersonateUser(userId: string): Promise<{
+  success: boolean;
+  token: string;
+  user: { id: string; email: string; name: string | null };
+  expires_in: number;
+}> {
+  return adminFetch(`/admin/users/${userId}/impersonate`, { method: 'POST' });
+}
+
+export async function bulkSuspendUsers(userIds: string[]): Promise<{ success: boolean; count: number }> {
+  const params = userIds.map(id => `user_ids=${id}`).join('&');
+  return adminFetch(`/admin/users/bulk-suspend?${params}`, { method: 'POST' });
+}
+
+export async function bulkActivateUsers(userIds: string[]): Promise<{ success: boolean; count: number }> {
+  const params = userIds.map(id => `user_ids=${id}`).join('&');
+  return adminFetch(`/admin/users/bulk-activate?${params}`, { method: 'POST' });
+}
+
+export async function resetUserPassword(userId: string): Promise<{ success: boolean; message: string }> {
+  return adminFetch(`/admin/users/${userId}/reset-password`, { method: 'POST' });
+}
+
+export async function deleteUser(userId: string): Promise<{ success: boolean; message: string }> {
+  return adminFetch(`/admin/users/${userId}`, { method: 'DELETE' });
+}
+
+export async function exportUsers(format: 'csv' | 'json' = 'csv', filters?: string): Promise<{
+  success: boolean;
+  message: string;
+  format: string;
+  estimated_records: number;
+}> {
+  const params = new URLSearchParams({ format });
+  if (filters) params.set('filters', filters);
+  return adminFetch(`/admin/users/export?${params}`, { method: 'POST' });
+}
+
+// ============================================================================
+// Email Templates & Logs
+// ============================================================================
+
+export interface EmailTemplate {
+  id: string;
+  name: string;
+  slug: string;
+  subject: string;
+  html_content: string;
+  text_content: string | null;
+  variables: string[];
+  category: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EmailTemplatesResponse {
+  templates: EmailTemplate[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export function useEmailTemplates(
+  page: number = 1,
+  category?: string,
+  isActive?: boolean
+) {
+  const params = new URLSearchParams({ page: page.toString(), limit: '50' });
+  if (category) params.set('category', category);
+  if (isActive !== undefined) params.set('is_active', String(isActive));
+  return useAdminApi<EmailTemplatesResponse>(`/admin/emails/templates?${params}`);
+}
+
+export function useEmailTemplate(templateId: string) {
+  return useAdminApi<{ template: EmailTemplate }>(`/admin/emails/templates/${templateId}`, !!templateId);
+}
+
+export interface CreateTemplateData {
+  name: string;
+  slug: string;
+  subject: string;
+  html_content: string;
+  text_content?: string;
+  variables?: string[];
+  category?: string;
+}
+
+export async function createEmailTemplate(data: CreateTemplateData): Promise<{
+  success: boolean;
+  template: EmailTemplate;
+}> {
+  return adminFetch('/admin/emails/templates', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export interface UpdateTemplateData {
+  name?: string;
+  slug?: string;
+  subject?: string;
+  html_content?: string;
+  text_content?: string;
+  variables?: string[];
+  category?: string;
+  is_active?: boolean;
+}
+
+export async function updateEmailTemplate(
+  templateId: string,
+  data: UpdateTemplateData
+): Promise<{ success: boolean; template: EmailTemplate }> {
+  return adminFetch(`/admin/emails/templates/${templateId}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteEmailTemplate(templateId: string): Promise<{ success: boolean; message: string }> {
+  return adminFetch(`/admin/emails/templates/${templateId}`, { method: 'DELETE' });
+}
+
+export async function duplicateEmailTemplate(templateId: string): Promise<{
+  success: boolean;
+  template: EmailTemplate;
+}> {
+  return adminFetch(`/admin/emails/templates/${templateId}/duplicate`, { method: 'POST' });
+}
+
+export interface SendTestEmailData {
+  template_id: string;
+  to_email: string;
+  variables?: Record<string, string>;
+}
+
+export async function sendTestEmail(data: SendTestEmailData): Promise<{
+  success: boolean;
+  message: string;
+  message_id?: string;
+}> {
+  return adminFetch('/admin/emails/send-test', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export interface SendCustomEmailData {
+  to_email: string;
+  subject: string;
+  html_content: string;
+  text_content?: string;
+}
+
+export async function sendCustomEmail(data: SendCustomEmailData): Promise<{
+  success: boolean;
+  message: string;
+  message_id?: string;
+}> {
+  return adminFetch('/admin/emails/send', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export interface EmailLog {
+  id: string;
+  template_id: string | null;
+  recipient_email: string;
+  recipient_user_id: string | null;
+  subject: string;
+  status: 'sent' | 'delivered' | 'bounced' | 'failed';
+  provider_message_id: string | null;
+  error_message: string | null;
+  sent_at: string;
+  delivered_at: string | null;
+}
+
+export interface EmailLogsResponse {
+  logs: EmailLog[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export function useEmailLogs(
+  page: number = 1,
+  status?: string,
+  templateId?: string,
+  recipient?: string
+) {
+  const params = new URLSearchParams({ page: page.toString(), limit: '50' });
+  if (status) params.set('status', status);
+  if (templateId) params.set('template_id', templateId);
+  if (recipient) params.set('recipient', recipient);
+  return useAdminApi<EmailLogsResponse>(`/admin/emails/logs?${params}`);
+}
+
+export interface EmailStats {
+  stats: {
+    total: number;
+    sent: number;
+    delivered: number;
+    failed: number;
+    bounced: number;
+    delivery_rate: number;
+  };
+  period_hours: number;
+}
+
+export function useEmailStats(hours: number = 24) {
+  return useAdminApi<EmailStats>(`/admin/emails/stats?hours=${hours}`);
+}
+
+export interface EmailStatsByTemplate {
+  stats: Array<{
+    template_id: string | null;
+    template_name: string;
+    template_slug: string | null;
+    total: number;
+    sent: number;
+    delivered: number;
+    failed: number;
+    bounced: number;
+  }>;
+}
+
+export function useEmailStatsByTemplate() {
+  return useAdminApi<EmailStatsByTemplate>('/admin/emails/stats/by-template');
+}
+
+export interface EmailAutomationRule {
+  id: string;
+  name: string;
+  trigger_event: string;
+  template_id: string;
+  is_enabled: boolean;
+  delay_minutes: number;
+  conditions: Record<string, unknown> | null;
+  created_at: string;
+  updated_at: string;
+  email_templates?: {
+    name: string;
+    slug: string;
+  };
+}
+
+export interface EmailAutomationRulesResponse {
+  rules: EmailAutomationRule[];
+}
+
+export function useEmailAutomationRules() {
+  return useAdminApi<EmailAutomationRulesResponse>('/admin/emails/automation-rules');
+}
+
+export async function toggleEmailAutomationRule(
+  ruleId: string,
+  isEnabled: boolean
+): Promise<{ success: boolean; rule: EmailAutomationRule }> {
+  return adminFetch(`/admin/emails/automation-rules/${ruleId}?is_enabled=${isEnabled}`, {
+    method: 'PATCH',
+  });
+}
+
+export interface ScheduledEmail {
+  id: string;
+  template_id: string;
+  recipient_email: string;
+  recipient_user_id: string | null;
+  variables: Record<string, string>;
+  scheduled_for: string;
+  status: 'pending' | 'sent' | 'cancelled';
+  created_at: string;
+  email_templates?: {
+    name: string;
+    slug: string;
+  };
+}
+
+export interface ScheduledEmailsResponse {
+  emails: ScheduledEmail[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export function useScheduledEmails(page: number = 1, status?: string) {
+  const params = new URLSearchParams({ page: page.toString(), limit: '50' });
+  if (status) params.set('status', status);
+  return useAdminApi<ScheduledEmailsResponse>(`/admin/emails/scheduled?${params}`);
+}
+
+export async function cancelScheduledEmail(emailId: string): Promise<{ success: boolean; message: string }> {
+  return adminFetch(`/admin/emails/scheduled/${emailId}/cancel`, { method: 'POST' });
+}
+
+// ============================================================================
+// Webhook Logs
+// ============================================================================
+
+export interface WebhookLog {
+  id: string;
+  provider: string;
+  event_type: string;
+  event_id: string;
+  payload: Record<string, unknown>;
+  status: 'received' | 'processing' | 'processed' | 'failed' | 'skipped';
+  error_message: string | null;
+  error_details: Record<string, unknown> | null;
+  retry_count: number;
+  organization_id: string | null;
+  subscription_id: string | null;
+  invoice_id: string | null;
+  received_at: string;
+  processed_at: string | null;
+  created_at: string;
+}
+
+export interface WebhookLogsResponse {
+  logs: WebhookLog[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export function useWebhookLogs(
+  page: number = 1,
+  provider?: string,
+  eventType?: string,
+  status?: string
+) {
+  const params = new URLSearchParams({ page: page.toString(), limit: '50' });
+  if (provider) params.set('provider', provider);
+  if (eventType) params.set('event_type', eventType);
+  if (status) params.set('status', status);
+  return useAdminApi<WebhookLogsResponse>(`/admin/webhooks/logs?${params}`);
+}
+
+export function useWebhookLogDetail(logId: string) {
+  return useAdminApi<{ log: WebhookLog }>(`/admin/webhooks/logs/${logId}`, !!logId);
+}
+
+export async function retryWebhook(logId: string): Promise<{ success: boolean; message: string }> {
+  return adminFetch(`/admin/webhooks/logs/${logId}/retry`, { method: 'POST' });
+}
+
+export interface WebhookStats {
+  total: number;
+  by_provider: Record<string, number>;
+  by_status: {
+    received: number;
+    processed: number;
+    failed: number;
+    skipped: number;
+  };
+  by_event_type: Record<string, number>;
+  success_rate: number;
+}
+
+export function useWebhookStats(hours: number = 24) {
+  return useAdminApi<WebhookStats>(`/admin/webhooks/stats?hours=${hours}`);
+}
+
+export interface WebhookEventTypesResponse {
+  [provider: string]: string[];
+}
+
+export function useWebhookEventTypes() {
+  return useAdminApi<WebhookEventTypesResponse>('/admin/webhooks/event-types');
+}
+
+export interface SubscriptionEvent {
+  id: string;
+  subscription_id: string;
+  organization_id: string;
+  event_type: string;
+  status_before: string | null;
+  status_after: string | null;
+  plan_before: string | null;
+  plan_after: string | null;
+  mrr_delta_cents: number;
+  triggered_by: string;
+  webhook_log_id: string | null;
+  admin_user_id: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface SubscriptionEventsResponse {
+  events: SubscriptionEvent[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export function useSubscriptionEvents(
+  page: number = 1,
+  subscriptionId?: string,
+  organizationId?: string,
+  eventType?: string
+) {
+  const params = new URLSearchParams({ page: page.toString(), limit: '50' });
+  if (subscriptionId) params.set('subscription_id', subscriptionId);
+  if (organizationId) params.set('organization_id', organizationId);
+  if (eventType) params.set('event_type', eventType);
+  return useAdminApi<SubscriptionEventsResponse>(`/admin/webhooks/subscription-events?${params}`);
 }
