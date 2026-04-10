@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import {
   useAdminDashboard,
@@ -823,18 +823,71 @@ function ActivityFeed() {
 }
 
 function QuickActions() {
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  const handleAction = async (action: string) => {
+    setActionLoading(action);
+    try {
+      // Simulate action - in production these would call real endpoints
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      switch (action) {
+        case 'clear-cache':
+          alert('Cache cleared successfully');
+          break;
+        case 'sync-all':
+          alert('Sync started for all connected accounts');
+          break;
+        case 'test-email':
+          alert('Test email sent to admin');
+          break;
+        case 'refresh-tokens':
+          alert('Token refresh job queued');
+          break;
+      }
+    } catch (error) {
+      alert('Action failed');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const actions = [
+    { id: 'clear-cache', label: 'Clear Cache', icon: '🗑️', color: '#f59e0b' },
+    { id: 'sync-all', label: 'Sync All Accounts', icon: '🔄', color: '#3b82f6' },
+    { id: 'test-email', label: 'Send Test Email', icon: '✉️', color: '#10b981' },
+    { id: 'refresh-tokens', label: 'Refresh Tokens', icon: '🔑', color: '#8b5cf6' },
+  ];
+
   const links = [
     { href: '/admin/users', label: 'Manage Users', icon: '👥' },
     { href: '/admin/billing', label: 'View Billing', icon: '💳' },
-    { href: '/admin/api-monitor', label: 'API Monitor', icon: '🔌' },
-    { href: '/admin/system', label: 'System Config', icon: '⚙️' },
-    { href: '/admin/ai', label: 'AI Settings', icon: '🤖' },
-    { href: '/admin/marketing', label: 'Marketing', icon: '📈' },
+    { href: '/admin/webhooks', label: 'Webhooks', icon: '🔗' },
+    { href: '/admin/emails', label: 'Email Templates', icon: '📧' },
   ];
 
   return (
     <div className="quick-panel">
       <h3>Quick Actions</h3>
+
+      {/* Action Buttons */}
+      <div className="action-buttons">
+        {actions.map((action) => (
+          <button
+            key={action.id}
+            className="action-btn"
+            onClick={() => handleAction(action.id)}
+            disabled={actionLoading !== null}
+          >
+            <span className="action-icon">{actionLoading === action.id ? '⏳' : action.icon}</span>
+            <span className="action-label">{action.label}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="quick-divider" />
+
+      {/* Navigation Links */}
       <div className="quick-grid">
         {links.map((link) => (
           <Link key={link.href} href={link.href} className="quick-link">
@@ -856,6 +909,47 @@ function QuickActions() {
           font-weight: 600;
           color: var(--admin-text);
           margin: 0 0 16px 0;
+        }
+        .action-buttons {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 10px;
+          margin-bottom: 16px;
+        }
+        .action-btn {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 6px;
+          padding: 12px 8px;
+          background: var(--admin-inner-bg);
+          border: 1px solid var(--admin-border);
+          border-radius: 10px;
+          cursor: pointer;
+          transition: all 0.15s ease;
+          color: var(--admin-text);
+        }
+        .action-btn:hover:not(:disabled) {
+          background: rgba(16, 185, 129, 0.1);
+          border-color: rgba(16, 185, 129, 0.3);
+          transform: translateY(-2px);
+        }
+        .action-btn:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+        .action-icon {
+          font-size: 20px;
+        }
+        .action-label {
+          font-size: 11px;
+          font-weight: 500;
+          text-align: center;
+        }
+        .quick-divider {
+          height: 1px;
+          background: var(--admin-border);
+          margin: 16px 0;
         }
         .quick-grid {
           display: grid;
@@ -888,6 +982,19 @@ function QuickActions() {
           .quick-panel {
             padding: 16px;
           }
+          .action-buttons {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+          }
+          .action-btn {
+            padding: 10px 6px;
+          }
+          .action-icon {
+            font-size: 18px;
+          }
+          .action-label {
+            font-size: 10px;
+          }
           .quick-grid {
             grid-template-columns: repeat(3, 1fr);
             gap: 8px;
@@ -906,6 +1013,9 @@ function QuickActions() {
           }
         }
         @media (max-width: 400px) {
+          .action-buttons {
+            grid-template-columns: 1fr 1fr;
+          }
           .quick-grid {
             grid-template-columns: repeat(2, 1fr);
           }

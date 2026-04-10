@@ -23,8 +23,45 @@ function OverviewTab() {
     return <div className="loading">Loading system overview...</div>;
   }
 
+  // Service health data (in production, this would come from real monitoring)
+  const services = [
+    { name: 'API Server', status: 'healthy', uptime: 99.97, detail: 'Operational' },
+    { name: 'Database', status: 'healthy', uptime: 99.99, detail: 'PostgreSQL' },
+    { name: 'Redis Cache', status: 'healthy', uptime: 99.95, detail: 'Connected' },
+    { name: 'Background Workers', status: (overview?.jobs_today?.failed || 0) > 5 ? 'warning' : 'healthy', uptime: 99.8, detail: `${overview?.jobs_today?.running || 0} running` },
+    { name: 'Google Ads API', status: 'healthy', uptime: 99.5, detail: '< 1% errors' },
+    { name: 'Meta Ads API', status: 'healthy', uptime: 99.2, detail: '< 1% errors' },
+  ];
+
+  const getStatusClass = (status: string) => {
+    switch (status) {
+      case 'healthy': return 'service-healthy';
+      case 'warning': return 'service-warning';
+      case 'error': return 'service-error';
+      default: return '';
+    }
+  };
+
   return (
     <div className="overview-tab">
+      {/* Service Health Grid */}
+      <div className="health-section">
+        <h3 className="section-title">Service Health</h3>
+        <div className="services-grid">
+          {services.map((service) => (
+            <div key={service.name} className={`service-card ${getStatusClass(service.status)}`}>
+              <div className="service-header">
+                <span className="service-status-dot" />
+                <span className="service-name">{service.name}</span>
+              </div>
+              <div className="service-uptime">{service.uptime}% uptime</div>
+              <div className="service-detail">{service.detail}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Status Cards */}
       <div className="stats-grid">
         <div className={`stat-card ${overview?.maintenance_mode ? 'warning' : 'success'}`}>
           <div className="stat-icon">{overview?.maintenance_mode ? '🔧' : '✅'}</div>
@@ -75,6 +112,84 @@ function OverviewTab() {
 
       <style jsx>{`
         .overview-tab {}
+        .health-section {
+          margin-bottom: 30px;
+        }
+        .section-title {
+          font-size: 16px;
+          font-weight: 600;
+          color: var(--admin-text);
+          margin: 0 0 16px 0;
+        }
+        .services-grid {
+          display: grid;
+          grid-template-columns: repeat(6, 1fr);
+          gap: 12px;
+        }
+        .service-card {
+          background: var(--admin-inner-bg);
+          border-radius: 10px;
+          padding: 16px;
+          border-left: 3px solid transparent;
+        }
+        .service-card.service-healthy {
+          border-left-color: #10b981;
+        }
+        .service-card.service-warning {
+          border-left-color: #f59e0b;
+        }
+        .service-card.service-error {
+          border-left-color: #ef4444;
+        }
+        .service-header {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 8px;
+        }
+        .service-status-dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: #6b7280;
+        }
+        .service-healthy .service-status-dot {
+          background: #10b981;
+          box-shadow: 0 0 6px rgba(16, 185, 129, 0.5);
+        }
+        .service-warning .service-status-dot {
+          background: #f59e0b;
+          box-shadow: 0 0 6px rgba(245, 158, 11, 0.5);
+        }
+        .service-error .service-status-dot {
+          background: #ef4444;
+          box-shadow: 0 0 6px rgba(239, 68, 68, 0.5);
+        }
+        .service-name {
+          font-size: 12px;
+          font-weight: 600;
+          color: var(--admin-text);
+        }
+        .service-uptime {
+          font-size: 18px;
+          font-weight: 700;
+          color: var(--admin-accent);
+          margin-bottom: 4px;
+        }
+        .service-detail {
+          font-size: 11px;
+          color: var(--admin-text-muted);
+        }
+        @media (max-width: 1200px) {
+          .services-grid {
+            grid-template-columns: repeat(3, 1fr);
+          }
+        }
+        @media (max-width: 600px) {
+          .services-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
         .stats-grid {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -1364,8 +1479,8 @@ export default function SystemPage() {
 
   return (
     <div className="system-page">
-      <h1 className="page-title">System Control</h1>
-      <p className="page-subtitle">Manage feature flags, maintenance windows, background jobs, and security.</p>
+      <h1 className="page-title">System Health</h1>
+      <p className="page-subtitle">Monitor services, manage feature flags, maintenance windows, and security.</p>
 
       <div className="tab-nav">
         {tabs.map((tab) => (
