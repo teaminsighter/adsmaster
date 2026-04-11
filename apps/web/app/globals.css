@@ -138,6 +138,7 @@ html {
   flex: 1;
   margin-left: var(--sidebar-width);
   min-height: 100vh;
+  padding-top: var(--header-height);
 }
 
 .header {
@@ -148,10 +149,13 @@ html {
   align-items: center;
   justify-content: space-between;
   padding: 0 24px;
-  position: sticky;
+  position: fixed;
   top: 0;
-  z-index: 50;
+  left: var(--sidebar-width);
+  right: 0;
+  z-index: 100;
 }
+
 
 .page-content {
   padding: 24px;

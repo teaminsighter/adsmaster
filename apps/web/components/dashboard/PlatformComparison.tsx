@@ -115,7 +115,6 @@ export default function PlatformComparison({ data }: PlatformComparisonProps) {
           border: 1px solid var(--border-default);
           border-radius: var(--radius-lg);
           padding: 16px;
-          height: 100%;
         }
 
         .comparison-title {

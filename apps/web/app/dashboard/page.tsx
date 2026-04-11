@@ -7,6 +7,7 @@ import AccountOverviewBar from '@/components/dashboard/AccountOverviewBar';
 import AlertsPanel from '@/components/dashboard/AlertsPanel';
 import PerformanceChart from '@/components/dashboard/PerformanceChart';
 import PlatformComparison from '@/components/dashboard/PlatformComparison';
+import PlatformComparisonTable from '@/components/dashboard/PlatformComparisonTable';
 import AIRecommendationsSummary from '@/components/dashboard/AIRecommendationsSummary';
 import QuickActionsGrid from '@/components/dashboard/QuickActionsGrid';
 import BudgetPacing from '@/components/dashboard/BudgetPacing';
@@ -14,6 +15,8 @@ import SpendDistributionChart from '@/components/dashboard/SpendDistributionChar
 import ConversionFunnel from '@/components/dashboard/ConversionFunnel';
 import MLForecastWidget from '@/components/dashboard/MLForecastWidget';
 import AnomalyAlertsWidget from '@/components/dashboard/AnomalyAlertsWidget';
+import TopRecommendationsWidget from '@/components/dashboard/TopRecommendationsWidget';
+import RightSidebarPanel from '@/components/dashboard/RightSidebarPanel';
 import { useDashboard } from '@/lib/hooks/useApi';
 import { formatMicros, formatNumber } from '@/lib/api';
 
@@ -107,176 +110,197 @@ export default function DashboardPage() {
     <>
       {isDemo && <DemoBanner onConnect={() => router.push('/connect')} />}
       <Header title="Dashboard" />
-      <div className="page-content dashboard">
-        {/* Row 1: Account Overview Bar */}
-        <AccountOverviewBar
-          healthScore={health_score.overall}
-          aiSavings={ai_savings_this_month}
-          onSyncAll={() => console.log('Sync all accounts')}
-        />
+      <div className="dashboard-layout">
+        {/* Main Content */}
+        <div className="dashboard-main">
+          {/* Row 1: Account Overview Bar */}
+          <AccountOverviewBar
+            healthScore={health_score.overall}
+            aiSavings={ai_savings_this_month}
+            onSyncAll={() => console.log('Sync all accounts')}
+          />
 
-        {/* Row 2: Key Metrics */}
-        <div className="metrics-grid">
-          <div className="metric-card">
-            <div className="metric-label">Total Spend (30d)</div>
-            <div className="metric-value mono">{formatMicros(metrics.spend_micros)}</div>
-            <div className={`metric-change ${metrics_change.spend >= 0 ? 'up' : 'down'}`}>
-              {metrics_change.spend >= 0 ? '+' : ''}{metrics_change.spend}%
-            </div>
-          </div>
-          <div className="metric-card">
-            <div className="metric-label">Revenue</div>
-            <div className="metric-value mono">{formatMicros(metrics.revenue_micros)}</div>
-            <div className={`metric-change ${metrics_change.revenue >= 0 ? 'up' : 'down'}`}>
-              {metrics_change.revenue >= 0 ? '+' : ''}{metrics_change.revenue}%
-            </div>
-          </div>
-          <div className="metric-card">
-            <div className="metric-label">ROAS</div>
-            <div className="metric-value mono">{metrics.roas}x</div>
-            <div className={`metric-change ${metrics_change.roas >= 0 ? 'up' : 'down'}`}>
-              {metrics_change.roas >= 0 ? '+' : ''}{metrics_change.roas}x
-            </div>
-          </div>
-          <div className="metric-card">
-            <div className="metric-label">Conversions</div>
-            <div className="metric-value mono">{formatNumber(metrics.conversions)}</div>
-            <div className={`metric-change ${metrics_change.conversions >= 0 ? 'up' : 'down'}`}>
-              {metrics_change.conversions >= 0 ? '+' : ''}{metrics_change.conversions}%
-            </div>
-          </div>
-          <div className="metric-card">
-            <div className="metric-label">Avg CPA</div>
-            <div className="metric-value mono">{formatMicros(metrics.cpa_micros)}</div>
-            <div className={`metric-change ${metrics_change.cpa <= 0 ? 'down' : 'up'}`}>
-              {metrics_change.cpa}%
-            </div>
-          </div>
-          <div className="metric-card">
-            <div className="metric-label">CTR</div>
-            <div className="metric-value mono">{metrics.ctr}%</div>
-            <div className={`metric-change ${metrics_change.ctr >= 0 ? 'up' : 'down'}`}>
-              {metrics_change.ctr >= 0 ? '+' : ''}{metrics_change.ctr}%
-            </div>
-          </div>
-        </div>
-
-        {/* Row 3: Budget Pacing + Alerts */}
-        <div className="row-3">
-          <div className="budget-section">
-            <BudgetPacing />
-          </div>
-          <div className="alerts-section">
-            <AlertsPanel />
-          </div>
-        </div>
-
-        {/* Row 4: Performance Chart + Platform Comparison */}
-        <div className="row-4">
-          <div className="chart-section">
-            <PerformanceChart data={chart_data} />
-          </div>
-          <div className="comparison-section">
-            <PlatformComparison data={platform_breakdown} />
-          </div>
-        </div>
-
-        {/* Row 5: Top Campaigns + AI Recommendations */}
-        <div className="row-5">
-          <div className="campaigns-section">
-            <div className="card campaigns-card">
-              <div className="card-header">
-                <span className="card-title">Top Campaigns</span>
-                <button className="btn btn-ghost btn-sm" onClick={() => router.push('/campaigns')}>
-                  View All
-                </button>
+          {/* Row 2: Key Metrics */}
+          <div className="metrics-grid">
+            <div className="metric-card">
+              <div className="metric-label">Total Spend (30d)</div>
+              <div className="metric-value mono">{formatMicros(metrics.spend_micros)}</div>
+              <div className={`metric-change ${metrics_change.spend >= 0 ? 'up' : 'down'}`}>
+                {metrics_change.spend >= 0 ? '+' : ''}{metrics_change.spend}%
               </div>
-              <div className="campaigns-list">
-                {top_campaigns.slice(0, 5).map((campaign) => (
-                  <div
-                    key={campaign.id}
-                    className="campaign-item"
-                    onClick={() => router.push(`/campaigns/${campaign.id}`)}
-                  >
-                    <div className="campaign-info">
-                      <span className={`status-dot ${campaign.status === 'ENABLED' ? 'active' : 'paused'}`} />
-                      <div className="campaign-details">
-                        <div className="campaign-name">{campaign.name}</div>
-                        <div className="campaign-platform">
+            </div>
+            <div className="metric-card">
+              <div className="metric-label">Revenue</div>
+              <div className="metric-value mono">{formatMicros(metrics.revenue_micros)}</div>
+              <div className={`metric-change ${metrics_change.revenue >= 0 ? 'up' : 'down'}`}>
+                {metrics_change.revenue >= 0 ? '+' : ''}{metrics_change.revenue}%
+              </div>
+            </div>
+            <div className="metric-card">
+              <div className="metric-label">ROAS</div>
+              <div className="metric-value mono">{metrics.roas}x</div>
+              <div className={`metric-change ${metrics_change.roas >= 0 ? 'up' : 'down'}`}>
+                {metrics_change.roas >= 0 ? '+' : ''}{metrics_change.roas}x
+              </div>
+            </div>
+            <div className="metric-card">
+              <div className="metric-label">Conversions</div>
+              <div className="metric-value mono">{formatNumber(metrics.conversions)}</div>
+              <div className={`metric-change ${metrics_change.conversions >= 0 ? 'up' : 'down'}`}>
+                {metrics_change.conversions >= 0 ? '+' : ''}{metrics_change.conversions}%
+              </div>
+            </div>
+            <div className="metric-card">
+              <div className="metric-label">Avg CPA</div>
+              <div className="metric-value mono">{formatMicros(metrics.cpa_micros)}</div>
+              <div className={`metric-change ${metrics_change.cpa <= 0 ? 'down' : 'up'}`}>
+                {metrics_change.cpa}%
+              </div>
+            </div>
+            <div className="metric-card">
+              <div className="metric-label">CTR</div>
+              <div className="metric-value mono">{metrics.ctr}%</div>
+              <div className={`metric-change ${metrics_change.ctr >= 0 ? 'up' : 'down'}`}>
+                {metrics_change.ctr >= 0 ? '+' : ''}{metrics_change.ctr}%
+              </div>
+            </div>
+          </div>
+
+          {/* Row 3: Budget Pacing + Performance Chart (50/50) */}
+          <div className="row-3">
+            <div className="budget-section">
+              <BudgetPacing />
+            </div>
+            <div className="chart-section">
+              <PerformanceChart data={chart_data} />
+            </div>
+          </div>
+
+          {/* Row 4: Platform Comparison Table (full width) */}
+          <div className="row-4">
+            <PlatformComparisonTable data={platform_breakdown} />
+          </div>
+
+          {/* Row 5: Top Campaigns + AI Summary */}
+          <div className="row-5">
+            <div className="campaigns-section">
+              <div className="card campaigns-card">
+                <div className="card-header">
+                  <span className="card-title">Top Campaigns</span>
+                  <button className="btn btn-ghost btn-sm" onClick={() => router.push('/campaigns')}>
+                    View All
+                  </button>
+                </div>
+                <div className="campaigns-list">
+                  {top_campaigns.slice(0, 5).map((campaign) => (
+                    <div
+                      key={campaign.id}
+                      className="campaign-item"
+                      onClick={() => router.push(`/campaigns/${campaign.id}`)}
+                    >
+                      <div className="campaign-info">
+                        <span className={`status-dot ${campaign.status === 'ENABLED' ? 'active' : 'paused'}`} />
+                        <div className="campaign-details">
+                          <div className="campaign-name">{campaign.name}</div>
+                          <div className="campaign-platform">
+                            <span
+                              className="platform-dot"
+                              style={{ background: campaign.platform === 'google' ? '#4285F4' : '#0668E1' }}
+                            />
+                            {campaign.platform === 'google' ? 'Google' : 'Meta'}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="campaign-metrics">
+                        <div className="campaign-metric">
+                          <span className="metric-label">Spend</span>
+                          <span className="metric-value mono">{formatMicros(campaign.spend_micros)}</span>
+                        </div>
+                        <div className="campaign-metric">
+                          <span className="metric-label">Conv</span>
+                          <span className="metric-value mono">{campaign.conversions}</span>
+                        </div>
+                        <div className="campaign-metric">
+                          <span className="metric-label">ROAS</span>
                           <span
-                            className="platform-dot"
-                            style={{ background: campaign.platform === 'google' ? '#4285F4' : '#0668E1' }}
-                          />
-                          {campaign.platform === 'google' ? 'Google' : 'Meta'}
+                            className="metric-value mono"
+                            style={{
+                              color: campaign.roas >= 4 ? 'var(--success)' : campaign.roas >= 3 ? 'var(--warning)' : 'var(--error)',
+                            }}
+                          >
+                            {campaign.roas}x
+                          </span>
                         </div>
                       </div>
                     </div>
-                    <div className="campaign-metrics">
-                      <div className="campaign-metric">
-                        <span className="metric-label">Spend</span>
-                        <span className="metric-value mono">{formatMicros(campaign.spend_micros)}</span>
-                      </div>
-                      <div className="campaign-metric">
-                        <span className="metric-label">Conv</span>
-                        <span className="metric-value mono">{campaign.conversions}</span>
-                      </div>
-                      <div className="campaign-metric">
-                        <span className="metric-label">ROAS</span>
-                        <span
-                          className="metric-value mono"
-                          style={{
-                            color: campaign.roas >= 4 ? 'var(--success)' : campaign.roas >= 3 ? 'var(--warning)' : 'var(--error)',
-                          }}
-                        >
-                          {campaign.roas}x
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
+            <div className="ai-section">
+              <AIRecommendationsSummary
+                pendingCount={pending_recommendations}
+                aiSavings={ai_savings_this_month}
+              />
+            </div>
           </div>
-          <div className="ai-section">
-            <AIRecommendationsSummary
-              pendingCount={pending_recommendations}
-              aiSavings={ai_savings_this_month}
+
+          {/* Row 6: AI Insights */}
+          <div className="row-6-ai">
+            <MLForecastWidget />
+            <AnomalyAlertsWidget />
+          </div>
+
+          {/* Row 7: Additional Charts */}
+          <div className="row-7">
+            <SpendDistributionChart
+              googleSpend={platform_breakdown.find(p => p.platform === 'google')?.spend_micros || 0}
+              metaSpend={platform_breakdown.find(p => p.platform === 'meta')?.spend_micros || 0}
+            />
+            <ConversionFunnel
+              impressions={metrics.impressions}
+              clicks={metrics.clicks}
+              conversions={metrics.conversions}
             />
           </div>
+
+          {/* Row 8: Quick Actions */}
+          <QuickActionsGrid />
         </div>
 
-        {/* Row 6: AI Insights */}
-        <div className="row-6-ai">
-          <MLForecastWidget />
-          <AnomalyAlertsWidget />
-        </div>
-
-        {/* Row 7: Additional Charts */}
-        <div className="row-7">
-          <SpendDistributionChart
-            googleSpend={platform_breakdown.find(p => p.platform === 'google')?.spend_micros || 0}
-            metaSpend={platform_breakdown.find(p => p.platform === 'meta')?.spend_micros || 0}
-          />
-          <ConversionFunnel
-            impressions={metrics.impressions}
-            clicks={metrics.clicks}
-            conversions={metrics.conversions}
-          />
-        </div>
-
-        {/* Row 7: Quick Actions */}
-        <QuickActionsGrid />
+        {/* Right Sidebar Panel */}
+        <aside className="right-panel">
+          <RightSidebarPanel />
+        </aside>
       </div>
 
       <style jsx>{`
-        .dashboard {
-          max-width: 1400px;
+        /* Main Dashboard Layout */
+        .dashboard-layout {
+          display: grid;
+          grid-template-columns: 1fr 300px;
+          gap: 20px;
+          padding: 20px;
+          width: 100%;
+        }
+
+        .dashboard-main {
+          min-width: 0;
+          flex: 1;
+        }
+
+        .right-panel {
+          position: sticky;
+          top: 20px;
+          height: fit-content;
+          max-height: calc(100vh - 40px);
+          overflow-y: auto;
         }
 
         /* Row 2: Metrics Grid */
         .metrics-grid {
           display: grid;
-          grid-template-columns: repeat(6, 1fr);
+          grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
           gap: 16px;
           margin-bottom: 20px;
         }
@@ -313,19 +337,21 @@ export default function DashboardPage() {
         .metric-change.up { color: var(--success); }
         .metric-change.down { color: var(--error); }
 
-        /* Row 3: Budget + Alerts */
+        /* Row 3: Budget Pacing + Performance Chart (50/50) */
         .row-3 {
           display: grid;
-          grid-template-columns: 1.5fr 1fr;
+          grid-template-columns: 1fr 1fr;
           gap: 20px;
           margin-bottom: 20px;
         }
 
-        /* Row 4: Chart + Platform */
+        .budget-section,
+        .chart-section {
+          min-width: 0;
+        }
+
+        /* Row 4: Platform Comparison Table (full width) */
         .row-4 {
-          display: grid;
-          grid-template-columns: 2fr 1fr;
-          gap: 20px;
           margin-bottom: 20px;
         }
 
@@ -442,7 +468,17 @@ export default function DashboardPage() {
           font-weight: 600;
         }
 
-        /* Mobile Responsive */
+        /* Responsive: Hide sidebar on smaller screens */
+        @media (max-width: 1400px) {
+          .dashboard-layout {
+            grid-template-columns: 1fr;
+          }
+
+          .right-panel {
+            display: none;
+          }
+        }
+
         @media (max-width: 1200px) {
           .metrics-grid {
             grid-template-columns: repeat(3, 1fr);
@@ -451,7 +487,6 @@ export default function DashboardPage() {
 
         @media (max-width: 900px) {
           .row-3,
-          .row-4,
           .row-5,
           .row-6-ai,
           .row-7 {
@@ -460,6 +495,10 @@ export default function DashboardPage() {
         }
 
         @media (max-width: 767px) {
+          .dashboard-layout {
+            padding: 16px;
+          }
+
           .metrics-grid {
             grid-template-columns: repeat(2, 1fr);
             gap: 12px;
@@ -473,7 +512,6 @@ export default function DashboardPage() {
             font-size: 20px;
           }
 
-          .row-3,
           .row-4,
           .row-5,
           .row-6-ai,

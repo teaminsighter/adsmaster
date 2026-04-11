@@ -70,23 +70,24 @@ curl -s "http://localhost:8081/accounts" -H "Authorization: Bearer $TOKEN"
 ## Architecture
 
 ### Monorepo Structure
-- `apps/web/` - Next.js 16 frontend (React 19, TailwindCSS 4, lucide-react icons)
+- `apps/web/` - Next.js 16.1.6 frontend (React 19, TailwindCSS 4, lucide-react icons, recharts)
 - `apps/api/` - FastAPI backend (Python 3.9-3.12, Poetry)
 - `packages/shared/` - Shared types/utilities
-- `supabase/migrations/` - Database migrations (00001-00008)
+- `supabase/migrations/` - Database migrations (00001-00011)
 - `database/schema/` - Reference SQL schemas (documentation)
 - `docs/planning/` - Planning phase documents (phases 1-16)
 - `status/` - Legacy session tracking files (historical reference)
 
 ### Frontend Architecture (apps/web/)
 - **App Router**: `app/` directory with page.tsx files
-- **Components**: `components/` with subdirectories by feature (dashboard/, ui/, layout/, etc.)
+- **Components**: `components/` with subdirectories by feature (dashboard/, ui/, layout/, admin/, etc.)
 - **API Client**: `lib/api.ts` - typed fetch wrapper for backend calls
-- **Hooks**: `lib/hooks/useApi.ts` - React hooks for API data
+- **Hooks**: `lib/hooks/useApi.ts` - React hooks for API data fetching with loading/error states
+- **Contexts**: `lib/contexts/` - Auth context, theme context for admin panel
 
 ### Backend Architecture (apps/api/)
 - **Entry Point**: `app/main.py` - FastAPI app with CORS, routers
-- **API Routes**: `app/api/` - 18 route modules (auth, accounts, campaigns, recommendations, automations, admin, admin_ai, admin_marketing, admin_api_monitor, admin_system, etc.)
+- **API Routes**: `app/api/` - 22 route modules (accounts, admin, admin_ai, admin_api_monitor, admin_emails, admin_marketing, admin_settings, admin_system, ai_chat, audiences, auth, automations, campaigns, demo, meta_auth, meta_campaigns, ml, recommendations, settings, sync, user_auth, webhooks)
 - **Services**: `app/services/` - Business logic (database, supabase_client, automation_service, meta_ads_service)
 - **Integrations**: `app/integrations/` - External API adapters + rate limiter
 - **Workers**: `app/workers/` - Background job processors:
@@ -144,12 +145,14 @@ All monetary values use **micros** (1 USD = 1,000,000 micros). Use `formatMicros
 Backend returns `{ data: T, error: string | null }` pattern. Check error before using data.
 
 ### Routes
+- Health: `/health` - API health check (no auth required)
 - Auth: `/auth/login`, `/auth/register`, `/auth/refresh`, `/auth/logout`
 - Google Ads: `/accounts/`, `/accounts/{id}/campaigns/`
 - Meta Ads: `/api/v1/meta/accounts/{id}/campaigns/`
 - Recommendations: `/api/v1/recommendations/` (apply, dismiss, undo, bulk operations)
 - Automations: `/api/v1/automations/rules/`
 - AI Chat: `/api/v1/ai-chat/`
+- ML: `/api/v1/ml/` (forecast/spend, forecast/conversions, anomalies, predict/keywords, status)
 - Settings: `/api/v1/settings/` (preferences, notifications, team, api-keys, billing)
 - Admin: `/api/v1/admin/` (super admin only - users, orgs, analytics, config)
 - Sync: `/sync/trigger/{account_id}`, `/sync/status/{account_id}`
@@ -164,8 +167,7 @@ Backend uses JWT tokens (PyJWT). Protected routes use `get_current_user` depende
 ### Database
 - Uses Row-Level Security (RLS) for multi-tenant isolation
 - `organization_id` is the tenant key on most tables
-- Metrics tables use date-based partitioning
-- Migrations live in `supabase/migrations/` (numbered 00001, 00002, etc.)
+- Migrations live in `supabase/migrations/` (numbered 00001-00011)
 - Reference schemas in `database/schema/` for documentation
 
 ### Frontend Hooks Pattern
@@ -183,8 +185,7 @@ The admin panel (`/admin/*` routes) has separate authentication from regular use
 - Admin login: POST `/api/v1/admin/auth/login`
 - Default admin credentials (dev only): `admin@adsmaster.io` / `admin123`
 
-### Subscription Tiers
-Defined in `supabase/migrations/00007_billing.sql`:
+### Subscription Tiers (defined in 00007_billing.sql)
 - **Free**: 1 ad account, 50 AI messages/month, Google Ads only
 - **Starter** ($49/mo): 2 accounts, 200 messages, Google + Meta
 - **Growth** ($149/mo): 5 accounts, 1000 messages, forecasting

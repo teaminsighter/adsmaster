@@ -282,29 +282,23 @@ export default function DateRangePicker({ value, onChange, compareEnabled, onCom
         >
           ›
         </button>
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="btn btn-secondary btn-sm"
-          style={{ gap: '8px', minWidth: '200px', justifyContent: 'space-between' }}
-        >
-          <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span>📅</span>
-            <span>{PRESETS.find(p => p.key === selectedPreset)?.label || 'Custom'}</span>
-          </span>
-          <span style={{ color: 'var(--text-tertiary)' }}>▼</span>
-        </button>
         <div
           onClick={() => setIsOpen(!isOpen)}
           style={{
             padding: '6px 12px',
-            background: 'var(--bg-secondary)',
+            background: 'var(--surface-secondary)',
             borderRadius: '6px',
             fontSize: '13px',
             cursor: 'pointer',
             border: '1px solid var(--border-default)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
           }}
         >
-          {formatDate(value.start)} – {formatDate(value.end)}
+          <span>📅</span>
+          <span>{formatDate(value.start)} – {formatDate(value.end)}</span>
+          <span style={{ color: 'var(--text-tertiary)', fontSize: '10px' }}>▼</span>
         </div>
         <button className="btn btn-ghost btn-sm" style={{ padding: '6px' }} title="Refresh">
           🔄
