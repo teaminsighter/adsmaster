@@ -1,183 +1,287 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAdminUsers, suspendUser, activateUser } from '@/lib/hooks/useAdminApi';
+import {
+  useEnhancedUsers,
+  UserFilters as FiltersType,
+  EnhancedUser,
+  suspendUser,
+  activateUser,
+  bulkSuspendUsers,
+  bulkActivateUsers,
+  impersonateUser,
+  resetUserPassword,
+  deleteUser,
+  exportUsers,
+} from '@/lib/hooks/useAdminApi';
+
+import UserStatsBar from '@/components/admin/users/UserStatsBar';
+import UserFilters from '@/components/admin/users/UserFilters';
+import UserTable from '@/components/admin/users/UserTable';
+import BulkActionBar from '@/components/admin/users/BulkActionBar';
+import UserQuickView from '@/components/admin/users/UserQuickView';
 
 export default function AdminUsersPage() {
   const router = useRouter();
   const [page, setPage] = useState(1);
-  const [search, setSearch] = useState('');
-  const [status, setStatus] = useState('');
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [filters, setFilters] = useState<FiltersType>({});
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selectedUser, setSelectedUser] = useState<EnhancedUser | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
-  const { data, loading, error, refetch } = useAdminUsers(page, search, status);
+  const { data, loading, error, refetch } = useEnhancedUsers(page, filters);
 
-  const handleSuspend = async (userId: string) => {
-    if (!confirm('Are you sure you want to suspend this user?')) return;
-    setActionLoading(userId);
+  const handleFiltersChange = useCallback((newFilters: FiltersType) => {
+    setFilters(newFilters);
+    setPage(1);
+    setSelectedIds([]);
+  }, []);
+
+  const handleRefresh = useCallback(() => {
+    refetch();
+    setSelectedIds([]);
+  }, [refetch]);
+
+  const handleExport = useCallback(async () => {
     try {
-      await suspendUser(userId);
-      refetch();
+      const result = await exportUsers('csv', JSON.stringify(filters));
+      alert(result.message);
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to suspend user');
-    } finally {
-      setActionLoading(null);
+      alert('Export failed');
     }
-  };
+  }, [filters]);
 
-  const handleActivate = async (userId: string) => {
-    setActionLoading(userId);
+  const handleUserClick = useCallback((user: EnhancedUser) => {
+    setSelectedUser(user);
+  }, []);
+
+  const handleAction = useCallback(async (action: string, user: EnhancedUser) => {
+    setActionLoading(true);
     try {
-      await activateUser(userId);
-      refetch();
+      switch (action) {
+        case 'view':
+          router.push(`/admin/users/${user.id}`);
+          break;
+
+        case 'impersonate':
+          const impResult = await impersonateUser(user.id);
+          if (impResult.success) {
+            // Store impersonation token and redirect
+            alert(`Impersonation token created. Expires in ${impResult.expires_in / 60} minutes.\n\nNote: In production, this would redirect to the main app with the impersonation token.`);
+          }
+          break;
+
+        case 'email':
+          // Open email modal or mailto
+          window.location.href = `mailto:${user.email}`;
+          break;
+
+        case 'activity':
+          setSelectedUser(user);
+          break;
+
+        case 'reset-password':
+          if (confirm(`Send password reset email to ${user.email}?`)) {
+            const resetResult = await resetUserPassword(user.id);
+            alert(resetResult.message);
+          }
+          break;
+
+        case 'suspend':
+          if (confirm(`Suspend user ${user.email}?`)) {
+            await suspendUser(user.id);
+            refetch();
+            setSelectedUser(null);
+          }
+          break;
+
+        case 'activate':
+          await activateUser(user.id);
+          refetch();
+          setSelectedUser(null);
+          break;
+
+        case 'delete':
+          if (confirm(`PERMANENTLY DELETE user ${user.email}? This cannot be undone.`)) {
+            if (confirm('Are you absolutely sure?')) {
+              await deleteUser(user.id);
+              refetch();
+              setSelectedUser(null);
+            }
+          }
+          break;
+      }
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to activate user');
+      alert(err instanceof Error ? err.message : 'Action failed');
     } finally {
-      setActionLoading(null);
+      setActionLoading(false);
     }
-  };
+  }, [router, refetch]);
+
+  const handleBulkSuspend = useCallback(async () => {
+    if (!confirm(`Suspend ${selectedIds.length} users?`)) return;
+    setActionLoading(true);
+    try {
+      await bulkSuspendUsers(selectedIds);
+      refetch();
+      setSelectedIds([]);
+    } catch (err) {
+      alert('Bulk suspend failed');
+    } finally {
+      setActionLoading(false);
+    }
+  }, [selectedIds, refetch]);
+
+  const handleBulkActivate = useCallback(async () => {
+    setActionLoading(true);
+    try {
+      await bulkActivateUsers(selectedIds);
+      refetch();
+      setSelectedIds([]);
+    } catch (err) {
+      alert('Bulk activate failed');
+    } finally {
+      setActionLoading(false);
+    }
+  }, [selectedIds, refetch]);
+
+  const handleBulkEmail = useCallback(() => {
+    const emails = data?.users
+      .filter(u => selectedIds.includes(u.id))
+      .map(u => u.email)
+      .join(',');
+    if (emails) {
+      window.location.href = `mailto:${emails}`;
+    }
+  }, [data, selectedIds]);
+
+  const handleBulkExport = useCallback(async () => {
+    try {
+      const result = await exportUsers('csv', JSON.stringify({ user_ids: selectedIds }));
+      alert(result.message);
+    } catch (err) {
+      alert('Export failed');
+    }
+  }, [selectedIds]);
 
   return (
     <div className="users-page">
+      {/* Page Header */}
       <div className="page-header">
-        <h1 className="page-title">Users</h1>
-        <span className="page-count">{data?.total || 0} total</span>
+        <div className="header-left">
+          <h1 className="page-title">Users</h1>
+          <span className="page-count">{data?.total || 0} total</span>
+        </div>
       </div>
+
+      {/* Stats Bar */}
+      <UserStatsBar />
 
       {/* Filters */}
-      <div className="filters">
-        <input
-          type="text"
-          placeholder="Search by email or name..."
-          value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-          className="search-input"
-        />
-        <select
-          value={status}
-          onChange={(e) => { setStatus(e.target.value); setPage(1); }}
-          className="filter-select"
-        >
-          <option value="">All Status</option>
-          <option value="active">Active</option>
-          <option value="suspended">Suspended</option>
-        </select>
-        <button onClick={() => refetch()} className="refresh-btn">
-          🔄 Refresh
-        </button>
-      </div>
+      <UserFilters
+        filters={filters}
+        onFiltersChange={handleFiltersChange}
+        onRefresh={handleRefresh}
+        onExport={handleExport}
+      />
 
-      {/* Table */}
-      {loading ? (
-        <div className="loading">Loading users...</div>
-      ) : error ? (
-        <div className="error">Error: {error}</div>
-      ) : (
-        <>
-          <div className="table-container">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Email</th>
-                  <th>Name</th>
-                  <th>Status</th>
-                  <th>Created</th>
-                  <th>Last Login</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data?.users.map((user) => (
-                  <tr key={user.id} className="clickable-row" onClick={() => router.push(`/admin/users/${user.id}`)}>
-                    <td className="email-cell">{user.email}</td>
-                    <td>{user.name || '—'}</td>
-                    <td>
-                      <span className={`status-badge ${user.is_active ? 'active' : 'suspended'}`}>
-                        {user.is_active ? '● Active' : '○ Suspended'}
-                      </span>
-                    </td>
-                    <td className="date-cell">
-                      {new Date(user.created_at).toLocaleDateString()}
-                    </td>
-                    <td className="date-cell">
-                      {user.last_login_at
-                        ? new Date(user.last_login_at).toLocaleDateString()
-                        : 'Never'}
-                    </td>
-                    <td>
-                      <div className="action-buttons" onClick={(e) => e.stopPropagation()}>
-                        {user.is_active ? (
-                          <button
-                            onClick={() => handleSuspend(user.id)}
-                            disabled={actionLoading === user.id}
-                            className="action-btn suspend"
-                          >
-                            {actionLoading === user.id ? '...' : 'Suspend'}
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => handleActivate(user.id)}
-                            disabled={actionLoading === user.id}
-                            className="action-btn activate"
-                          >
-                            {actionLoading === user.id ? '...' : 'Activate'}
-                          </button>
-                        )}
-                        <button
-                          onClick={() => router.push(`/admin/users/${user.id}`)}
-                          className="action-btn view"
-                        >
-                          View
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {!data?.users.length && (
-                  <tr>
-                    <td colSpan={6} className="empty-cell">No users found</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+      {/* Bulk Action Bar */}
+      <BulkActionBar
+        selectedCount={selectedIds.length}
+        onSuspend={handleBulkSuspend}
+        onActivate={handleBulkActivate}
+        onEmail={handleBulkEmail}
+        onExport={handleBulkExport}
+        onClear={() => setSelectedIds([])}
+        loading={actionLoading}
+      />
+
+      {/* Error State */}
+      {error && (
+        <div className="error-state">
+          Error loading users: {error}
+        </div>
+      )}
+
+      {/* Users Table */}
+      <UserTable
+        users={data?.users || []}
+        selectedIds={selectedIds}
+        onSelectChange={setSelectedIds}
+        onUserClick={handleUserClick}
+        onActionClick={handleAction}
+        loading={loading}
+      />
+
+      {/* Pagination */}
+      {data && data.pages > 1 && (
+        <div className="pagination">
+          <button
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="page-btn"
+          >
+            Previous
+          </button>
+          <div className="page-numbers">
+            {Array.from({ length: Math.min(5, data.pages) }, (_, i) => {
+              let pageNum: number;
+              if (data.pages <= 5) {
+                pageNum = i + 1;
+              } else if (page <= 3) {
+                pageNum = i + 1;
+              } else if (page >= data.pages - 2) {
+                pageNum = data.pages - 4 + i;
+              } else {
+                pageNum = page - 2 + i;
+              }
+              return (
+                <button
+                  key={pageNum}
+                  onClick={() => setPage(pageNum)}
+                  className={`page-num ${page === pageNum ? 'active' : ''}`}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
           </div>
+          <button
+            onClick={() => setPage(p => Math.min(data.pages, p + 1))}
+            disabled={page === data.pages}
+            className="page-btn"
+          >
+            Next
+          </button>
+        </div>
+      )}
 
-          {/* Pagination */}
-          {data && data.pages > 1 && (
-            <div className="pagination">
-              <button
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="page-btn"
-              >
-                ← Previous
-              </button>
-              <span className="page-info">
-                Page {page} of {data.pages}
-              </span>
-              <button
-                onClick={() => setPage(p => Math.min(data.pages, p + 1))}
-                disabled={page === data.pages}
-                className="page-btn"
-              >
-                Next →
-              </button>
-            </div>
-          )}
-        </>
+      {/* Quick View Panel */}
+      {selectedUser && (
+        <UserQuickView
+          user={selectedUser}
+          onClose={() => setSelectedUser(null)}
+          onAction={handleAction}
+        />
       )}
 
       <style jsx>{`
         .users-page {
-          max-width: 1200px;
+          max-width: 1400px;
         }
 
         .page-header {
           display: flex;
           align-items: center;
-          gap: 16px;
-          margin-bottom: 24px;
+          justify-content: space-between;
+          margin-bottom: 20px;
+        }
+
+        .header-left {
+          display: flex;
+          align-items: center;
+          gap: 12px;
         }
 
         .page-title {
@@ -195,205 +299,27 @@ export default function AdminUsersPage() {
           border-radius: 12px;
         }
 
-        .filters {
-          display: flex;
-          gap: 12px;
-          margin-bottom: 20px;
-        }
-
-        .search-input {
-          flex: 1;
-          max-width: 300px;
-          padding: 10px 16px;
-          background: var(--admin-card);
-          border: 1px solid var(--admin-border);
+        .error-state {
+          background: rgba(239, 68, 68, 0.1);
+          border: 1px solid var(--admin-error);
           border-radius: 8px;
-          color: var(--admin-text);
-          font-size: 14px;
-          outline: none;
-        }
-
-        .search-input::placeholder {
-          color: var(--admin-text-dim);
-        }
-
-        .search-input:focus {
-          border-color: var(--admin-accent);
-        }
-
-        .filter-select {
-          padding: 10px 16px;
-          background: var(--admin-card);
-          border: 1px solid var(--admin-border);
-          border-radius: 8px;
-          color: var(--admin-text);
-          font-size: 14px;
-          outline: none;
-          cursor: pointer;
-        }
-
-        .refresh-btn {
-          padding: 10px 16px;
-          background: var(--admin-inner-bg);
-          border: 1px solid var(--admin-border);
-          border-radius: 8px;
-          color: var(--admin-text);
-          font-size: 14px;
-          cursor: pointer;
-          transition: all 0.15s ease;
-        }
-
-        .refresh-btn:hover {
-          background: var(--admin-card-hover);
-          border-color: var(--admin-accent);
-        }
-
-        .loading, .error {
-          padding: 40px;
-          text-align: center;
-          color: var(--admin-text-muted);
-        }
-
-        .error {
+          padding: 16px;
           color: var(--admin-error);
-        }
-
-        .table-container {
-          background: var(--admin-card);
-          border: 1px solid var(--admin-border);
-          border-radius: 12px;
-          overflow: hidden;
-        }
-
-        .data-table {
-          width: 100%;
-          border-collapse: collapse;
-        }
-
-        .data-table th {
-          padding: 14px 16px;
-          text-align: left;
-          font-size: 12px;
-          font-weight: 600;
-          color: var(--admin-text-muted);
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-          background: var(--admin-inner-bg);
-          border-bottom: 1px solid var(--admin-border);
-        }
-
-        .data-table td {
-          padding: 14px 16px;
-          font-size: 14px;
-          color: var(--admin-text);
-          border-bottom: 1px solid var(--admin-border);
-        }
-
-        .data-table tr:last-child td {
-          border-bottom: none;
-        }
-
-        .clickable-row {
-          cursor: pointer;
-          transition: background 0.15s ease;
-        }
-
-        .clickable-row:hover td {
-          background: var(--admin-card-hover);
-        }
-
-        .email-cell {
-          font-family: monospace;
-          font-size: 13px;
-        }
-
-        .date-cell {
-          font-size: 13px;
-          color: var(--admin-text-muted);
-        }
-
-        .status-badge {
-          display: inline-block;
-          padding: 4px 10px;
-          border-radius: 12px;
-          font-size: 12px;
-          font-weight: 500;
-        }
-
-        .status-badge.active {
-          background: rgba(16, 185, 129, 0.15);
-          color: var(--admin-accent);
-        }
-
-        .status-badge.suspended {
-          background: rgba(239, 68, 68, 0.15);
-          color: var(--admin-error);
-        }
-
-        .action-buttons {
-          display: flex;
-          gap: 8px;
-        }
-
-        .action-btn {
-          padding: 6px 12px;
-          border: none;
-          border-radius: 6px;
-          font-size: 12px;
-          font-weight: 500;
-          cursor: pointer;
-          transition: all 0.15s ease;
-        }
-
-        .action-btn:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-
-        .action-btn.suspend {
-          background: rgba(239, 68, 68, 0.15);
-          color: var(--admin-error);
-        }
-
-        .action-btn.suspend:hover:not(:disabled) {
-          background: rgba(239, 68, 68, 0.25);
-        }
-
-        .action-btn.activate {
-          background: rgba(16, 185, 129, 0.15);
-          color: var(--admin-accent);
-        }
-
-        .action-btn.activate:hover:not(:disabled) {
-          background: rgba(16, 185, 129, 0.25);
-        }
-
-        .action-btn.view {
-          background: rgba(59, 130, 246, 0.15);
-          color: var(--admin-info);
-        }
-
-        .action-btn.view:hover:not(:disabled) {
-          background: rgba(59, 130, 246, 0.25);
-        }
-
-        .empty-cell {
-          text-align: center;
-          color: var(--admin-text-dim);
-          padding: 40px !important;
+          margin-bottom: 16px;
         }
 
         .pagination {
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 16px;
+          gap: 8px;
           margin-top: 20px;
+          padding: 16px 0;
         }
 
         .page-btn {
           padding: 8px 16px;
-          background: var(--admin-inner-bg);
+          background: var(--admin-card);
           border: 1px solid var(--admin-border);
           border-radius: 6px;
           color: var(--admin-text);
@@ -412,63 +338,62 @@ export default function AdminUsersPage() {
           border-color: var(--admin-accent);
         }
 
-        .page-info {
-          font-size: 14px;
-          color: var(--admin-text-muted);
+        .page-numbers {
+          display: flex;
+          gap: 4px;
         }
 
-        /* Mobile Responsive Styles */
+        .page-num {
+          width: 36px;
+          height: 36px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: var(--admin-card);
+          border: 1px solid var(--admin-border);
+          border-radius: 6px;
+          color: var(--admin-text);
+          font-size: 14px;
+          cursor: pointer;
+          transition: all 0.15s ease;
+        }
+
+        .page-num:hover {
+          background: var(--admin-card-hover);
+        }
+
+        .page-num.active {
+          background: var(--admin-accent);
+          border-color: var(--admin-accent);
+          color: white;
+        }
+
+        /* Mobile responsive */
         @media (max-width: 768px) {
           .page-header {
             flex-direction: column;
             align-items: flex-start;
             gap: 8px;
-            margin-bottom: 16px;
           }
+
           .page-title {
             font-size: 20px;
           }
-          .filters {
-            flex-direction: column;
-            gap: 8px;
-          }
-          .search-input {
-            max-width: none;
-            width: 100%;
-          }
-          .filter-select, .refresh-btn {
-            width: 100%;
-          }
-          .table-container {
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-          }
-          .data-table {
-            min-width: 600px;
-          }
-          .data-table th,
-          .data-table td {
-            padding: 10px 12px;
-            font-size: 12px;
-          }
-          .email-cell {
-            font-size: 11px;
-          }
-          .action-buttons {
-            flex-direction: column;
-            gap: 4px;
-          }
-          .action-btn {
-            padding: 6px 10px;
-            font-size: 11px;
-          }
+
           .pagination {
             flex-wrap: wrap;
             gap: 8px;
           }
+
+          .page-numbers {
+            order: -1;
+            width: 100%;
+            justify-content: center;
+          }
+
           .page-btn {
-            padding: 8px 12px;
-            font-size: 13px;
+            flex: 1;
+            text-align: center;
           }
         }
       `}</style>

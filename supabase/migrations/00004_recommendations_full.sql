@@ -16,8 +16,9 @@ ALTER TABLE recommendations
 -- Create index for organization lookup
 CREATE INDEX IF NOT EXISTS idx_recommendations_org ON recommendations(organization_id, status);
 
--- Add RLS policy for service role bypass
-CREATE POLICY IF NOT EXISTS "Service role can manage recommendations"
+-- Add RLS policy for service role bypass (drop if exists, then create)
+DROP POLICY IF EXISTS "Service role can manage recommendations" ON recommendations;
+CREATE POLICY "Service role can manage recommendations"
     ON recommendations
     FOR ALL
     TO service_role

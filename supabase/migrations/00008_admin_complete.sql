@@ -525,9 +525,9 @@ CREATE INDEX IF NOT EXISTS idx_security_events_ip ON security_events(ip_address)
 CREATE INDEX IF NOT EXISTS idx_bg_jobs_status ON background_jobs(status, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_bg_jobs_type ON background_jobs(job_type, created_at DESC);
 
--- Announcements
-CREATE INDEX IF NOT EXISTS idx_announcements_active ON announcements(starts_at, ends_at)
-    WHERE ends_at IS NULL OR ends_at > NOW();
+-- Announcements (index without NOW() since it's not immutable)
+CREATE INDEX IF NOT EXISTS idx_announcements_active ON announcements(starts_at, ends_at);
+CREATE INDEX IF NOT EXISTS idx_announcements_current ON announcements(ends_at) WHERE ends_at IS NULL;
 
 -- ============================================================================
 -- TRIGGERS

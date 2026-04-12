@@ -68,19 +68,23 @@ class VerificationService:
         if ad_account_id in self._google_adapter_cache:
             return self._google_adapter_cache[ad_account_id]
 
+        # Schema: platform_id (FK to ad_platforms), external_account_id (customer ID)
         result = self.db.table("ad_accounts").select(
-            "id, platform, platform_account_id, refresh_token"
+            "id, external_account_id, refresh_token, ad_platforms(name)"
         ).eq("id", ad_account_id).execute()
 
         if not result.data:
             return None
 
         account = result.data[0]
-        if account.get("platform", "").lower() != "google":
+        ad_platforms = account.get("ad_platforms") or {}
+        platform_name = ad_platforms.get("name", "") if isinstance(ad_platforms, dict) else ""
+
+        if "google" not in platform_name.lower():
             return None
 
         refresh_token = account.get("refresh_token")
-        customer_id = account.get("platform_account_id")
+        customer_id = account.get("external_account_id")
 
         if not refresh_token or not customer_id:
             return None
@@ -94,15 +98,19 @@ class VerificationService:
         if ad_account_id in self._meta_adapter_cache:
             return self._meta_adapter_cache[ad_account_id]
 
+        # Schema: platform_id (FK to ad_platforms), external_account_id (ad account ID)
         result = self.db.table("ad_accounts").select(
-            "id, platform, platform_account_id, access_token"
+            "id, external_account_id, access_token, ad_platforms(name)"
         ).eq("id", ad_account_id).execute()
 
         if not result.data:
             return None
 
         account = result.data[0]
-        if account.get("platform", "").lower() not in ["meta", "facebook"]:
+        ad_platforms = account.get("ad_platforms") or {}
+        platform_name = ad_platforms.get("name", "") if isinstance(ad_platforms, dict) else ""
+
+        if "meta" not in platform_name.lower() and "facebook" not in platform_name.lower():
             return None
 
         access_token = account.get("access_token")

@@ -3,6 +3,7 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import AppShell from "@/components/layout/AppShell";
 import AIAdvisorWrapper from "@/components/AIAdvisor/AIAdvisorWrapper";
+import Providers from "@/lib/providers/Providers";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -34,12 +35,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} ${jetbrainsMono.variable}`}>
-        <div className="app-layout">
-          <AppShell>
-            {children}
-          </AppShell>
-        </div>
-        <AIAdvisorWrapper />
+        <Providers>
+          <div className="app-layout">
+            <AppShell>
+              {children}
+            </AppShell>
+          </div>
+          <AIAdvisorWrapper />
+        </Providers>
       </body>
     </html>
   );

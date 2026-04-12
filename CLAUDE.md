@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 AdsMaster is an AI-powered advertising management SaaS platform that manages Google Ads and Meta Ads campaigns. It's a monorepo with a Next.js frontend and FastAPI backend.
 
-**Current Status:** See [STATUS.md](./STATUS.md) for implementation progress (~60% complete).
+**Current Status:** See [STATUS.md](./STATUS.md) for implementation progress (~65% complete).
 
 ## Commands
 
@@ -23,7 +23,7 @@ cd apps/api && poetry run uvicorn app.main:app --reload --port 8081
 # Tab 2: cd apps/api && poetry run uvicorn app.main:app --reload --port 8081
 ```
 
-**Important**: The frontend expects the API at `http://localhost:8081` (via `NEXT_PUBLIC_API_URL`). Do NOT use `npm run dev:api` - it uses port 8000 which breaks frontend API calls.
+**Important**: The frontend expects the API at `http://localhost:8081` (via `NEXT_PUBLIC_API_URL`). The `npm run dev:api` script in package.json uses port 8000, which breaks frontend API calls - always use the port 8081 command above.
 
 ### Build & Lint
 ```bash
@@ -33,6 +33,10 @@ npm run lint           # Lint all apps via Turbo
 # Frontend-specific
 cd apps/web && npm run lint
 cd apps/web && npx tsc --noEmit    # Type check
+
+# Backend-specific
+cd apps/api && poetry run black .      # Format code
+cd apps/api && poetry run ruff check . # Lint
 ```
 
 ### Database
@@ -48,8 +52,6 @@ cd apps/api
 poetry run pytest                           # Run all tests
 poetry run pytest tests/test_file.py        # Single test file
 poetry run pytest -k "test_name"            # Run specific test
-poetry run black .                          # Format code
-poetry run ruff check .                     # Lint
 ```
 
 ### API Testing (with auth)
@@ -58,7 +60,7 @@ poetry run ruff check .                     # Lint
 # Requires backend running on port 8081
 TOKEN=$(curl -s -X POST http://localhost:8081/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"tester@demo.com","password":"demopass123"}' | jq -r '.access_token')
+  -d '{"email":"demo@test.com","password":"testpass123"}' | jq -r '.access_token')
 
 # Test authenticated endpoints
 curl -s "http://localhost:8081/accounts" -H "Authorization: Bearer $TOKEN"
@@ -70,25 +72,26 @@ curl -s "http://localhost:8081/accounts" -H "Authorization: Bearer $TOKEN"
 ## Architecture
 
 ### Monorepo Structure
-- `apps/web/` - Next.js 16.1.6 frontend (React 19, TailwindCSS 4, lucide-react icons, recharts)
+- `apps/web/` - Next.js 16 frontend (React 19, TailwindCSS 4, lucide-react icons, recharts)
 - `apps/api/` - FastAPI backend (Python 3.9-3.12, Poetry)
 - `packages/shared/` - Shared types/utilities
-- `supabase/migrations/` - Database migrations (00001-00011)
+- `supabase/migrations/` - Database migrations (13 files: 00001-00013)
 - `database/schema/` - Reference SQL schemas (documentation)
-- `docs/planning/` - Planning phase documents (phases 1-16)
-- `status/` - Legacy session tracking files (historical reference)
+- `docs/planning/` - Planning phase documents (phases 1-18)
 
 ### Frontend Architecture (apps/web/)
 - **App Router**: `app/` directory with page.tsx files
-- **Components**: `components/` with subdirectories by feature (dashboard/, ui/, layout/, admin/, etc.)
+- **Components**: `components/` with subdirectories by feature (dashboard/, ui/, layout/, admin/, tracking/, campaigns/, etc.)
 - **API Client**: `lib/api.ts` - typed fetch wrapper for backend calls
 - **Hooks**: `lib/hooks/useApi.ts` - React hooks for API data fetching with loading/error states
+- **Admin Hooks**: `lib/hooks/useAdminApi.ts` - Separate hooks for admin panel with its own JWT
 - **Contexts**: `lib/contexts/` - Auth context, theme context for admin panel
+- **Providers**: `lib/providers/` - React context providers
 
 ### Backend Architecture (apps/api/)
 - **Entry Point**: `app/main.py` - FastAPI app with CORS, routers
-- **API Routes**: `app/api/` - 22 route modules (accounts, admin, admin_ai, admin_api_monitor, admin_emails, admin_marketing, admin_settings, admin_system, ai_chat, audiences, auth, automations, campaigns, demo, meta_auth, meta_campaigns, ml, recommendations, settings, sync, user_auth, webhooks)
-- **Services**: `app/services/` - Business logic (database, supabase_client, automation_service, meta_ads_service)
+- **API Routes**: `app/api/` - 28 route modules
+- **Services**: `app/services/` - Business logic (database, supabase_client, automation_service, meta_ads_service, email_service, stripe_service, sync/, tracking/)
 - **Integrations**: `app/integrations/` - External API adapters + rate limiter
 - **Workers**: `app/workers/` - Background job processors:
   - `sync_worker.py` - Syncs campaigns/metrics from ad platforms
@@ -108,8 +111,8 @@ Services call adapters, never SDKs directly. When a new API version releases, ad
 
 ### AI/ML Services
 - `app/services/ai/` - LLM providers (Gemini, OpenAI, Anthropic) with factory pattern
-- `app/services/ml/` - ML models (forecasting, anomaly detection, classification)
-- `app/services/recommendations/` - Rule-based engine + AI-powered recommendation engine
+- `app/services/ml/` - ML models (forecasting, anomaly detection, classification) via BigQuery ML and Vertex AI
+- `app/services/recommendations/` - Rule-based engine + AI-powered recommendation engine + action executor + verification service
 
 ### Data Flow
 1. Frontend calls `lib/api.ts` functions or uses hooks from `lib/hooks/useApi.ts`
@@ -131,6 +134,8 @@ Required in `.env` at project root:
 - `META_APP_ID`, `META_APP_SECRET`
 - `JWT_SECRET` - Required for user authentication (change from default in production)
 - `REDIS_URL` (optional, defaults to localhost:6379)
+- `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` (for billing)
+- `RESEND_API_KEY` (for transactional emails)
 
 Frontend uses `NEXT_PUBLIC_API_URL` (defaults to http://localhost:8081).
 
@@ -155,7 +160,9 @@ Backend returns `{ data: T, error: string | null }` pattern. Check error before 
 - ML: `/api/v1/ml/` (forecast/spend, forecast/conversions, anomalies, predict/keywords, status)
 - Settings: `/api/v1/settings/` (preferences, notifications, team, api-keys, billing)
 - Admin: `/api/v1/admin/` (super admin only - users, orgs, analytics, config)
-- Sync: `/sync/trigger/{account_id}`, `/sync/status/{account_id}`
+- Sync: `/sync/trigger/{account_id}`, `/sync/status/{account_id}`, `/sync/logs`
+- Tracking: `/tracking/` (visitor tracking), `/api/v1/visitors/`, `/api/v1/conversions/offline`
+- Webhooks: `/webhooks/` (Stripe), `/webhooks/ingest/` (external data ingestion)
 - Demo (no auth): `/api/v1/demo/*` - Returns mock data for UI development
 
 ### Demo Mode
@@ -167,7 +174,7 @@ Backend uses JWT tokens (PyJWT). Protected routes use `get_current_user` depende
 ### Database
 - Uses Row-Level Security (RLS) for multi-tenant isolation
 - `organization_id` is the tenant key on most tables
-- Migrations live in `supabase/migrations/` (numbered 00001-00011)
+- Migrations live in `supabase/migrations/` (numbered 00001-00013)
 - Reference schemas in `database/schema/` for documentation
 
 ### Frontend Hooks Pattern

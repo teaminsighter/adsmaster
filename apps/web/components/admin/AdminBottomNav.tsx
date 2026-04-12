@@ -1,8 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { LayoutDashboard, Users, CreditCard, Bot, Settings, MoreHorizontal } from 'lucide-react';
-import { useState } from 'react';
+import { LayoutDashboard, Users, CreditCard, Brain, HeartPulse, MoreHorizontal } from 'lucide-react';
 
 interface AdminBottomNavProps {
   currentPath: string;
@@ -14,8 +13,8 @@ const quickTabs = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/users', label: 'Users', icon: Users },
   { href: '/admin/billing', label: 'Billing', icon: CreditCard },
-  { href: '/admin/ai', label: 'AI', icon: Bot },
-  { href: '/admin/system', label: 'System', icon: Settings },
+  { href: '/admin/ai', label: 'AI', icon: Brain },
+  { href: '/admin/system', label: 'Health', icon: HeartPulse },
 ];
 
 export default function AdminBottomNav({ currentPath, theme, onMoreClick }: AdminBottomNavProps) {

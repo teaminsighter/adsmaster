@@ -22,6 +22,7 @@ except ImportError:
 
 from .api import auth, accounts, campaigns, sync, recommendations, meta_auth, meta_campaigns, demo, admin_settings, ai_chat, audiences, settings, user_auth, automations, admin
 from .api import admin_marketing, admin_ai, admin_api_monitor, admin_system, admin_emails, ml, webhooks
+from .api import tracking, visitors, offline_conversions, webhooks_ingest, sync_logs
 
 app = FastAPI(
     title="AdsMaster API",
@@ -63,6 +64,13 @@ app.include_router(admin_system.router)
 app.include_router(admin_emails.router)
 app.include_router(ml.router)
 app.include_router(webhooks.router)
+
+# Tracking & Conversions (Phase 1-2)
+app.include_router(tracking.router)
+app.include_router(visitors.router)
+app.include_router(offline_conversions.router)
+app.include_router(webhooks_ingest.router)
+app.include_router(sync_logs.router)
 
 
 @app.get("/")

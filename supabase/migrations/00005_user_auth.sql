@@ -31,12 +31,14 @@ CREATE INDEX IF NOT EXISTS idx_sessions_active ON user_sessions(user_id, is_acti
 -- RLS for user sessions
 ALTER TABLE user_sessions ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY IF NOT EXISTS sessions_service ON user_sessions
+DROP POLICY IF EXISTS sessions_service ON user_sessions;
+CREATE POLICY sessions_service ON user_sessions
     FOR ALL TO service_role
     USING (true) WITH CHECK (true);
 
 -- Trigger for updated_at
-CREATE TRIGGER IF NOT EXISTS update_user_sessions_updated_at
+DROP TRIGGER IF EXISTS update_user_sessions_updated_at ON user_sessions;
+CREATE TRIGGER update_user_sessions_updated_at
     BEFORE UPDATE ON user_sessions
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();

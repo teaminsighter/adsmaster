@@ -80,6 +80,35 @@ export interface CampaignMetrics {
   roas: number | null;
 }
 
+export interface AuctionInsightEntry {
+  domain: string;
+  impression_share: number | null;
+  overlap_rate: number | null;
+  position_above_rate: number | null;
+  top_impression_pct: number | null;
+  abs_top_impression_pct: number | null;
+  outranking_share: number | null;
+}
+
+export interface LeadGenInsights {
+  impression_share_lost: number;
+  top_competitor: string | null;
+  top_competitor_share: number | null;
+  potential_leads_missed_pct: number;
+  recommendation: string;
+}
+
+export interface AuctionInsightsResponse {
+  campaign_id: string;
+  campaign_name: string;
+  date_from: string;
+  date_to: string;
+  your_impression_share: number | null;
+  insights: AuctionInsightEntry[];
+  total_competitors: number;
+  lead_gen_insights: LeadGenInsights | null;
+}
+
 export interface AccountStats {
   account_id: string;
   campaigns_count: number;
@@ -206,6 +235,27 @@ export async function getCampaignMetrics(
   const query = params.toString() ? `?${params}` : '';
   return fetchApi<CampaignMetrics>(
     `/accounts/${accountId}/campaigns/${campaignId}/metrics${query}`
+  );
+}
+
+/**
+ * Get auction insights showing competitor landscape for a campaign.
+ *
+ * Lead Gen Value: Identify competitors bidding on the same keywords
+ * and understand potential leads lost to competition.
+ */
+export async function getAuctionInsights(
+  accountId: string,
+  campaignId: string,
+  dateFrom?: string,
+  dateTo?: string
+) {
+  const params = new URLSearchParams();
+  if (dateFrom) params.set('date_from', dateFrom);
+  if (dateTo) params.set('date_to', dateTo);
+  const query = params.toString() ? `?${params}` : '';
+  return fetchApi<AuctionInsightsResponse>(
+    `/accounts/${accountId}/campaigns/${campaignId}/auction-insights${query}`
   );
 }
 

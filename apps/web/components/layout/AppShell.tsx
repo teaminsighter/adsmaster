@@ -48,8 +48,8 @@ export default function AppShell({ children }: AppShellProps) {
     return 'AdsMaster';
   };
 
-  // Don't render shell on admin pages
-  if (pathname.startsWith('/admin')) {
+  // Don't render shell on admin or auth pages
+  if (pathname.startsWith('/admin') || pathname === '/login' || pathname === '/register') {
     return <>{children}</>;
   }
 

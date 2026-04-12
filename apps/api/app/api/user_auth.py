@@ -6,6 +6,7 @@ Uses JWT tokens for authentication.
 """
 
 from fastapi import APIRouter, HTTPException, Query, Request, Depends
+from fastapi.responses import RedirectResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
@@ -545,3 +546,284 @@ async def reset_password(
     }).eq("user_id", user["id"]).execute()
 
     return {"success": True, "message": "Password reset successfully. Please login with your new password."}
+
+
+# =============================================================================
+# Google OAuth (Sign in with Google)
+# =============================================================================
+
+from urllib.parse import urlencode
+import base64
+import json
+
+GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
+GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
+GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v2/userinfo"
+
+# Scopes for user authentication (NOT Google Ads)
+GOOGLE_AUTH_SCOPES = [
+    "openid",
+    "email",
+    "profile",
+]
+
+
+class GoogleAuthRequest(BaseModel):
+    """Request for Google OAuth login URL."""
+    redirect_after: Optional[str] = "/dashboard"
+
+
+class GoogleAuthResponse(BaseModel):
+    """Response with Google OAuth URL."""
+    auth_url: str
+    state: str
+
+
+@router.get("/google/login", response_model=GoogleAuthResponse)
+async def google_login(redirect_after: str = "/dashboard"):
+    """
+    Get Google OAuth URL for user authentication.
+
+    This is for signing in/up with Google account, NOT for connecting Google Ads.
+    """
+    from ..core.config import get_settings
+    settings = get_settings()
+
+    if not settings.google_ads_client_id:
+        raise HTTPException(
+            status_code=500,
+            detail="Google OAuth not configured. Set GOOGLE_ADS_CLIENT_ID and GOOGLE_ADS_CLIENT_SECRET."
+        )
+
+    # Generate state with redirect info
+    state_data = {
+        "redirect": redirect_after,
+        "nonce": secrets.token_urlsafe(16),
+    }
+    state = base64.urlsafe_b64encode(json.dumps(state_data).encode()).decode()
+
+    params = {
+        "client_id": settings.google_ads_client_id,
+        "redirect_uri": settings.google_auth_redirect_uri,
+        "response_type": "code",
+        "scope": " ".join(GOOGLE_AUTH_SCOPES),
+        "access_type": "offline",
+        "state": state,
+        "prompt": "select_account",  # Always show account selector
+    }
+
+    auth_url = f"{GOOGLE_AUTH_URL}?{urlencode(params)}"
+
+    return GoogleAuthResponse(auth_url=auth_url, state=state)
+
+
+@router.get("/google/callback")
+async def google_callback(
+    code: str = Query(None, description="Authorization code from Google"),
+    state: str = Query(None, description="State parameter"),
+    error: Optional[str] = Query(None, description="Error if authorization failed"),
+    request: Request = None,
+):
+    """
+    Handle Google OAuth callback for user authentication.
+
+    Creates or updates user account and returns JWT tokens.
+    """
+    import httpx
+    from ..core.config import get_settings
+    settings = get_settings()
+
+    web_url = settings.web_url or "http://localhost:3000"
+
+    # Handle errors
+    if error:
+        return RedirectResponse(
+            url=f"{web_url}/login?error={error}"
+        )
+
+    if not code or not state:
+        return RedirectResponse(
+            url=f"{web_url}/login?error=missing_code"
+        )
+
+    try:
+        # Decode state
+        state_data = json.loads(base64.urlsafe_b64decode(state).decode())
+        redirect_after = state_data.get("redirect", "/dashboard")
+
+        # Exchange code for tokens
+        async with httpx.AsyncClient() as client:
+            token_response = await client.post(
+                GOOGLE_TOKEN_URL,
+                data={
+                    "client_id": settings.google_ads_client_id,
+                    "client_secret": settings.google_ads_client_secret,
+                    "code": code,
+                    "grant_type": "authorization_code",
+                    "redirect_uri": settings.google_auth_redirect_uri,
+                },
+            )
+
+            if token_response.status_code != 200:
+                raise Exception(f"Token exchange failed: {token_response.text}")
+
+            tokens = token_response.json()
+            access_token = tokens["access_token"]
+
+            # Get user info from Google
+            userinfo_response = await client.get(
+                GOOGLE_USERINFO_URL,
+                headers={"Authorization": f"Bearer {access_token}"},
+            )
+
+            if userinfo_response.status_code != 200:
+                raise Exception(f"Failed to get user info: {userinfo_response.text}")
+
+            google_user = userinfo_response.json()
+
+        # Extract user info
+        email = google_user.get("email", "").lower()
+        full_name = google_user.get("name", "")
+        google_id = google_user.get("id", "")
+        picture = google_user.get("picture", "")
+
+        if not email:
+            raise Exception("No email returned from Google")
+
+        supabase = get_supabase_client()
+
+        # Check if user exists
+        existing_user = supabase.table("users").select("*").eq("email", email).execute()
+
+        if existing_user.data:
+            # User exists - update Google ID if not set
+            user = existing_user.data[0]
+            if not user.get("google_id"):
+                supabase.table("users").update({
+                    "google_id": google_id,
+                    "avatar_url": picture,
+                }).eq("id", user["id"]).execute()
+        else:
+            # Create new user
+            user_id = str(uuid.uuid4())
+
+            # Create organization for new user
+            org_name = f"{full_name.split()[0] if full_name else 'My'}'s Organization"
+            org_result = supabase.table("organizations").insert({
+                "id": str(uuid.uuid4()),
+                "name": org_name,
+                "slug": org_name.lower().replace(" ", "-").replace("'", ""),
+                "owner_email": email,
+            }).execute()
+
+            organization_id = org_result.data[0]["id"] if org_result.data else None
+
+            # Create default subscription
+            if organization_id:
+                supabase.table("subscriptions").insert({
+                    "id": str(uuid.uuid4()),
+                    "organization_id": organization_id,
+                    "plan_name": "starter",
+                    "status": "active",
+                    "max_ad_accounts": 2,
+                    "max_team_members": 1,
+                    "max_api_calls_per_month": 10000,
+                }).execute()
+
+            # Create user
+            user_result = supabase.table("users").insert({
+                "id": user_id,
+                "email": email,
+                "full_name": full_name,
+                "google_id": google_id,
+                "avatar_url": picture,
+                "organization_id": organization_id,
+                "email_verified": True,  # Google verified the email
+            }).execute()
+
+            user = user_result.data[0]
+
+            # Add user as organization owner
+            if organization_id:
+                supabase.table("organization_members").insert({
+                    "id": str(uuid.uuid4()),
+                    "organization_id": organization_id,
+                    "user_id": user_id,
+                    "role": "owner",
+                    "status": "active",
+                    "accepted_at": datetime.utcnow().isoformat(),
+                }).execute()
+
+        # Get organization info
+        org_name = None
+        if user.get("organization_id"):
+            org_result = supabase.table("organizations").select("name").eq(
+                "id", user["organization_id"]
+            ).execute()
+            if org_result.data:
+                org_name = org_result.data[0]["name"]
+
+        # Create JWT tokens
+        access_token_jwt, _ = create_access_token(user["id"], user.get("organization_id"))
+        refresh_token_str, refresh_hash, refresh_expires = create_refresh_token(user["id"])
+
+        # Store session
+        device_info = request.headers.get("User-Agent", "Unknown")[:255] if request else "Unknown"
+        ip_address = request.client.host if request and request.client else None
+
+        supabase.table("user_sessions").insert({
+            "id": str(uuid.uuid4()),
+            "user_id": user["id"],
+            "refresh_token_hash": refresh_hash,
+            "device_info": device_info,
+            "ip_address": ip_address,
+            "is_active": True,
+            "expires_at": refresh_expires.isoformat(),
+        }).execute()
+
+        # Update last login
+        supabase.table("users").update({
+            "last_login_at": datetime.utcnow().isoformat()
+        }).eq("id", user["id"]).execute()
+
+        # Build user data for frontend
+        user_data = {
+            "id": user["id"],
+            "email": user["email"],
+            "full_name": user.get("full_name"),
+            "organization_id": user.get("organization_id"),
+            "organization_name": org_name,
+        }
+
+        # Encode tokens and user data for URL (frontend will parse these)
+        auth_data = base64.urlsafe_b64encode(json.dumps({
+            "access_token": access_token_jwt,
+            "refresh_token": refresh_token_str,
+            "user": user_data,
+        }).encode()).decode()
+
+        # Determine redirect based on whether user is new
+        final_redirect = redirect_after
+        if not existing_user.data:
+            # New user - redirect to connect page
+            final_redirect = "/connect"
+
+        # Redirect to frontend with auth data
+        return RedirectResponse(
+            url=f"{web_url}/auth/callback?data={auth_data}&redirect={final_redirect}"
+        )
+
+    except Exception as e:
+        print(f"Google OAuth error: {e}")
+        return RedirectResponse(
+            url=f"{web_url}/login?error=oauth_failed&message={str(e)}"
+        )
+
+
+@router.get("/google/connected")
+async def check_google_connected(current_user: dict = Depends(get_current_user)):
+    """Check if current user has Google connected."""
+    return {
+        "connected": bool(current_user.get("google_id")),
+        "email": current_user.get("email"),
+    }

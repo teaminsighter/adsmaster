@@ -247,21 +247,25 @@ CREATE INDEX IF NOT EXISTS idx_revenue_events_type ON revenue_events(event_type,
 -- TRIGGERS
 -- ============================================================================
 
+DROP TRIGGER IF EXISTS update_subscriptions_updated_at ON subscriptions;
 CREATE TRIGGER update_subscriptions_updated_at
     BEFORE UPDATE ON subscriptions
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_invoices_updated_at ON invoices;
 CREATE TRIGGER update_invoices_updated_at
     BEFORE UPDATE ON invoices
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_payment_methods_updated_at ON payment_methods;
 CREATE TRIGGER update_payment_methods_updated_at
     BEFORE UPDATE ON payment_methods
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_coupons_updated_at ON coupons;
 CREATE TRIGGER update_coupons_updated_at
     BEFORE UPDATE ON coupons
     FOR EACH ROW

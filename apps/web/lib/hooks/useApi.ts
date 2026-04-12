@@ -959,3 +959,53 @@ export function useMLDemoAnomalies() {
     error: string | null;
   }>('/api/v1/ml/demo/anomalies');
 }
+
+// ============================================================================
+// AUCTION INSIGHTS HOOKS
+// ============================================================================
+
+export interface AuctionInsightEntry {
+  domain: string;
+  impression_share: number | null;
+  overlap_rate: number | null;
+  position_above_rate: number | null;
+  top_impression_pct: number | null;
+  abs_top_impression_pct: number | null;
+  outranking_share: number | null;
+}
+
+export interface LeadGenInsights {
+  impression_share_lost: number;
+  top_competitor: string | null;
+  top_competitor_share: number | null;
+  potential_leads_missed_pct: number;
+  recommendation: string;
+}
+
+export interface AuctionInsightsData {
+  campaign_id: string;
+  campaign_name: string;
+  date_from: string;
+  date_to: string;
+  your_impression_share: number | null;
+  insights: AuctionInsightEntry[];
+  total_competitors: number;
+  lead_gen_insights: LeadGenInsights | null;
+  demo_mode?: boolean;
+}
+
+/**
+ * Hook for auction insights (competitor analysis)
+ * Shows who you're competing against and impression share lost
+ */
+export function useAuctionInsights(accountId: string, campaignId: string, dateFrom?: string, dateTo?: string) {
+  const params = new URLSearchParams();
+  if (dateFrom) params.set('date_from', dateFrom);
+  if (dateTo) params.set('date_to', dateTo);
+  const query = params.toString() ? `?${params}` : '';
+
+  return useApi<AuctionInsightsData>(
+    `/accounts/${accountId}/campaigns/${campaignId}/auction-insights${query}`,
+    { enabled: !!accountId && !!campaignId }
+  );
+}

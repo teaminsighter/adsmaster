@@ -75,3 +75,6 @@ yarn-error.log*
 # Reference docs (optional, can remove this if you want to track)
 docs/reference/*.docx
 docs/reference/*.html
+
+# GCP Credentials (sensitive)
+credentials/

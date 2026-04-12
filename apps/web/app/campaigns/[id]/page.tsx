@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Header from "@/components/layout/Header";
 import DemoBanner from '@/components/ui/DemoBanner';
 import MetricCard from "@/components/dashboard/MetricCard";
+import AuctionInsightsCard from '@/components/campaigns/AuctionInsightsCard';
 import { useCampaignDetail } from '@/lib/hooks/useApi';
 import { useIsMobile } from '@/lib/hooks/useIsMobile';
 import { formatMicros, formatNumber } from '@/lib/api';
@@ -526,6 +527,14 @@ export default function CampaignDetailPage() {
                   </table>
                 )}
               </div>
+            )}
+
+            {/* Auction Insights - Competitor Analysis for Lead Gen */}
+            {campaign.platform === 'google' && (
+              <AuctionInsightsCard
+                accountId="demo-account-001"
+                campaignId={campaignId}
+              />
             )}
           </>
         )}

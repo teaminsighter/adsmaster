@@ -123,8 +123,9 @@ class ActionExecutor:
             return self._google_adapter_cache[ad_account_id]
 
         # Get account credentials from database
+        # Schema: platform_id (FK to ad_platforms), external_account_id (customer ID)
         result = self.db.table("ad_accounts").select(
-            "id, platform, platform_account_id, refresh_token, ad_platforms(name)"
+            "id, external_account_id, refresh_token, ad_platforms(name)"
         ).eq("id", ad_account_id).execute()
 
         if not result.data:
@@ -132,14 +133,15 @@ class ActionExecutor:
             return None
 
         account = result.data[0]
-        platform = account.get("platform") or account.get("ad_platforms", {}).get("name", "")
+        ad_platforms = account.get("ad_platforms") or {}
+        platform_name = ad_platforms.get("name", "") if isinstance(ad_platforms, dict) else ""
 
-        if platform.lower() != "google":
-            logger.info(f"Account {ad_account_id} is not a Google account")
+        if "google" not in platform_name.lower():
+            logger.info(f"Account {ad_account_id} is not a Google account (platform: {platform_name})")
             return None
 
         refresh_token = account.get("refresh_token")
-        customer_id = account.get("platform_account_id")
+        customer_id = account.get("external_account_id")
 
         if not refresh_token or not customer_id:
             logger.warning(f"Missing credentials for account {ad_account_id}")
@@ -162,8 +164,9 @@ class ActionExecutor:
             return self._meta_adapter_cache[ad_account_id]
 
         # Get account credentials from database
+        # Schema: platform_id (FK to ad_platforms), external_account_id (ad account ID)
         result = self.db.table("ad_accounts").select(
-            "id, platform, platform_account_id, access_token, ad_platforms(name)"
+            "id, external_account_id, access_token, ad_platforms(name)"
         ).eq("id", ad_account_id).execute()
 
         if not result.data:
@@ -171,10 +174,11 @@ class ActionExecutor:
             return None
 
         account = result.data[0]
-        platform = account.get("platform") or account.get("ad_platforms", {}).get("name", "")
+        ad_platforms = account.get("ad_platforms") or {}
+        platform_name = ad_platforms.get("name", "") if isinstance(ad_platforms, dict) else ""
 
-        if platform.lower() not in ["meta", "facebook"]:
-            logger.info(f"Account {ad_account_id} is not a Meta account")
+        if "meta" not in platform_name.lower() and "facebook" not in platform_name.lower():
+            logger.info(f"Account {ad_account_id} is not a Meta account (platform: {platform_name})")
             return None
 
         access_token = account.get("access_token")
@@ -349,13 +353,24 @@ class ActionExecutor:
             idempotency_key = f"{recommendation_id}:{action_type}"
             expires_at = (datetime.utcnow() + timedelta(hours=24)).isoformat()
 
-            self.db.table("action_idempotency_keys").upsert({
+            # Use insert with upsert behavior (on conflict do update)
+            # The supabase-py client uses the postgrest API
+            data = {
                 "idempotency_key": idempotency_key,
                 "recommendation_id": recommendation_id,
                 "action_type": action_type,
                 "expires_at": expires_at,
-                "result": result
-            }).execute()
+                "result": json.dumps(result) if isinstance(result, dict) else result
+            }
+            # Try insert first, if conflict then update
+            try:
+                self.db.table("action_idempotency_keys").insert(data).execute()
+            except Exception:
+                # On conflict, update the existing record
+                self.db.table("action_idempotency_keys").update({
+                    "expires_at": expires_at,
+                    "result": data["result"]
+                }).eq("idempotency_key", idempotency_key).execute()
         except Exception as e:
             logger.error(f"Failed to set idempotency key: {e}")
 
