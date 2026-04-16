@@ -19,6 +19,9 @@ WORKDIR /app
 # Copy deps
 COPY --from=deps /app/node_modules ./node_modules
 
+# Cache bust - change this to force rebuild
+ARG CACHE_BUST=2
+
 # Copy source code
 COPY apps/web ./apps/web
 COPY package.json package-lock.json ./
