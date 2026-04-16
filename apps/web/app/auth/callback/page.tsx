@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/contexts/AuthContext';
 
-export default function AuthCallbackPage() {
+function AuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { setAuthFromOAuth } = useAuth();
@@ -159,5 +159,24 @@ export default function AuthCallbackPage() {
         }
       `}</style>
     </div>
+  );
+}
+
+export default function AuthCallbackPage() {
+  return (
+    <Suspense fallback={
+      <div style={{
+        position: 'fixed',
+        inset: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+      }}>
+        <div style={{ color: '#94a3b8', fontSize: '16px' }}>Processing...</div>
+      </div>
+    }>
+      <AuthCallbackContent />
+    </Suspense>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Header from '@/components/layout/Header';
 import { useAuth } from '@/lib/contexts/AuthContext';
@@ -33,7 +33,7 @@ const platformData: Platform[] = [
   },
 ];
 
-export default function ConnectPage() {
+function ConnectPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, getAccessToken, isAuthenticated, isLoading: authLoading } = useAuth();
@@ -342,5 +342,17 @@ export default function ConnectPage() {
         </div>
       </div>
     </>
+  );
+}
+
+export default function ConnectPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ textAlign: 'center', padding: '48px' }}>
+        <p style={{ color: 'var(--text-secondary)' }}>Loading...</p>
+      </div>
+    }>
+      <ConnectPageContent />
+    </Suspense>
   );
 }
