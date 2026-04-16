@@ -8,7 +8,6 @@ WORKDIR /app
 # Copy package files
 COPY package.json package-lock.json ./
 COPY apps/web/package.json ./apps/web/
-COPY packages/shared/package.json ./packages/shared/
 
 # Install dependencies
 RUN npm ci
@@ -19,12 +18,10 @@ WORKDIR /app
 
 # Copy deps
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
 
 # Copy source code
 COPY apps/web ./apps/web
-COPY packages/shared ./packages/shared
-COPY package.json package-lock.json turbo.json ./
+COPY package.json package-lock.json ./
 
 # Set build-time environment variables
 ARG NEXT_PUBLIC_API_URL
