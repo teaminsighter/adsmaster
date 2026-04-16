@@ -210,6 +210,91 @@ The admin panel (`/admin/*` routes) has separate authentication from regular use
 - **Agency** ($299/mo): 25 accounts, 5000 messages, white-label, API access
 - **Enterprise**: Custom pricing, unlimited everything
 
+## Production Deployment (Coolify on Hostinger VPS)
+
+### Current Deployment Status
+**Domain**: digitalytics.io
+- **Frontend**: https://app.digitalytics.io (Coolify app: `adsmaster:main-hjls5ppmbj...`)
+- **API**: https://api.digitalytics.io (Coolify app: `adsmaster:main-ich0k1slib...`) ✅ Working
+- **PostgreSQL**: Internal Coolify database (`digitalytics`)
+- **Redis**: Internal Coolify Redis (`redis-database-i4sop8fhoo...`)
+
+**GitHub Repo**: https://github.com/teaminsighter/adsmaster (private)
+**Auto-deploy**: Enabled - pushes to `main` trigger automatic deployment
+
+### MVP Scope (What's Deployed)
+This deployment is **MVP - Ads features only**. The sidebar was simplified to core features:
+- ✅ Dashboard
+- ✅ Campaigns
+- ✅ Keywords
+- ✅ Audiences
+- ✅ AI Advisor
+- ✅ Recommendations
+- ✅ Analytics (basic)
+- ✅ Settings
+
+**NOT included in this deployment** (hidden from sidebar, pages have `@ts-nocheck`):
+- ❌ Tracking (Session recordings, Live debug, Domains, Conversion import)
+- ❌ CRM Integrations (HubSpot, Salesforce, etc.)
+- ❌ Reporting (Custom reports)
+- ❌ Studio (Custom dashboards)
+- ❌ Advanced Analytics (Click analytics, Product analytics, Search console)
+
+These features exist in the codebase but are not exposed in the sidebar for MVP. To enable them later, update `apps/web/components/layout/Sidebar.tsx` and `SidebarMobile.tsx`.
+
+### Known Issue (April 2026)
+The frontend at `app.digitalytics.io` is showing a different application ("Insighter AI" with orange theme) instead of AdsMaster. This is likely a **domain conflict in Coolify** where another application has the same domain configured.
+
+**To fix**: In Coolify, check all applications and ensure ONLY the AdsMaster Web app has `app.digitalytics.io` as its domain. Remove the domain from any other app.
+
+### Deployment Files
+- `deploy/coolify/api.Dockerfile` - Backend API Docker build
+- `deploy/coolify/web.Dockerfile` - Frontend Docker build (monorepo standalone)
+- `deploy/coolify/DEPLOY-COOLIFY.md` - Full deployment guide
+
+### Dockerfile Fixes Applied During Deployment
+1. **Poetry `--no-dev` deprecated** → Changed to `--only main`
+2. **Python version** → Changed to `>=3.10,<3.13` for cryptography compatibility
+3. **Poetry missing README** → Added `--no-root` flag
+4. **SQLAlchemy postgres:// dialect** → Auto-convert to `postgresql://` in `database.py`
+5. **Monorepo standalone path** → Server.js at `/app/apps/web/server.js`
+6. **IPv6 healthcheck** → Use `127.0.0.1` instead of `localhost`
+
+### Database Connection
+The backend uses SQLAlchemy directly (not Supabase SDK) for production:
+- `apps/api/app/services/database.py` - Supabase-compatible query builder
+- Automatically converts `postgres://` URLs to `postgresql://` for SQLAlchemy
+
+### Environment Variables (Production)
+Set these in Coolify for both API and Web apps:
+```
+# API App
+DATABASE_URL=postgresql://postgres:PASSWORD@database-host:5432/postgres
+REDIS_URL=redis://default:PASSWORD@redis-host:6379/0
+JWT_SECRET=<64-char-random-string>
+GOOGLE_ADS_DEVELOPER_TOKEN=...
+GOOGLE_ADS_CLIENT_ID=...
+GOOGLE_ADS_CLIENT_SECRET=...
+GOOGLE_ADS_REDIRECT_URI=https://api.digitalytics.io/auth/google-ads/callback
+META_APP_ID=...
+META_APP_SECRET=...
+GEMINI_API_KEY=...
+STRIPE_SECRET_KEY=...
+STRIPE_WEBHOOK_SECRET=...
+RESEND_API_KEY=...
+CORS_ORIGINS=https://app.digitalytics.io
+
+# Web App (Build Argument)
+NEXT_PUBLIC_API_URL=https://api.digitalytics.io
+```
+
+### OAuth Redirect URIs (Google Cloud Console)
+```
+https://app.digitalytics.io/auth/callback
+https://api.digitalytics.io/auth/google-ads/callback
+https://api.digitalytics.io/auth/google/callback
+```
+
 ## Troubleshooting
 
 ### Common Issues
@@ -217,3 +302,9 @@ The admin panel (`/admin/*` routes) has separate authentication from regular use
 - **CORS errors**: Check `main.py` allows your frontend port (3000, 3001, 3002 allowed)
 - **Auth failures**: Verify JWT_SECRET is set in `.env` and matches between sessions
 - **Demo user login fails**: Run `npm run db:migrate` to seed demo data
+
+### Production Issues
+- **Frontend showing wrong app**: Check Coolify for domain conflicts - another app may have the same domain
+- **Container unhealthy**: Check logs in Coolify → Logs tab
+- **Build fails with TypeScript errors**: Some pages have `// @ts-nocheck` for non-MVP features
+- **Suspense boundary errors**: All pages using `useSearchParams()` must be wrapped in `<Suspense>`
