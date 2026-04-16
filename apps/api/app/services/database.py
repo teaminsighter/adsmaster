@@ -24,6 +24,11 @@ DATABASE_URL = os.getenv(
     "postgresql://adsmaster:adsmaster_secret@localhost:5432/adsmaster"
 )
 
+# Fix common URL format issues
+# Coolify/Heroku use postgres:// but SQLAlchemy requires postgresql://
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
 # Convert async URL to sync for standard SQLAlchemy
 SYNC_DATABASE_URL = DATABASE_URL.replace("postgresql+asyncpg://", "postgresql://")
 
