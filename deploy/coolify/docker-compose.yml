@@ -1,0 +1,136 @@
+# AdsMaster Docker Compose for Coolify
+# This file defines all services needed for deployment
+
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: adsmaster-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-adsmaster}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-adsmaster}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init_database.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-adsmaster}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - adsmaster-network
+
+  # Redis (for rate limiting and caching)
+  redis:
+    image: redis:7-alpine
+    container_name: adsmaster-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - adsmaster-network
+
+  # Backend API (FastAPI)
+  api:
+    build:
+      context: ../..
+      dockerfile: deploy/coolify/api.Dockerfile
+    container_name: adsmaster-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      # Database
+      DATABASE_URL: postgresql://${POSTGRES_USER:-adsmaster}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-adsmaster}
+
+      # Redis
+      REDIS_URL: redis://redis:6379
+
+      # JWT
+      JWT_SECRET: ${JWT_SECRET}
+
+      # Google Ads
+      GOOGLE_ADS_DEVELOPER_TOKEN: ${GOOGLE_ADS_DEVELOPER_TOKEN}
+      GOOGLE_ADS_CLIENT_ID: ${GOOGLE_ADS_CLIENT_ID}
+      GOOGLE_ADS_CLIENT_SECRET: ${GOOGLE_ADS_CLIENT_SECRET}
+      GOOGLE_ADS_REDIRECT_URI: ${GOOGLE_ADS_REDIRECT_URI}
+
+      # Meta Ads
+      META_APP_ID: ${META_APP_ID}
+      META_APP_SECRET: ${META_APP_SECRET}
+      META_REDIRECT_URI: ${META_REDIRECT_URI}
+
+      # AI
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+
+      # GCP (for BigQuery/Vertex AI)
+      GCP_PROJECT_ID: ${GCP_PROJECT_ID}
+      GCP_LOCATION: ${GCP_LOCATION:-us-central1}
+      GOOGLE_APPLICATION_CREDENTIALS: /app/credentials/gcp-service-account.json
+      BIGQUERY_DATASET: ${BIGQUERY_DATASET:-adsmaster_ml}
+
+      # Stripe
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+
+      # Email
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:-noreply@yourdomain.com}
+
+      # App
+      ENVIRONMENT: production
+      DEBUG: "false"
+      CORS_ORIGINS: ${WEB_URL}
+      API_URL: ${API_URL}
+      WEB_URL: ${WEB_URL}
+    volumes:
+      - ./credentials:/app/credentials:ro
+    ports:
+      - "8081:8081"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - adsmaster-network
+
+  # Frontend (Next.js)
+  web:
+    build:
+      context: ../..
+      dockerfile: deploy/coolify/web.Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${API_URL}
+    container_name: adsmaster-web
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      NEXT_PUBLIC_API_URL: ${API_URL}
+    ports:
+      - "3000:3000"
+    networks:
+      - adsmaster-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  adsmaster-network:
+    driver: bridge

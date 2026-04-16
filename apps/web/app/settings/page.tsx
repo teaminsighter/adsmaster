@@ -14,6 +14,12 @@ const settingsSections = [
     icon: '🔗',
   },
   {
+    title: 'Goals & Alerts',
+    description: 'Set performance targets, budget pacing, and anomaly alerts',
+    href: '/settings/goals',
+    icon: '🎯',
+  },
+  {
     title: 'Notifications',
     description: 'Configure email and in-app notification preferences',
     href: '/settings/notifications',

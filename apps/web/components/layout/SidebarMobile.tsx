@@ -16,7 +16,6 @@ const navItems = [
 
 const bottomNavItems = [
   { href: '/settings', label: 'Settings', icon: '⚙️' },
-  { href: '/help', label: 'Help', icon: '❓' },
 ];
 
 interface SidebarMobileProps {

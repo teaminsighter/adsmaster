@@ -63,3 +63,7 @@ class Settings(BaseSettings):
 @lru_cache()
 def get_settings() -> Settings:
     return Settings()
+
+
+# Singleton instance for convenience imports
+settings = get_settings()

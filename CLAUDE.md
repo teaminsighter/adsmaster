@@ -75,7 +75,7 @@ curl -s "http://localhost:8081/accounts" -H "Authorization: Bearer $TOKEN"
 - `apps/web/` - Next.js 16 frontend (React 19, TailwindCSS 4, lucide-react icons, recharts)
 - `apps/api/` - FastAPI backend (Python 3.9-3.12, Poetry)
 - `packages/shared/` - Shared types/utilities
-- `supabase/migrations/` - Database migrations (13 files: 00001-00013)
+- `supabase/migrations/` - Database migrations (23 files: 00001-00023)
 - `database/schema/` - Reference SQL schemas (documentation)
 - `docs/planning/` - Planning phase documents (phases 1-18)
 
@@ -90,13 +90,14 @@ curl -s "http://localhost:8081/accounts" -H "Authorization: Bearer $TOKEN"
 
 ### Backend Architecture (apps/api/)
 - **Entry Point**: `app/main.py` - FastAPI app with CORS, routers
-- **API Routes**: `app/api/` - 28 route modules
-- **Services**: `app/services/` - Business logic (database, supabase_client, automation_service, meta_ads_service, email_service, stripe_service, sync/, tracking/)
+- **API Routes**: `app/api/` - 39 route modules including admin, tracking, analytics, studio, CRM
+- **Services**: `app/services/` - Business logic (database, supabase_client, automation_service, meta_ads_service, email_service, stripe_service, ga4_service, alert_service, sync/, tracking/, crm/)
 - **Integrations**: `app/integrations/` - External API adapters + rate limiter
 - **Workers**: `app/workers/` - Background job processors:
   - `sync_worker.py` - Syncs campaigns/metrics from ad platforms
   - `token_refresh_worker.py` - Refreshes OAuth tokens before expiry
   - `reconciliation_worker.py` - Daily reconciliation of data drift
+  - `alert_worker.py` - Processes goal alerts and notifications
 - **Config**: `app/core/config.py` - Pydantic settings from .env
 
 ### Ad Platform Adapters (Critical Pattern)
@@ -137,6 +138,11 @@ Required in `.env` at project root:
 - `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` (for billing)
 - `RESEND_API_KEY` (for transactional emails)
 
+AI providers (at least one required for AI features):
+- `GEMINI_API_KEY` - Google Gemini
+- `OPENAI_API_KEY` - OpenAI GPT models
+- `ANTHROPIC_API_KEY` - Anthropic Claude models
+
 Frontend uses `NEXT_PUBLIC_API_URL` (defaults to http://localhost:8081).
 
 Requires Node.js >=20, Python 3.9-3.12.
@@ -159,9 +165,14 @@ Backend returns `{ data: T, error: string | null }` pattern. Check error before 
 - AI Chat: `/api/v1/ai-chat/`
 - ML: `/api/v1/ml/` (forecast/spend, forecast/conversions, anomalies, predict/keywords, status)
 - Settings: `/api/v1/settings/` (preferences, notifications, team, api-keys, billing)
-- Admin: `/api/v1/admin/` (super admin only - users, orgs, analytics, config)
+- Admin: `/api/v1/admin/` (super admin only - users, orgs, analytics, config, emails, webhooks)
 - Sync: `/sync/trigger/{account_id}`, `/sync/status/{account_id}`, `/sync/logs`
-- Tracking: `/tracking/` (visitor tracking), `/api/v1/visitors/`, `/api/v1/conversions/offline`
+- Tracking: `/tracking/`, `/api/v1/visitors/`, `/api/v1/conversions/offline`, `/api/v1/session-recordings/`
+- Goals: `/api/v1/goals/` (ad goals, alerts, budget pacing)
+- Studio: `/api/v1/studio/` (custom dashboards)
+- Domains: `/api/v1/domains/` (CNAME tracking domains)
+- CRM: `/api/v1/crm/` (HubSpot, Salesforce integrations)
+- Analytics: `/api/v1/ad-insights/`, `/api/v1/clicks/`, `/api/v1/products/`, `/api/v1/search-console/`, `/api/v1/ga4/`
 - Webhooks: `/webhooks/` (Stripe), `/webhooks/ingest/` (external data ingestion)
 - Demo (no auth): `/api/v1/demo/*` - Returns mock data for UI development
 
@@ -174,7 +185,7 @@ Backend uses JWT tokens (PyJWT). Protected routes use `get_current_user` depende
 ### Database
 - Uses Row-Level Security (RLS) for multi-tenant isolation
 - `organization_id` is the tenant key on most tables
-- Migrations live in `supabase/migrations/` (numbered 00001-00013)
+- Migrations live in `supabase/migrations/` (numbered 00001-00023)
 - Reference schemas in `database/schema/` for documentation
 
 ### Frontend Hooks Pattern
@@ -182,7 +193,7 @@ The `useApi` hook in `lib/hooks/useApi.ts` provides data fetching with:
 - Automatic loading/error states
 - Demo mode detection (`isDemo` flag when `demo_mode: true` in response)
 - `refetch()` function for manual refresh
-- Feature-specific hooks: `useDashboard()`, `useCampaigns()`, `useRecommendations()`, `useAnalytics()`, `useKeywords()`, `useAudiences()`, `useConnectedAccounts()`, `usePreferences()`, `useNotificationSettings()`, `useTeamMembers()`, `useApiKeys()`, `useBilling()`
+- Feature-specific hooks: `useDashboard()`, `useCampaigns()`, `useRecommendations()`, `useAnalytics()`, `useKeywords()`, `useAudiences()`, `useConnectedAccounts()`, `usePreferences()`, `useNotificationSettings()`, `useTeamMembers()`, `useApiKeys()`, `useBilling()`, `useGoals()`, `useSessionRecordings()`
 
 ### Admin Panel
 The admin panel (`/admin/*` routes) has separate authentication from regular users:

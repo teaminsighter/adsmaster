@@ -2,6 +2,7 @@
 
 import { ReactNode } from 'react';
 import { AuthProvider } from '@/lib/contexts/AuthContext';
+import { SubscriptionProvider } from '@/lib/contexts/SubscriptionContext';
 
 interface ProvidersProps {
   children: ReactNode;
@@ -10,7 +11,9 @@ interface ProvidersProps {
 export default function Providers({ children }: ProvidersProps) {
   return (
     <AuthProvider>
-      {children}
+      <SubscriptionProvider>
+        {children}
+      </SubscriptionProvider>
     </AuthProvider>
   );
 }

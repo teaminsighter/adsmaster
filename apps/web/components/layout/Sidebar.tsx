@@ -14,17 +14,8 @@ const navItems = [
   { href: '/audiences', label: 'Audiences', icon: '👥' },
 ];
 
-const trackingItems = [
-  { href: '/tracking', label: 'Overview', icon: '📡' },
-  { href: '/tracking/visitors', label: 'Visitors', icon: '👁️' },
-  { href: '/tracking/conversions', label: 'Conversions', icon: '🎯' },
-  { href: '/tracking/sync-history', label: 'Sync History', icon: '📋' },
-  { href: '/tracking/setup', label: 'Setup', icon: '⚙️' },
-];
-
 const bottomNavItems = [
   { href: '/settings', label: 'Settings', icon: '⚙️' },
-  { href: '/help', label: 'Help', icon: '❓' },
 ];
 
 // Mock connected accounts
@@ -125,38 +116,6 @@ export default function Sidebar() {
           <span className="nav-item-icon">💬</span>
           AdsMaster AI
         </Link>
-
-        {/* Tracking Section */}
-        <div style={{
-          marginTop: '16px',
-          paddingTop: '16px',
-          borderTop: '1px solid var(--border-default)'
-        }}>
-          <div style={{
-            padding: '8px 16px',
-            fontSize: '11px',
-            fontWeight: '600',
-            color: 'var(--text-secondary)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px'
-          }}>
-            Tracking
-          </div>
-          {trackingItems.map((item) => {
-            const isActive = pathname === item.href ||
-              (item.href !== '/tracking' && pathname.startsWith(item.href));
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`nav-item ${isActive ? 'active' : ''}`}
-              >
-                <span className="nav-item-icon">{item.icon}</span>
-                {item.label}
-              </Link>
-            );
-          })}
-        </div>
       </nav>
 
       {/* Bottom Navigation */}

@@ -22,7 +22,11 @@ except ImportError:
 
 from .api import auth, accounts, campaigns, sync, recommendations, meta_auth, meta_campaigns, demo, admin_settings, ai_chat, audiences, settings, user_auth, automations, admin
 from .api import admin_marketing, admin_ai, admin_api_monitor, admin_system, admin_emails, ml, webhooks
-from .api import tracking, visitors, offline_conversions, webhooks_ingest, sync_logs
+from .api import tracking, visitors, offline_conversions, webhooks_ingest, sync_logs, session_recordings, studio, domains, crm_integrations
+# from .api import conversion_import, live_debug  # Requires python-multipart (Python 3.10+)
+from .api import ad_insights, click_analytics, product_analytics, search_console
+from .api import ad_goals  # Sprint 8: Ad Goals & Alerts
+from .services.ga4_service import router as ga4_router
 
 app = FastAPI(
     title="AdsMaster API",
@@ -32,10 +36,16 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-# CORS middleware
+# CORS middleware - read from env for production, fallback to localhost for dev
+cors_origins_env = os.getenv("CORS_ORIGINS", "")
+if cors_origins_env:
+    cors_origins = [origin.strip() for origin in cors_origins_env.split(",")]
+else:
+    cors_origins = ["http://localhost:3000", "http://localhost:3001", "http://localhost:3002"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3001", "http://localhost:3002"],  # Next.js dev server
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -71,6 +81,24 @@ app.include_router(visitors.router)
 app.include_router(offline_conversions.router)
 app.include_router(webhooks_ingest.router)
 app.include_router(sync_logs.router)
+app.include_router(session_recordings.router)
+app.include_router(studio.router)
+app.include_router(domains.router)
+app.include_router(crm_integrations.router)
+
+# Sprint 6: Enhanced Conversions
+# app.include_router(conversion_import.router)  # Requires python-multipart
+# app.include_router(live_debug.router)  # Requires python-multipart
+
+# Sprint 7: Analytics Enhancements
+app.include_router(ad_insights.router)
+app.include_router(click_analytics.router)
+app.include_router(product_analytics.router)
+app.include_router(search_console.router)
+app.include_router(ga4_router)
+
+# Sprint 8: Ad Goals & Alerts
+app.include_router(ad_goals.router)
 
 
 @app.get("/")
