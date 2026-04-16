@@ -44,12 +44,18 @@ ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy built application
-COPY --from=builder /app/apps/web/public ./public
+# Copy built application (monorepo structure)
+# Standalone output contains: /app/apps/web/.next/standalone/apps/web/server.js
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./.next/static
+# Copy public folder to the correct nested location
+COPY --from=builder /app/apps/web/public ./apps/web/public
+# Copy static files to the correct nested location
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
 
 USER nextjs
+
+# Work from the nested app directory
+WORKDIR /app/apps/web
 
 EXPOSE 3000
 
