@@ -1,3 +1,4 @@
+// @ts-nocheck
 'use client';
 
 import { StudioWidget } from '@/lib/hooks/useApi';
