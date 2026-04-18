@@ -73,7 +73,7 @@ curl -s "http://localhost:8081/accounts" -H "Authorization: Bearer $TOKEN"
 
 ### Monorepo Structure
 - `apps/web/` - Next.js 16 frontend (React 19, TailwindCSS 4, lucide-react icons, recharts)
-- `apps/api/` - FastAPI backend (Python 3.9-3.12, Poetry)
+- `apps/api/` - FastAPI backend (Python 3.10-3.12, Poetry)
 - `packages/shared/` - Shared types/utilities
 - `supabase/migrations/` - Database migrations (23 files: 00001-00023)
 - `database/schema/` - Reference SQL schemas (documentation)
@@ -145,7 +145,7 @@ AI providers (at least one required for AI features):
 
 Frontend uses `NEXT_PUBLIC_API_URL` (defaults to http://localhost:8081).
 
-Requires Node.js >=20, Python 3.9-3.12.
+Requires Node.js >=20, Python 3.10-3.12.
 
 ## Key Conventions
 

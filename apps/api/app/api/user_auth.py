@@ -604,7 +604,7 @@ async def google_login(redirect_after: str = "/dashboard"):
 
     params = {
         "client_id": settings.google_ads_client_id,
-        "redirect_uri": settings.google_auth_redirect_uri,
+        "redirect_uri": settings.google_redirect_uri,
         "response_type": "code",
         "scope": " ".join(GOOGLE_AUTH_SCOPES),
         "access_type": "offline",
@@ -660,7 +660,7 @@ async def google_callback(
                     "client_secret": settings.google_ads_client_secret,
                     "code": code,
                     "grant_type": "authorization_code",
-                    "redirect_uri": settings.google_auth_redirect_uri,
+                    "redirect_uri": settings.google_redirect_uri,
                 },
             )
 

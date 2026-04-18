@@ -20,7 +20,8 @@ class Settings(BaseSettings):
     google_ads_redirect_uri: str = "http://localhost:8000/auth/google-ads/callback"
 
     # Google User Auth (Sign in with Google)
-    google_auth_redirect_uri: str = "http://localhost:8081/auth/google/callback"
+    # Accepts both GOOGLE_AUTH_REDIRECT_URI and GOOGLE_REDIRECT_URI
+    google_redirect_uri: str = "http://localhost:8081/auth/google/callback"
 
     # Meta Ads
     meta_app_id: str = ""
