@@ -708,7 +708,9 @@ async def google_callback(
             user_id = str(uuid.uuid4())
 
             # Create organization for new user
-            org_name = f"{full_name.split()[0] if full_name else 'My'}'s Organization"
+            name_parts = full_name.split() if full_name else []
+            first_name = name_parts[0] if name_parts else "My"
+            org_name = f"{first_name}'s Organization"
             org_result = supabase.table("organizations").insert({
                 "id": str(uuid.uuid4()),
                 "name": org_name,
