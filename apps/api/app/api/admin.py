@@ -199,25 +199,52 @@ def log_audit(admin_id: str, action: str, resource_type: str = None,
 @router.post("/auth/login", response_model=AdminLoginResponse)
 async def admin_login(request: Request, data: AdminLoginRequest):
     """Admin login endpoint"""
-    supabase = get_supabase_client()
+    print(f"Admin login attempt: {data.email}")
 
-    # Demo mode credentials
+    # Demo mode credentials - check FIRST before database
     DEMO_ADMIN_EMAIL = "admin@adsmaster.io"
     DEMO_ADMIN_PASSWORD = "admin123"
 
+    # Check demo credentials first
+    if data.email == DEMO_ADMIN_EMAIL and data.password == DEMO_ADMIN_PASSWORD:
+        print("Demo admin login - bypassing database")
+        admin = {
+            "id": "demo-admin-001",
+            "email": DEMO_ADMIN_EMAIL,
+            "name": "Demo Admin",
+            "role": "super_admin",
+            "is_active": True,
+            "password_hash": ""
+        }
+        admin_id = "demo-admin-001"
+        access_token = create_admin_token(admin_id, "access")
+        refresh_token = create_admin_token(admin_id, "refresh")
+        return AdminLoginResponse(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            admin={
+                "id": admin_id,
+                "email": admin["email"],
+                "name": admin.get("name"),
+                "role": admin["role"]
+            }
+        )
+
+    supabase = get_supabase_client()
     admin = None
     is_demo = False
 
     try:
         # Try to find admin by email in database
         result = supabase.table("admin_users").select("*").eq("email", data.email).execute()
+        print(f"Admin query result: {result.data}")
         if result.data:
             admin = result.data[0]
     except Exception as e:
         # Table might not exist - fall back to demo mode
         print(f"Admin table query failed: {e}")
 
-    # Fallback to demo admin if no DB admin found
+    # Fallback to demo admin if no DB admin found (legacy check)
     if not admin and data.email == DEMO_ADMIN_EMAIL and data.password == DEMO_ADMIN_PASSWORD:
         is_demo = True
         admin = {
