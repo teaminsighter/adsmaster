@@ -124,10 +124,11 @@ async def create_admin_from_env():
         existing = supabase.table("admin_users").select("id").eq("email", admin_email).execute()
 
         if existing.data:
-            # Update existing admin
+            # Update existing admin - reset password
             supabase.table("admin_users").update({
                 "password_hash": password_hash,
                 "is_active": True,
+                "role": "super_admin",
             }).eq("email", admin_email).execute()
             print(f"Updated admin user: {admin_email}")
         else:
@@ -136,9 +137,9 @@ async def create_admin_from_env():
             supabase.table("admin_users").insert({
                 "id": str(uuid.uuid4()),
                 "email": admin_email,
-                "full_name": "Admin",
+                "name": "Admin",
                 "password_hash": password_hash,
-                "is_super_admin": True,
+                "role": "super_admin",
                 "is_active": True,
             }).execute()
             print(f"Created admin user: {admin_email}")
