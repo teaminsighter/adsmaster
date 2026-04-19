@@ -240,9 +240,10 @@ async def admin_login(request: Request, data: AdminLoginRequest):
     if not is_demo and not verify_password(data.password, admin["password_hash"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    # Generate tokens
-    access_token = create_admin_token(admin["id"], "access")
-    refresh_token = create_admin_token(admin["id"], "refresh")
+    # Generate tokens - ensure admin_id is string (UUID comes from database)
+    admin_id = str(admin["id"])
+    access_token = create_admin_token(admin_id, "access")
+    refresh_token = create_admin_token(admin_id, "refresh")
 
     client_ip = request.client.host if request.client else None
     user_agent = request.headers.get("user-agent")
@@ -251,7 +252,7 @@ async def admin_login(request: Request, data: AdminLoginRequest):
     if not is_demo:
         try:
             supabase.table("admin_sessions").insert({
-                "admin_user_id": admin["id"],
+                "admin_user_id": admin_id,
                 "refresh_token_hash": hashlib.sha256(refresh_token.encode()).hexdigest(),
                 "expires_at": (datetime.utcnow() + timedelta(days=ADMIN_REFRESH_TOKEN_EXPIRE_DAYS)).isoformat(),
                 "ip_address": client_ip,
@@ -261,10 +262,10 @@ async def admin_login(request: Request, data: AdminLoginRequest):
             # Update last login
             supabase.table("admin_users").update({
                 "last_login_at": datetime.utcnow().isoformat()
-            }).eq("id", admin["id"]).execute()
+            }).eq("id", admin_id).execute()
 
             # Audit log
-            log_audit(admin["id"], "auth.login", ip_address=client_ip)
+            log_audit(admin_id, "auth.login", ip_address=client_ip)
         except Exception as e:
             print(f"Failed to log admin session: {e}")
 
@@ -272,7 +273,7 @@ async def admin_login(request: Request, data: AdminLoginRequest):
         access_token=access_token,
         refresh_token=refresh_token,
         admin={
-            "id": admin["id"],
+            "id": admin_id,
             "email": admin["email"],
             "name": admin.get("name"),
             "role": admin["role"]
@@ -283,11 +284,12 @@ async def admin_login(request: Request, data: AdminLoginRequest):
 async def admin_logout(admin: dict = Depends(get_current_admin)):
     """Admin logout - invalidate sessions"""
     supabase = get_supabase_client()
+    admin_id = str(admin["id"])
 
     # Delete all sessions for this admin
-    supabase.table("admin_sessions").delete().eq("admin_user_id", admin["id"]).execute()
+    supabase.table("admin_sessions").delete().eq("admin_user_id", admin_id).execute()
 
-    log_audit(admin["id"], "auth.logout")
+    log_audit(admin_id, "auth.logout")
 
     return {"success": True, "message": "Logged out successfully"}
 
@@ -295,7 +297,7 @@ async def admin_logout(admin: dict = Depends(get_current_admin)):
 async def get_current_admin_info(admin: dict = Depends(get_current_admin)):
     """Get current admin user info"""
     return AdminUserResponse(
-        id=admin["id"],
+        id=str(admin["id"]),
         email=admin["email"],
         name=admin.get("name"),
         role=admin["role"],
