@@ -101,6 +101,51 @@ app.include_router(ga4_router)
 app.include_router(ad_goals.router)
 
 
+@app.on_event("startup")
+async def create_admin_from_env():
+    """Create or update admin user from environment variables on startup."""
+    admin_email = os.getenv("ADMIN_EMAIL")
+    admin_password = os.getenv("ADMIN_PASSWORD")
+
+    if not admin_email or not admin_password:
+        print("ADMIN_EMAIL or ADMIN_PASSWORD not set, skipping admin creation")
+        return
+
+    try:
+        import bcrypt
+        from .services.supabase_client import get_supabase_client
+
+        supabase = get_supabase_client()
+
+        # Hash password with bcrypt
+        password_hash = bcrypt.hashpw(admin_password.encode(), bcrypt.gensalt(12)).decode()
+
+        # Check if admin exists
+        existing = supabase.table("admin_users").select("id").eq("email", admin_email).execute()
+
+        if existing.data:
+            # Update existing admin
+            supabase.table("admin_users").update({
+                "password_hash": password_hash,
+                "is_active": True,
+            }).eq("email", admin_email).execute()
+            print(f"Updated admin user: {admin_email}")
+        else:
+            # Create new admin
+            import uuid
+            supabase.table("admin_users").insert({
+                "id": str(uuid.uuid4()),
+                "email": admin_email,
+                "full_name": "Admin",
+                "password_hash": password_hash,
+                "is_super_admin": True,
+                "is_active": True,
+            }).execute()
+            print(f"Created admin user: {admin_email}")
+    except Exception as e:
+        print(f"Failed to create admin user: {e}")
+
+
 @app.get("/")
 async def root():
     return {"message": "AdsMaster API", "version": "0.1.0"}
