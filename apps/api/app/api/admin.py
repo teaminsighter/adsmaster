@@ -296,14 +296,18 @@ async def admin_login(request: Request, data: AdminLoginRequest):
         except Exception as e:
             print(f"Failed to log admin session: {e}")
 
+    # Handle both schema versions: role or is_super_admin, name or full_name
+    role = admin.get("role") or ("super_admin" if admin.get("is_super_admin") else "admin")
+    name = admin.get("name") or admin.get("full_name")
+
     return AdminLoginResponse(
         access_token=access_token,
         refresh_token=refresh_token,
         admin={
             "id": admin_id,
             "email": admin["email"],
-            "name": admin.get("name"),
-            "role": admin["role"]
+            "name": name,
+            "role": role
         }
     )
 
