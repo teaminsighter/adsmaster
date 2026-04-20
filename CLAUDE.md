@@ -8,6 +8,27 @@ AdsMaster is an AI-powered advertising management SaaS platform that manages Goo
 
 **Current Status:** See [STATUS.md](./STATUS.md) for implementation progress (~65% complete).
 
+## Quick Start (First-Time Setup)
+
+```bash
+# 1. Install dependencies
+npm install                          # Frontend + monorepo deps
+cd apps/api && poetry install        # Backend deps
+
+# 2. Copy environment file and configure
+cp .env.example .env                 # Edit with your keys
+
+# 3. Start Supabase (local database)
+supabase start                       # Requires Docker running
+
+# 4. Run migrations
+npm run db:migrate
+
+# 5. Start development servers (two terminal tabs)
+# Tab 1: npm run dev:web
+# Tab 2: cd apps/api && poetry run uvicorn app.main:app --reload --port 8081
+```
+
 ## Commands
 
 ### Development
@@ -52,6 +73,14 @@ cd apps/api
 poetry run pytest                           # Run all tests
 poetry run pytest tests/test_file.py        # Single test file
 poetry run pytest -k "test_name"            # Run specific test
+poetry run pytest -v                        # Verbose output
+```
+
+### Frontend Testing
+```bash
+cd apps/web
+npm run test                                # Run all tests (if configured)
+npx playwright test                         # E2E tests (if configured)
 ```
 
 ### API Testing (with auth)
@@ -212,15 +241,24 @@ The admin panel (`/admin/*` routes) has separate authentication from regular use
 
 ## Production Deployment (Coolify on Hostinger VPS)
 
-### Current Deployment Status
+### Current Deployment Status (April 2026) ✅ LIVE
 **Domain**: digitalytics.io
-- **Frontend**: https://app.digitalytics.io (Coolify app: `adsmaster:main-hjls5ppmbj...`)
-- **API**: https://api.digitalytics.io (Coolify app: `adsmaster:main-ich0k1slib...`) ✅ Working
-- **PostgreSQL**: Internal Coolify database (`digitalytics`)
-- **Redis**: Internal Coolify Redis (`redis-database-i4sop8fhoo...`)
+- **Frontend**: https://app.digitalytics.io ✅ Working
+- **API**: https://api.digitalytics.io ✅ Working
+- **PostgreSQL**: Internal Coolify database ✅ Working
+- **Redis**: Internal Coolify Redis ✅ Available
 
 **GitHub Repo**: https://github.com/teaminsighter/adsmaster (private)
 **Auto-deploy**: Enabled - pushes to `main` trigger automatic deployment
+
+### What's Working in Production
+- ✅ User registration and login (email/password)
+- ✅ Google OAuth login ("Sign in with Google")
+- ✅ Admin panel login (demo or env-based)
+- ✅ Dashboard with demo data
+- ✅ All MVP pages (Campaigns, Keywords, Audiences, AI Advisor, etc.)
+- ✅ Mobile responsive UI with bottom navigation
+- ✅ Light/Dark theme support
 
 ### MVP Scope (What's Deployed)
 This deployment is **MVP - Ads features only**. The sidebar was simplified to core features:
@@ -242,10 +280,17 @@ This deployment is **MVP - Ads features only**. The sidebar was simplified to co
 
 These features exist in the codebase but are not exposed in the sidebar for MVP. To enable them later, update `apps/web/components/layout/Sidebar.tsx` and `SidebarMobile.tsx`.
 
-### Known Issue (April 2026)
-The frontend at `app.digitalytics.io` is showing a different application ("Insighter AI" with orange theme) instead of AdsMaster. This is likely a **domain conflict in Coolify** where another application has the same domain configured.
+### Admin Panel Access
+Two ways to access admin panel at `/admin/login`:
 
-**To fix**: In Coolify, check all applications and ensure ONLY the AdsMaster Web app has `app.digitalytics.io` as its domain. Remove the domain from any other app.
+1. **Demo Admin** (always works, bypasses database):
+   - Email: `admin@adsmaster.io`
+   - Password: `admin123`
+
+2. **Custom Admin** (via environment variables):
+   - Set `ADMIN_EMAIL` and `ADMIN_PASSWORD` in Coolify API env vars
+   - Restart API - startup event creates/updates the admin user
+   - Check logs for: `Updated admin user: your@email.com`
 
 ### Deployment Files
 - `deploy/coolify/api.Dockerfile` - Backend API Docker build
@@ -259,6 +304,35 @@ The frontend at `app.digitalytics.io` is showing a different application ("Insig
 4. **SQLAlchemy postgres:// dialect** → Auto-convert to `postgresql://` in `database.py`
 5. **Monorepo standalone path** → Server.js at `/app/apps/web/server.js`
 6. **IPv6 healthcheck** → Use `127.0.0.1` instead of `localhost`
+
+### Production Code Fixes (April 2026)
+These fixes were applied to make production work:
+
+1. **Google OAuth redirect** (`apps/api/app/core/config.py`):
+   - Changed `google_auth_redirect_uri` to `google_redirect_uri` to match env var name
+
+2. **User registration** (`apps/api/app/api/user_auth.py`):
+   - Fixed "list index out of range" when Google returns empty name
+   - Handle `full_name.split()` safely
+
+3. **Admin login UUID serialization** (`apps/api/app/api/admin.py`):
+   - Convert `admin["id"]` UUID to string before creating JWT tokens
+   - Handle schema variations (`is_super_admin` vs `role`, `full_name` vs `name`)
+
+4. **Admin creation from env vars** (`apps/api/app/main.py`):
+   - Added startup event to create/update admin from `ADMIN_EMAIL` and `ADMIN_PASSWORD`
+   - Demo admin check moved to beginning of login flow (bypasses database)
+
+5. **Database schema additions** (run manually in production):
+   ```sql
+   -- Users table additions
+   ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id VARCHAR(255);
+   ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMPTZ;
+
+   -- User sessions additions
+   ALTER TABLE user_sessions ADD COLUMN IF NOT EXISTS device_info VARCHAR(255);
+   ALTER TABLE user_sessions ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true;
+   ```
 
 ### Database Connection
 The backend uses SQLAlchemy directly (not Supabase SDK) for production:

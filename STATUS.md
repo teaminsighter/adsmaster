@@ -1,7 +1,22 @@
 # AdsMaster - Project Status
 
-> **Last Updated:** 2026-04-03
-> **Overall Progress:** ~65% of MVP features implemented
+> **Last Updated:** 2026-04-19
+> **Overall Progress:** ~70% of MVP features implemented
+> **Production Status:** ✅ LIVE on https://app.digitalytics.io
+
+---
+
+## 🚀 Production Deployment
+
+| Component | URL | Status |
+|-----------|-----|--------|
+| Frontend | https://app.digitalytics.io | ✅ Live |
+| API | https://api.digitalytics.io | ✅ Live |
+| Database | Coolify PostgreSQL | ✅ Working |
+| Redis | Coolify Redis | ✅ Available |
+
+**Hosting:** Coolify on Hostinger VPS
+**Auto-deploy:** GitHub `main` branch → automatic deployment
 
 ---
 
@@ -10,17 +25,19 @@
 | Area | Status | Details |
 |------|--------|---------|
 | Planning (17 phases) | ✅ Complete | All planning docs written |
-| Database Schema | ✅ Complete | 8 migrations, core tables ready |
-| Backend API | ✅ Core Complete | 18 routers, 60+ endpoints |
+| Database Schema | ✅ Complete | 23 migrations, core tables ready |
+| Backend API | ✅ Core Complete | 39 routers, 90+ endpoints |
 | Frontend UI | ✅ Core Complete | 25+ pages, mobile responsive, light/dark themes |
-| Google Ads Integration | ⚠️ Partial | OAuth + adapter pattern ready, real API calls need testing |
-| Meta Ads Integration | ⚠️ Partial | OAuth + adapter ready, needs real account testing |
+| Production Deployment | ✅ Complete | Coolify on Hostinger VPS |
+| User Authentication | ✅ Complete | Email/password + Google OAuth working |
+| Admin Panel | ✅ Complete | Full dashboard, demo admin working |
+| Google Ads Integration | ⚠️ Partial | OAuth + adapter ready, real API needs testing |
+| Meta Ads Integration | ⚠️ Partial | OAuth + adapter ready, needs real account |
 | AI/ML Pipeline | ⚠️ Partial | 3 LLM providers wired, ML models scaffolded |
-| Admin Panel | ✅ Complete | Full dashboard, users, orgs, billing |
-| Billing (Stripe) | ⚠️ Schema Only | Tables ready, Stripe webhooks not wired |
-| DevOps/CI/CD | ❌ Not Started | No Terraform, no GitHub Actions |
+| Billing (Stripe) | ⚠️ Schema Only | Tables ready, webhooks not wired |
+| DevOps/CI/CD | ✅ Partial | Coolify auto-deploy working, no GitHub Actions |
 | Testing | ❌ Not Started | No pytest, no Playwright |
-| Security/Compliance | ⚠️ Partial | JWT auth works, MFA/audit not implemented |
+| Security/Compliance | ⚠️ Partial | JWT auth works, MFA not implemented |
 
 ---
 
@@ -56,15 +73,15 @@
 
 ---
 
-### Phase 2: System Architecture ✅ COMPLETE (Local Dev)
+### Phase 2: System Architecture ✅ COMPLETE (Coolify Production)
 
 | Planned | Status | Notes |
 |---------|--------|-------|
-| GCP infrastructure | ❌ Not Started | Local Supabase only |
-| Next.js on Cloud Run | ❌ Local Only | `npm run dev:web` |
-| FastAPI on Cloud Run | ❌ Local Only | `poetry run uvicorn` |
-| Cloud SQL PostgreSQL | ⚠️ Supabase | Using Supabase instead |
-| Memorystore Redis | ❌ Not Started | Rate limiter scaffolded, no Redis |
+| GCP infrastructure | ❌ Not Used | Using Coolify on Hostinger VPS |
+| Next.js deployment | ✅ Done | https://app.digitalytics.io |
+| FastAPI deployment | ✅ Done | https://api.digitalytics.io |
+| PostgreSQL | ✅ Done | Coolify managed PostgreSQL |
+| Redis | ✅ Available | Coolify managed Redis |
 | BigQuery analytics | ❌ Not Started | |
 | Vertex AI | ❌ Not Started | ML models use local inference |
 
@@ -185,25 +202,30 @@
 | Planned | Status | Notes |
 |---------|--------|-------|
 | JWT authentication | ✅ Done | 15-min access, 30-day refresh |
-| Password bcrypt hashing | ✅ Done | |
+| Password bcrypt hashing | ✅ Done | Admin uses bcrypt, users use SHA256+salt |
+| Google OAuth | ✅ Done | Sign in with Google working |
+| Admin authentication | ✅ Done | Separate JWT, demo + env-based admin |
 | MFA (TOTP) | ❌ Not Done | |
 | OAuth token encryption | ⚠️ Partial | Stored, not envelope encrypted |
 | Row Level Security | ⚠️ Enabled | Policies need audit |
 | Audit logging | ✅ Done | `audit_logs` table in admin |
+| HTTPS/SSL | ✅ Done | Automatic via Coolify/Traefik |
+| CORS | ✅ Done | Configured for production domain |
 | GDPR compliance | ❌ Not Done | No data export/deletion |
-| Cloud Armor WAF | ❌ Not Done | |
 
 ---
 
-### Phase 9: DevOps & Infrastructure ❌ NOT STARTED
+### Phase 9: DevOps & Infrastructure ✅ PARTIAL (Coolify)
 
 | Planned | Status | Notes |
 |---------|--------|-------|
-| Terraform modules | ❌ Not Done | |
-| GitHub Actions CI/CD | ❌ Not Done | |
-| Docker containers | ❌ Not Done | |
-| Cloud Run deployment | ❌ Not Done | |
-| Monitoring/alerting | ❌ Not Done | |
+| Terraform modules | ❌ Not Done | Using Coolify instead |
+| GitHub Actions CI/CD | ⚠️ Partial | Coolify auto-deploy on push to `main` |
+| Docker containers | ✅ Done | `deploy/coolify/*.Dockerfile` |
+| Cloud Run deployment | ❌ Not Used | Using Coolify on Hostinger VPS |
+| Production deployment | ✅ Done | app.digitalytics.io + api.digitalytics.io |
+| SSL/HTTPS | ✅ Done | Automatic via Coolify/Traefik |
+| Monitoring/alerting | ⚠️ Basic | Coolify dashboard, no Sentry |
 | Disaster recovery | ❌ Not Done | |
 
 ---
@@ -308,28 +330,28 @@
 
 ## Priority TODO Items
 
-### P0 - Blockers for Launch
-1. **Stripe webhook integration** - Wire up subscription lifecycle
-2. **Real Google Ads API testing** - Connect real account, test sync
-3. **Real Meta Ads API testing** - Connect real account, test sync
-4. **Production Supabase** - Migrate from local to hosted
+### P0 - Immediate (Production is Live)
+1. **Connect real Google Ads account** - Test OAuth + campaign sync
+2. **Connect real Meta Ads account** - Test OAuth + campaign sync
+3. **Set up admin credentials** - Add ADMIN_EMAIL/ADMIN_PASSWORD env vars
+4. **Stripe webhook integration** - Wire up subscription lifecycle
 
 ### P1 - High Priority
-1. **Basic test coverage** - pytest for critical endpoints
-2. **Error monitoring** - Add Sentry integration
-3. **Token health alerts** - Email/Slack on refresh failures
-4. **Onboarding wizard** - 6-step flow for new users
+1. **Error monitoring** - Add Sentry integration
+2. **Token health alerts** - Email on OAuth refresh failures
+3. **Onboarding wizard** - 6-step flow for new users
+4. **Basic test coverage** - pytest for critical endpoints
 
 ### P2 - Medium Priority
-1. **CI/CD pipeline** - GitHub Actions for lint/test/build
-2. **Docker containers** - Containerize API and web
-3. **More recommendation rules** - Expand from 5 to 20+ rules
-4. **Email templates** - SendGrid for transactional emails
+1. **More recommendation rules** - Expand from 5 to 20+ rules
+2. **Email templates** - Resend for transactional emails
+3. **Database backups** - Automated backup strategy
+4. **GitHub Actions** - Lint/test on PR (optional, Coolify handles deploy)
 
 ### P3 - Lower Priority
 1. **MFA (TOTP)** - Two-factor authentication
 2. **WebSocket real-time** - Live updates
-3. **BigQuery analytics** - Historical data warehouse
+3. **Enable hidden features** - Tracking, CRM, Studio
 4. **White-label** - Agency branding options
 
 ---
